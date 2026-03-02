@@ -1,11 +1,8 @@
 package com.frandm.pomodoro;
 
 //region Imports
-import javafx.beans.binding.Bindings;
 import javafx.collections.FXCollections;
-import javafx.geometry.Pos;
 import javafx.scene.chart.*;
-import javafx.scene.control.cell.PropertyValueFactory;
 import javafx.collections.ObservableList;
 import javafx.animation.FadeTransition;
 import javafx.animation.Interpolator;
@@ -13,6 +10,7 @@ import javafx.animation.KeyFrame;
 import javafx.animation.KeyValue;
 import javafx.animation.Timeline;
 import javafx.animation.TranslateTransition;
+import javafx.scene.control.cell.PropertyValueFactory;
 import javafx.scene.layout.*;
 import javafx.scene.paint.Color;
 import javafx.scene.shape.Arc;
@@ -23,11 +21,6 @@ import javafx.fxml.FXML;
 import javafx.scene.control.*;
 import javafx.scene.media.AudioClip;
 import java.net.URL;
-import java.sql.Connection;
-import java.sql.DriverManager;
-import java.sql.PreparedStatement;
-import java.sql.ResultSet;
-import java.sql.SQLException;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
@@ -109,25 +102,13 @@ public class PomodoroController {
         //DatabaseHandler.generateRandomPomodoros();
         ConfigManager.load(engine);
 
-
         //region config de la tabla
         colDate.setCellValueFactory(new PropertyValueFactory<>("date"));
         colSubject.setCellValueFactory(new PropertyValueFactory<>("subject"));
         colTopic.setCellValueFactory(new PropertyValueFactory<>("topic"));
         colDescription.setCellValueFactory(new PropertyValueFactory<>("description"));
         colDuration.setCellValueFactory(new PropertyValueFactory<>("duration"));
-        colTimeline.setCellFactory(param -> new TableCell<Session, String>() {
-            @Override
-            protected void updateItem(String item, boolean empty) {
-                super.updateItem(item, empty);
-                if (empty || getTableView() == null) {
-                    setGraphic(null);
-                } else {
-                    Session session = getTableView().getItems().get(getIndex());
-                    setGraphic(createTimelineGraphic(session.getId()));
-                }
-            }
-        });
+
         //endregion
 
         //region dashboard
@@ -242,9 +223,6 @@ public class PomodoroController {
         ObservableList<Session> data = DatabaseHandler.getAllSessions();
         sessionsTable.setItems(data);
 
-        historyContainer.getChildren().clear();
-        historyContainer.getChildren().add(new StudyTimelineDashboard());
-
         Region currentVisible = mainContainer.isVisible() ? mainContainer : statsContainer;
         switchPanels(currentVisible, historyContainer);
     }
@@ -261,9 +239,12 @@ public class PomodoroController {
         if (isSettingsOpen) {
             updateEngineSettings();
             ConfigManager.save(engine);
-            settingsAnim.setToX(-settingsPane.getWidth()); // hide settings
+            settingsAnim.setToX(-settingsPane.getWidth());// hide settings
+            settingsAnim.setOnFinished(e -> settingsPane.setVisible(false));
         } else {
+            settingsPane.setVisible(true);
             settingsAnim.setToX(0);    // show settings
+            settingsAnim.setOnFinished(null);
         }
 
         settingsAnim.play();
@@ -368,7 +349,6 @@ public class PomodoroController {
                 selectedSubjectLabel.setVisible(true);
                 selectedSubjectLabel.setManaged(true);
             }
-            setupPane.setTranslateX(600);
         } else {
             startPauseBtn.setText(current == PomodoroEngine.State.WAITING ? "RESUME" : "PAUSE");
         }
@@ -617,16 +597,16 @@ public class PomodoroController {
             LocalDate endOfWeek = LocalDate.now().minusWeeks(i).with(java.time.DayOfWeek.SUNDAY);
             LocalDate startOfWeek = endOfWeek.minusDays(6);
 
-            double totalHours = sessions.stream()
+            double totalMins = sessions.stream()
                     .filter(s -> {
                         LocalDate d = LocalDate.parse(s.getDate(), DATE_FORMATTER);
                         return !d.isBefore(startOfWeek) && !d.isAfter(endOfWeek);
                     })
                     .mapToDouble(Session::getDuration)
-                    .sum() / 60;
+                    .sum();
 
             String label = startOfWeek.format(labelFormatter);
-            XYChart.Data<String, Number> dataPoint = new XYChart.Data<>(label, totalHours);
+            XYChart.Data<String, Number> dataPoint = new XYChart.Data<>(label, totalMins/60);
 
             dataPoint.setExtraValue(new LocalDate[]{startOfWeek, endOfWeek});
             series.getData().add(dataPoint);
@@ -638,8 +618,11 @@ public class PomodoroController {
             LocalDate[] dates = (LocalDate[]) data.getExtraValue();
             LocalDate start = dates[0];
             LocalDate end = dates[1];
+            int totalMinutes = (int)(data.getYValue().doubleValue()*60);
+            int hours = totalMinutes / 60;
+            int minutes = totalMinutes % 60;
 
-            Tooltip tooltip = new Tooltip(String.format("%s - %s\n%.1fh", start.format(dateFormatter), end.format(dateFormatter), data.getYValue().doubleValue()));
+            Tooltip tooltip = new Tooltip(String.format("%s - %s\n %dh %dm", start.format(dateFormatter), end.format(dateFormatter), hours, minutes));
 
             tooltip.setShowDelay(Duration.millis(50));
             tooltip.getStyleClass().add("heatmap-tooltip");
@@ -706,52 +689,25 @@ public class PomodoroController {
     }
     @FXML
     private void toggleSetup() {
-        if (settingsAnim != null) settingsAnim.stop();
-        TranslateTransition anim = new TranslateTransition(Duration.millis(400), setupPane);
-        anim.setInterpolator(Interpolator.EASE_BOTH);
+        if (setupAnim != null) setupAnim.stop();
+        setupAnim = new TranslateTransition(Duration.millis(400), setupPane);
+        setupAnim.setInterpolator(Interpolator.EASE_BOTH);
 
         if (isSetupOpen) {
-            anim.setToX(setupPane.getWidth()); // hide setup panel
+            setupAnim.setToX(setupPane.getWidth()); // hide setup panel
+            setupAnim.setOnFinished(e -> {
+                setupPane.setVisible(false);
+                setupPane.setManaged(false);
+            });
         } else {
-            anim.setToX(0); // show setup panel
+            setupPane.setVisible(true);
+            setupPane.setManaged(true);
+            setupAnim.setToX(0); // show setup panel
+            setupAnim.setOnFinished(null);
         }
-        anim.play();
+        setupAnim.play();
         isSetupOpen = !isSetupOpen;
     }
 //endregion
-//region timeline
-private HBox createTimelineGraphic(int sessionId) {
-    HBox timelineBar = new HBox(2);
-    timelineBar.setAlignment(Pos.CENTER_LEFT);
 
-    String sql = "SELECT event_type FROM session_events WHERE session_id = ? ORDER BY event_timestamp ASC";
-
-    try (Connection conn = DriverManager.getConnection(DatabaseHandler.getDatabaseUrl());
-         PreparedStatement pstmt = conn.prepareStatement(sql)) {
-
-        pstmt.setInt(1, sessionId);
-        ResultSet rs = pstmt.executeQuery();
-
-        while (rs.next()) {
-            String type = rs.getString("event_type");
-            Region marker = new Region();
-            marker.setPrefSize(10, 10);
-
-            switch (type) {
-                case "started" -> marker.setStyle("-fx-background-color: #2ECC71; -fx-background-radius: 5;"); // verde
-                case "paused" -> marker.setStyle("-fx-background-color: #E74C3C; -fx-background-radius: 5;");  // rojo
-                case "resumed" -> marker.setStyle("-fx-background-color: #F1C40F; -fx-background-radius: 5;"); // amarillo
-                case "finalized" -> marker.setStyle("-fx-background-color: #3498DB; -fx-background-radius: 5;"); // azul
-            }
-
-            Tooltip.install(marker, new Tooltip(type.toUpperCase()));
-            timelineBar.getChildren().add(marker);
-        }
-    } catch (SQLException e) {
-        e.printStackTrace();
-    }
-
-    return timelineBar;
-}
-    //endregion
 }

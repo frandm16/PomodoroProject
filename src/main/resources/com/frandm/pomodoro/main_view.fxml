@@ -10,11 +10,6 @@
 <?import javafx.scene.chart.NumberAxis?>
 <?import javafx.scene.chart.AreaChart?>
 <?import javafx.scene.shape.SVGPath?>
-<?import javafx.scene.image.ImageView?>
-<?import javafx.scene.image.Image?>
-<?import javafx.scene.effect.ColorAdjust?>
-<?import javafx.scene.effect.Blend?>
-<?import javafx.scene.effect.ColorInput?>
 <?import javafx.scene.effect.Glow?>
 <StackPane fx:id="rootPane" prefHeight="600.0" prefWidth="800.0"
            stylesheets="@styles.css" styleClass="root-pane"
@@ -39,7 +34,7 @@
         </GridPane>
         <ScrollPane VBox.vgrow="ALWAYS" fitToWidth="true" styleClass="main-scroll">
             <StackPane>
-                <GridPane  StackPane.alignment="TOP_CENTER" maxHeight="-Infinity" maxWidth="Infinity">
+                <GridPane StackPane.alignment="TOP_CENTER" maxHeight="-Infinity" maxWidth="Infinity">
                     <columnConstraints>
                         <ColumnConstraints fx:id="colLeftStats" percentWidth="25" />
                         <ColumnConstraints fx:id="colCenterStats" percentWidth="50" />
@@ -215,41 +210,50 @@
                         </GridPane>
                     </VBox>
                 </GridPane >
-                <VBox fx:id="mainContainer" alignment="TOP_CENTER" spacing="50" maxHeight="-Infinity" maxWidth="Infinity" >
-                    <padding><Insets top="80" right="50" bottom="50" left="50"/></padding>
-                    <VBox alignment="CENTER" spacing="15">
+                <GridPane StackPane.alignment="TOP_CENTER" maxHeight="-Infinity" maxWidth="Infinity">
+                    <columnConstraints>
+                        <ColumnConstraints percentWidth="100" />
+                    </columnConstraints>
+                    <rowConstraints>
+                        <RowConstraints vgrow="ALWAYS" />
+                    </rowConstraints>
+
+                    <VBox  fx:id="mainContainer" alignment="TOP_CENTER" spacing="50" GridPane.columnIndex="0" GridPane.fillHeight="true">
+                        <padding><Insets top="80" right="50" bottom="50" left="50"/></padding>
+                        <VBox alignment="CENTER" spacing="15">
+                            <HBox alignment="CENTER" spacing="25">
+                                <Label fx:id="stateLabel" text="READY TO START" styleClass="state-label" />
+                                <Button fx:id="changeSubjectBtn" text="⚙" onAction="#toggleSetup" styleClass="button-secondary, settings-text" />
+                            </HBox>
+                            <Label fx:id="selectedSubjectLabel" visible="false" managed="false"/>
+                        </VBox>
+                        <StackPane maxWidth="-Infinity" maxHeight="-Infinity">
+
+                            <Circle radius="250" fill="transparent" stroke="#34495e" strokeWidth="8" opacity="0.3" />
+
+                            <Pane maxWidth="500" maxHeight="500" minWidth="500" minHeight="500">
+                                <Arc fx:id="progressArc"
+                                     radiusX="250.0"
+                                     radiusY="250.0"
+                                     centerX="250.0"
+                                     centerY="250.0"
+                                     startAngle="90"
+                                     length="90"
+                                     strokeWidth="12"
+                                     stroke="#4a90e2"
+                                     fill="transparent"
+                                     strokeLineCap="ROUND"/>
+                            </Pane>
+
+                            <Label fx:id="timerLabel" text="25:00" styleClass="timer-label"/>
+                        </StackPane>
                         <HBox alignment="CENTER" spacing="25">
-                            <Label fx:id="stateLabel" text="READY TO START" styleClass="state-label" />
-                            <Button fx:id="changeSubjectBtn" text="⚙" onAction="#toggleSetup" styleClass="button-secondary, settings-text" />
+                            <Button fx:id="startPauseBtn" onAction="#handleMainAction" prefHeight="60" prefWidth="140" text="START" styleClass="button-main" />
+                            <Button fx:id="skipBtn" onAction="#handleSkip" prefHeight="60" prefWidth="100" text="SKIP" styleClass="button-secondary" />
+                            <Button fx:id="finishBtn" onAction="#handleFinish" prefHeight="60" prefWidth="120" text="FINISH" styleClass="button-secondary" />
                         </HBox>
-                        <Label fx:id="selectedSubjectLabel" visible="false" managed="false"/>
                     </VBox>
-                    <StackPane maxWidth="-Infinity" maxHeight="-Infinity">
-
-                        <Circle radius="250" fill="transparent" stroke="#34495e" strokeWidth="8" opacity="0.3" />
-
-                        <Pane maxWidth="500" maxHeight="500" minWidth="500" minHeight="500">
-                            <Arc fx:id="progressArc"
-                                 radiusX="250.0"
-                                 radiusY="250.0"
-                                 centerX="250.0"
-                                 centerY="250.0"
-                                 startAngle="90"
-                                 length="90"
-                                 strokeWidth="12"
-                                 stroke="#4a90e2"
-                                 fill="transparent"
-                                 strokeLineCap="ROUND"/>
-                        </Pane>
-
-                        <Label fx:id="timerLabel" text="25:00" styleClass="timer-label"/>
-                    </StackPane>
-                    <HBox alignment="CENTER" spacing="25">
-                        <Button fx:id="startPauseBtn" onAction="#handleMainAction" prefHeight="60" prefWidth="140" text="START" styleClass="button-main" />
-                        <Button fx:id="skipBtn" onAction="#handleSkip" prefHeight="60" prefWidth="100" text="SKIP" styleClass="button-secondary" />
-                        <Button fx:id="finishBtn" onAction="#handleFinish" prefHeight="60" prefWidth="120" text="FINISH" styleClass="button-secondary" />
-                    </HBox>
-                </VBox>
+                </GridPane>
                 <VBox fx:id="historyContainer" visible="false" managed="false" alignment="TOP_CENTER" spacing="30" maxHeight="-Infinity" maxWidth="Infinity" styleClass="stats-content-wrapper">
                     <padding><Insets top="20" right="40" bottom="20" left="40"/></padding>
                     <TableView fx:id="sessionsTable" maxWidth="1200" styleClass="modern-table" VBox.vgrow="ALWAYS">
@@ -262,11 +266,9 @@
                             <TableColumn fx:id="colTopic" text="Topic" prefWidth="150"/>
                             <TableColumn fx:id="colDescription" text="Description" prefWidth="150"/>
                             <TableColumn fx:id="colDuration" text="Min"/>
-                            <TableColumn fx:id="colTimeline" text="timeStamp"/>
                         </columns>
                     </TableView>
                 </VBox>
-
             </StackPane>
 
         </ScrollPane>
@@ -371,17 +373,17 @@
     <AnchorPane pickOnBounds="false">
         <VBox fx:id="setupPane" styleClass="setup-sidebar" maxWidth="600" minWidth="600" AnchorPane.topAnchor="0" AnchorPane.bottomAnchor="0" AnchorPane.rightAnchor="0"
               translateX="600">
-        <padding>
-            <Insets top="20" right="5" bottom="20" left="20"/>
-        </padding>
+            <padding>
+                <Insets top="20" right="5" bottom="20" left="20"/>
+            </padding>
 
-        <HBox alignment="CENTER_LEFT" spacing="10">
-            <Label text="Topic Selector" styleClass="sidebar-title"/>
-            <Region HBox.hgrow="ALWAYS" />
-            <Button text="✕" onAction="#toggleSetup" styleClass="close-button"/>
-        </HBox>
+            <HBox alignment="CENTER_LEFT" spacing="10">
+                <Label text="Topic Selector" styleClass="sidebar-title"/>
+                <Region HBox.hgrow="ALWAYS" />
+                <Button text="✕" onAction="#toggleSetup" styleClass="close-button"/>
+            </HBox>
 
-        <Separator/>
+            <Separator/>
             <ScrollPane VBox.vgrow="ALWAYS" fitToWidth="true" styleClass="heatmap-scroll" >
                 <VBox spacing="10">
                     <padding>
@@ -409,6 +411,8 @@
                     <Region VBox.vgrow="ALWAYS"/> <Button fx:id="startSessionBtn" text="Apply Topic" onAction="#handleApplySetup" styleClass="button-main" maxWidth="Infinity" prefHeight="50"/>
                 </VBox>
             </ScrollPane>
-    </VBox>
+        </VBox>
     </AnchorPane>
+
+
 </StackPane>

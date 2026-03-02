@@ -209,7 +209,7 @@ public class StatsDashboard extends VBox {
 
         String tooltipDate = weekDayName + ", " + monthName + " " + date.getDayOfMonth() + ", " + date.getYear();
 
-        Tooltip tt = new Tooltip(String.format("%.1f", minutes/60.0) + "h \n" + tooltipDate);
+        Tooltip tt = new Tooltip(String.format(tooltipDate + " \n" + (minutes/60) + "h " + (minutes%60) + "m"));
         tt.getStyleClass().add("heatmap-tooltip");
         tt.setShowDuration(Duration.hours(1));
         tt.setShowDelay(Duration.millis(0));

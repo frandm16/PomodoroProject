@@ -2,6 +2,8 @@ package com.frandm.pomodoro;
 
 
 import java.sql.*;
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
 
 public class Session {
     private int id;
@@ -11,6 +13,7 @@ public class Session {
     private final String topic;
     private final String description;
     private final int duration;
+    private static final DateTimeFormatter FORMATTER = DateTimeFormatter.ISO_LOCAL_DATE_TIME;
 
     public Session(int id, String timestamp, String date, String subject, String topic, String description, int duration) {
         this.id = id;
@@ -47,5 +50,32 @@ public class Session {
             e.printStackTrace();
         }
         return false;
+    }
+
+    public LocalDateTime getStartDateTime() {
+        String sql = "SELECT MIN(event_timestamp) FROM session_events WHERE session_id = ? AND event_type = 'started'";
+        return getEventTime(sql);
+    }
+
+    public LocalDateTime getEndDateTime() {
+        String sql = "SELECT MAX(event_timestamp) FROM session_events WHERE session_id = ? AND event_type = 'finalized'";
+        return getEventTime(sql);
+    }
+
+    private LocalDateTime getEventTime(String sql) {
+        try (Connection conn = DriverManager.getConnection(DatabaseHandler.getDatabaseUrl());
+             PreparedStatement pstmt = conn.prepareStatement(sql)) {
+
+            pstmt.setInt(1, this.id);
+            ResultSet rs = pstmt.executeQuery();
+
+            if (rs.next() && rs.getString(1) != null) {
+                return LocalDateTime.parse(rs.getString(1), FORMATTER);
+            }
+        } catch (SQLException e) {
+            e.printStackTrace(System.err);
+        }
+        // Retorna la fecha de la sesión como respaldo si no hay eventos
+        return LocalDateTime.parse(this.timestamp, FORMATTER);
     }
 }
