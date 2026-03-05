@@ -188,7 +188,7 @@ public class DatabaseHandler {
 
     public static ObservableList<Session> getAllSessions() {
         ObservableList<Session> sessions = FXCollections.observableArrayList();
-        String sql = "SELECT s.id, tg.name as tag, tg.color as color, t.name as task, s.title, s.description, s.total_minutes, s.start_date " +
+        String sql = "SELECT s.id, tg.name as tag, tg.color as color, t.name as task, s.title, s.description, s.total_minutes, s.start_date, s.end_date " +
                 "FROM sessions s " +
                 "JOIN tasks t ON s.task_id = t.id " +
                 "JOIN tags tg ON t.tag_id = tg.id " +
@@ -207,7 +207,8 @@ public class DatabaseHandler {
                         rs.getString("title"),
                         rs.getString("description"),
                         rs.getInt("total_minutes"),
-                        rs.getString("start_date")
+                        rs.getString("start_date"),
+                        rs.getString("end_date")
                 ));
             }
         } catch (SQLException e) {
@@ -242,8 +243,10 @@ public class DatabaseHandler {
     public static void generateRandomPomodoros() {
         java.util.Random random = new java.util.Random();
         java.time.LocalDate today = java.time.LocalDate.now();
-        String[] tags = {"test1", "test2", "test3", "tes4"};
-        String[] colors = {"#e74c3c", "#3498db", "#f1c40f", "#2ecc71"};
+        String[] verbs = {"Estudiar", "Programar", "Diseñar", "Repasar", "Configurar", "Escribir", "Analizar", "Revisar", "Limpiar", "Organizar", "Entrenar", "Leer"};
+        String[] nouns = {"Java", "Base de Datos", "Interfaz", "Documentación", "Algoritmos", "CSS", "Backend", "Spring Boot", "Proyecto X", "Email", "Reunión", "Libro"};
+        String[] tags = {"Trabajo", "Estudios", "Personal", "Salud", "Ocio", "Proyectos"};
+        String[] colors = {"#e74c3c", "#3498db", "#f1c40f", "#2ecc71", "#9b59b6", "#e67e22"};
 
         try (Connection conn = DriverManager.getConnection(getDatabaseUrl())) {
             conn.setAutoCommit(false);
@@ -251,15 +254,17 @@ public class DatabaseHandler {
             for (int i = 0; i < 365; i++) {
                 java.time.LocalDate date = today.minusDays(i);
 
-                if (random.nextDouble() < 0.65) {
+                if (random.nextDouble() < 0.80) {
                     java.time.LocalDateTime currentTime = date.atTime(8, 0);
-                    int sessionsToday = random.nextInt(5) + 1;
+                    int sessionsToday = random.nextInt(6) + 1;
 
                     for (int s = 0; s < sessionsToday; s++) {
                         int tagIndex = random.nextInt(tags.length);
                         String tagName = tags[tagIndex];
                         String tagColor = colors[tagIndex];
-                        String taskName = "taskTest " + (random.nextInt(3) + 1);
+                        String taskName = verbs[random.nextInt(verbs.length)] + " " +
+                                nouns[random.nextInt(nouns.length)] + " " +
+                                (random.nextInt(100) + 1);
 
                         int taskId = getOrCreateTask(tagName, tagColor, taskName);
 
@@ -269,15 +274,15 @@ public class DatabaseHandler {
 
                         saveSession(
                                 taskId,
-                                "Sesión de prueba",
-                                "Generado automáticamente",
+                                "sesion test",
+                                "descripcion test",
                                 duration,
                                 start,
                                 end
                         );
 
-                        currentTime = end.plusMinutes(15);
-                        if (currentTime.getHour() >= 21) break;
+                        currentTime = end.plusMinutes(random.nextInt(20) + 5);
+                        if (currentTime.getHour() >= 23) break;
                     }
                 }
             }
@@ -291,7 +296,7 @@ public class DatabaseHandler {
     public static List<Session> getSessionsByDate(LocalDate date) {
         List<Session> sessions = new java.util.ArrayList<>();
         String sql = "SELECT s.id, tg.name as tag, tg.color as tagColor, t.name as task, " +
-                "s.title, s.description, s.total_minutes, s.start_date " +
+                "s.title, s.description, s.total_minutes, s.start_date, s.end_date " +
                 "FROM sessions s " +
                 "JOIN tasks t ON s.task_id = t.id " +
                 "JOIN tags tg ON t.tag_id = tg.id " +
@@ -313,12 +318,52 @@ public class DatabaseHandler {
                         rs.getString("title"),
                         rs.getString("description"),
                         rs.getInt("total_minutes"),
-                        rs.getString("start_date")
+                        rs.getString("start_date"),
+                        rs.getString("end_date")
                 ));
             }
         } catch (SQLException e) {
             System.err.println("Error en getSessionsByDate: " + e.getMessage());
         }
+        return sessions;
+    }
+
+    public static List<Session> getSessionsPaged(int limit, int offset) {
+        List<Session> sessions = new ArrayList<>();
+
+        String sql = "SELECT s.id, s.title, s.description, s.total_minutes, s.start_date, s.end_date, " +
+                "t.name AS task_name, tg.name AS tag_name, tg.color AS tag_color " +
+                "FROM sessions s " +
+                "JOIN tasks t ON s.task_id = t.id " +
+                "JOIN tags tg ON t.tag_id = tg.id " +
+                "ORDER BY s.start_date DESC LIMIT ? OFFSET ?";
+
+        try (Connection conn = DriverManager.getConnection(getDatabaseUrl());
+             PreparedStatement pstmt = conn.prepareStatement(sql)) {
+
+            pstmt.setInt(1, limit);
+            pstmt.setInt(2, offset);
+
+            ResultSet rs = pstmt.executeQuery();
+
+            while (rs.next()) {
+                Session session = new Session(
+                        rs.getInt("id"),
+                        rs.getString("tag_name"),
+                        rs.getString("tag_color"),
+                        rs.getString("task_name"),
+                        rs.getString("title"),
+                        rs.getString("description"),
+                        rs.getInt("total_minutes"),
+                        rs.getString("start_date"),
+                        rs.getString("end_date")
+                );
+                sessions.add(session);
+            }
+        } catch (SQLException e) {
+            System.err.println("Error getting sessions paged: " + e.getMessage());
+        }
+
         return sessions;
     }
 }

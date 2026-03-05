@@ -12,7 +12,7 @@
 
     -color-menu: -color-bg-default;
     -color-hover: -color-bg-subtle;
-    -bg-settings: #161b22;
+    -bg-panels: -color-bg-subtle;
     -text-main: -color-fg-default;
     -text-dark: #e6edf3;
     -text-muted: -color-fg-muted;
@@ -34,38 +34,39 @@
     -color-break-secundary: #8dc3fd;
     -color-long-break: #1a1e43;
     -color-long-break-secundary: #a2b2fd;
+    -color-border-subtle: rgba(255, 255, 255, 0.1);
 }
 
 .primer-light {
-    -color-bg-default: #fdfdfd;
+    -color-bg-default: #f8f9fa;
     -color-fg-default: #1e293b;
-    -color-fg-muted: #6e7781;
-    -color-bg-subtle: #f6f8fa;
+    -color-fg-muted: #64748b;
+    -color-bg-subtle: #ffffff;
     -color-accent: #8250df;
 
     -color-menu: -color-bg-default;
-    -color-hover: -color-bg-subtle;
-    -bg-settings: -color-bg-subtle;
+    -color-hover: #f1f5f9;
+    -bg-panels: -color-bg-subtle;
     -text-main: -color-fg-default;
-    -text-dark: #24292f;
+    -text-dark: #0f172a;
     -text-muted: -color-fg-muted;
-    -stat-card-normal-bg: rgba(46, 74, 255, 0.1);
-    -stat-card-red-bg: rgba(255, 57, 22, 0.1);
-    -stat-card-secundary-bg: rgba(205, 205, 205, 0.07);
+    -stat-card-normal-bg: rgba(52, 152, 219, 0.08);
+    -stat-card-red-bg: rgba(231, 76, 60, 0.08);
+    -stat-card-secundary-bg: #ffffff;
 
-    -heatmap-empty: #ebedf0;
-    -heatmap-very-low: #d2a8ff;
-    -heatmap-low: #bc7af9;
-    -heatmap-medium: #a855f7;
-    -heatmap-high: #8957e5;
-    -heatmap-very-high: #6e40c1;
-    -heatmap-extreme: #553098;
+    -heatmap-empty: #e2e8f0;
+    -heatmap-very-low: #f5f3ff;
+    -heatmap-low: #ede9fe;
+    -heatmap-medium: #ddd6fe;
+    -heatmap-high: #c4b5fd;
+    -heatmap-very-high: #a78bfa;
+    -heatmap-extreme: #8b5cf6;
 
-
-    -color-work: #7aefa7;
-    -color-work-secundary: #175732;
-    -color-break: #8dc3fd;
-    -color-break-secundary: #192d5a;
-    -color-long-break: #a2b2fd;
-    -color-long-break-secundary: #252a61;
+    -color-work: #dcfce7;
+    -color-work-secundary: #166534;
+    -color-break: #dbeafe;
+    -color-break-secundary: #1e40af;
+    -color-long-break: #ede9fe;
+    -color-long-break-secundary: #5b21b6;
+    -color-border-subtle: rgba(0, 0, 0, 0.08);
 }

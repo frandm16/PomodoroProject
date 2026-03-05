@@ -14,6 +14,16 @@
     -fx-effect: dropshadow(gaussian, rgba(0,0,0,0.2), 0, 0, 0, 4);
 }
 
+.task-badge {
+    -fx-background-color: transparent;
+    -fx-border-color: -text-muted;
+    -fx-border-radius: 12;
+    -fx-padding: 2 10;
+    -fx-font-size: 10px;
+    -fx-text-fill: -text-muted;
+    -fx-opacity: 0.8;
+}
+
 .state-label {
     -fx-font-size: 22px;
     -fx-text-fill: -text-main;
@@ -69,7 +79,7 @@
 
 /* --- settings sidebar --- */
 .settings-sidebar {
-    -fx-background-color: -bg-settings;
+    -fx-background-color: -bg-panels;
     -fx-background-radius: 0 40 40 0;
     -fx-effect: dropshadow(three-pass-box, rgba(0,0,0,0.4), 30, 0, 8, 0);
 }
@@ -124,6 +134,7 @@
     -fx-background-color: -color-menu;
     -fx-background-radius: 8;
     -fx-border-color: -text-muted;
+    -fx-border-radius: 8;
     -fx-padding: 8 12;
     -fx-text-fill: -text-main;
     -fx-font-size: 13px;
@@ -201,39 +212,42 @@
 }
 
 /* --- setup --- */
-#setupPane .hbox-main-container {
-    -fx-background-color: #1e222b;
+.setup-main-box {
+    -fx-background-color: -bg-panels;
     -fx-padding: 25;
     -fx-background-radius: 15;
-    -fx-border-color: rgba(255,255,255,0.1);
+    -fx-border-radius: 15;
+    -fx-border-color: -color-border-subtle;
     -fx-border-width: 1;
-    -fx-effect: dropshadow(three-pass-box, rgba(0,0,0,0.5), 20, 0, 0, 0);
 }
 
-#setupPane .fuzzy-result-button {
-    -fx-background-color: rgba(255,255,255,0.05);
+.setup-section-title {
+    -fx-font-weight: bold;
+    -fx-text-fill: -text-muted;
+}
+
+.search-input {
+    -fx-font-size: 14px;
+    -fx-background-color: -color-bg-subtle;
+    -fx-text-fill: -text-main;
+    -fx-background-radius: 5;
+    -fx-border-color: -color-border-subtle;
+    -fx-border-radius: 5;
+}
+
+.fuzzy-result-button {
+    -fx-background-color: -color-bg-subtle;
     -fx-background-radius: 8;
     -fx-padding: 12;
-    -fx-text-fill: #e0e0e0;
+    -fx-text-fill: -text-main;
     -fx-alignment: center-left;
     -fx-cursor: hand;
-    -fx-transition: all 0.2s;
 }
 
-#setupPane .fuzzy-result-button:hover {
-    -fx-background-color: rgba(255,255,255,0.12);
+.fuzzy-result-button:hover {
+    -fx-background-color: -color-hover;
     -fx-translate-x: 5;
 }
-
-#setupPane .text-field {
-    -fx-background-color: rgba(0,0,0,0.2);
-    -fx-border-color: rgba(255,255,255,0.1);
-    -fx-border-radius: 5;
-    -fx-text-fill: white;
-    -fx-padding: 8;
-}
-
-
 
 .tag-row {
     -fx-cursor: hand;
@@ -242,5 +256,101 @@
 }
 
 .tag-row:hover {
-    -fx-background-color: rgba(255,255,255,0.05);
+    -fx-background-color: -color-hover;
+}
+
+.selection-preview-box {
+    -fx-background-color: -stat-card-secundary-bg;
+    -fx-padding: 15;
+    -fx-background-radius: 10;
+}
+
+.selection-label {
+    -fx-font-weight: bold;
+    -fx-text-fill: -text-main;
+}
+
+.setup-scroll {
+    -fx-background-color: transparent;
+    -fx-background: transparent;
+}
+
+
+/* --- history --- */
+
+.history-card-title {
+    -fx-font-size: 15px;
+    -fx-font-weight: bold;
+    -fx-text-fill: -text-main;
+}
+
+.history-card-subtitle, .history-card-time {
+    -fx-font-size: 12px;
+    -fx-text-fill: -text-muted;
+}
+
+.button-sm {
+    -fx-background-color: transparent;
+    -fx-border-color: -text-muted;
+    -fx-border-radius: 8;
+    -fx-text-fill: -text-main;
+    -fx-font-size: 11px;
+    -fx-padding: 5 12;
+    -fx-cursor: hand;
+}
+
+.button-sm:hover {
+    -fx-background-color: rgba(255, 255, 255, 0.1);
+    -fx-border-color: -text-main;
+}
+
+.history-date-num {
+    -fx-font-family: "JetBrains Mono", "Monospaced";
+    -fx-smoothing-type: lcd;
+}
+
+.history-month-name {
+    -fx-letter-spacing: 2px;
+    -fx-opacity: 0.7;
+}
+
+.history-view .button-secondary {
+    -fx-margin: 30 0 0 0;
+    -fx-min-height: 45;
+    -fx-background-radius: 12;
+    -fx-font-weight: bold;
+}
+
+.history-card-title {
+    -fx-text-fill: -text-main;
+    -fx-padding: 0 0 2 0;
+}
+
+.timeline-card:hover {
+    -fx-opacity: 1.0;
+    -fx-border-color: -text-main;
+    -fx-text-fill: -text-main;
+    -fx-translate-x: 1
+}
+
+.sessions-container-line {
+    -fx-border-color: -text-muted;
+    -fx-border-width: 0 0 0 1;
+    -fx-opacity: 0.3;
+}
+
+.timeline-card {
+    -fx-background-color: transparent;
+    -fx-background-radius: 12;
+    -fx-border-color: -color-fg-muted;
+    -fx-border-radius: 12;
+    -fx-border-width: 1;
+    -fx-cursor: hand;
+}
+
+
+.card-expanded {
+    -fx-background-color: transparent;
+    -fx-border-color: -color-fg-muted;
+    -fx-effect: dropshadow(three-pass-box, rgba(0,0,0,0.15), 15, 0, 0, 8);
 }

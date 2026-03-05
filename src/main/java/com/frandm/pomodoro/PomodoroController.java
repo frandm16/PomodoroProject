@@ -12,7 +12,6 @@ import javafx.animation.KeyFrame;
 import javafx.animation.KeyValue;
 import javafx.animation.Timeline;
 import javafx.animation.TranslateTransition;
-import javafx.scene.control.cell.PropertyValueFactory;
 import javafx.scene.layout.*;
 import javafx.scene.paint.Color;
 import javafx.scene.paint.Paint;
@@ -26,8 +25,6 @@ import javafx.scene.control.*;
 import javafx.scene.media.AudioClip;
 import me.xdrop.fuzzywuzzy.FuzzySearch;
 import me.xdrop.fuzzywuzzy.model.ExtractedResult;
-
-import javax.xml.crypto.Data;
 import java.net.URL;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
@@ -36,38 +33,34 @@ import java.util.*;
 
 public class PomodoroController {
 
-    //region FXML Nodes
-    public VBox streakVBox;
-    public VBox streakImage;
-    public Circle circleMain;
-    public TextField tagNameInput;
-    public ColorPicker tagColorInput;
-    public TextField fuzzySearchInput;
-    public VBox fuzzyResultsContainer;
-    public Label selectedNameLabel;
-    public VBox tagsListContainer;
-    public Label taskField; // Campos nuevos
-    public Label tagField;  // Campos nuevos
-    public Button selectTaskBtn;
-    public AreaChart weeklyLineChart;
-    public CategoryAxis weeksXAxis;
-    public PieChart tagPieChart;
 
-    @FXML private StackPane rootPane, setupPane;
-    @FXML private VBox mainContainer, settingsPane, statsContainer, historyContainer, statsPlaceholder;
-    @FXML private Label timerLabel, stateLabel, workValLabel, shortValLabel, longValLabel, intervalValLabel, alarmVolumeValLabel, widthSliderValLabel, streakLabel, timeThisWeekLabel, timeLastMonthLabel, tasksLabel, bestDayLabel;
-    @FXML private Button startPauseBtn, skipBtn, finishBtn, menuBtn, statsBtn, historyBtn;
-    @FXML private Arc progressArc;
-    @FXML private Slider workSlider, shortSlider, longSlider, intervalSlider, alarmVolumeSlider, widthSlider;
+    //region FXML
+    @FXML private ScrollPane mainScrollPane;
+    @FXML private GridPane setupPane;
+    @FXML private StackPane rootPane;
+    @FXML private VBox mainContainer, settingsPane, statsContainer, historyContainer, statsPlaceholder, streakVBox, streakImage, fuzzyResultsContainer, tagsListContainer, activeTaskContainer;
+    @FXML private Label timerLabel, stateLabel, workValLabel, shortValLabel, longValLabel, intervalValLabel,
+            alarmVolumeValLabel, widthSliderValLabel, streakLabel, timeThisWeekLabel,
+            timeLastMonthLabel, tasksLabel, bestDayLabel, selectedNameLabel;
+    @FXML private Button startPauseBtn, skipBtn, finishBtn, menuBtn, statsBtn, historyBtn, selectTaskBtn;
     @FXML private ToggleButton autoBreakToggle, autoPomoToggle, countBreakTime;
+    @FXML public TextField tagNameInput, fuzzySearchInput;
+    @FXML public ColorPicker tagColorInput;
+    @FXML public Circle circleMain;
+    @FXML private Arc progressArc;
+    @FXML public AreaChart<String, Number> weeklyLineChart;
+    @FXML public CategoryAxis weeksXAxis;
+    @FXML public PieChart tagPieChart;
+    @FXML private Slider workSlider, shortSlider, longSlider, intervalSlider, alarmVolumeSlider, widthSlider;
     @FXML private TableView<Session> sessionsTable;
     @FXML private TableColumn<Session, String> colDate, colSubject, colTopic, colDescription;
     @FXML private TableColumn<Session, Integer> colDuration;
     @FXML private ColumnConstraints colRightStats, colCenterStats, colLeftStats;
-    //endregion
+//endregion
 
     private final PomodoroEngine engine = new PomodoroEngine();
     private StatsDashboard statsDashboard;
+    private HistoryView historyView;
     private boolean isSettingsOpen = false, isSetupOpen = false, isDarkMode = true;
     private TranslateTransition settingsAnim;
     private static final DateTimeFormatter DATE_FORMATTER = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
@@ -78,6 +71,7 @@ public class PomodoroController {
     private String currentSelectedTask = null;
     private Map<String, List<String>> tagsWithTasksMap = new HashMap<>();
     private Map<String, String> tagColors = new HashMap<>();
+
 
     @FXML
     public void initialize() {
@@ -96,19 +90,22 @@ public class PomodoroController {
             rootPane.getStyleClass().remove("primer-dark");
         }
 
-        //region config de la tabla
-        colDate.setCellValueFactory(new PropertyValueFactory<>("startDate"));
-        colSubject.setCellValueFactory(new PropertyValueFactory<>("tag"));
-        colTopic.setCellValueFactory(new PropertyValueFactory<>("task"));
-        colDescription.setCellValueFactory(new PropertyValueFactory<>("description"));
-        colDuration.setCellValueFactory(new PropertyValueFactory<>("totalMinutes"));
 
-        //endregion
 
         //region dashboard
         statsDashboard = new StatsDashboard();
         statsPlaceholder.getChildren().clear();
         statsPlaceholder.getChildren().add(statsDashboard);
+        //endregion
+
+        tagColors = DatabaseHandler.getTagColors();
+        updateActiveTaskDisplay("No tag selected", null);
+
+        //region history view
+        historyView = new HistoryView(tagColors);
+        historyContainer.getChildren().clear();
+        historyContainer.getChildren().add(historyView);
+        VBox.setVgrow(historyView, Priority.ALWAYS);
         //endregion
 
         //region paneles
@@ -148,7 +145,18 @@ public class PomodoroController {
         });
         //endregion
 
+        //region setup
+        int MAX_CHARS = 100;
+        fuzzySearchInput.setTextFormatter(new TextFormatter<>(change -> {
+            if (change.getControlNewText().length() <= MAX_CHARS) {
+                return change;
+            }
+            return null;
+        }));
         fuzzySearchInput.textProperty().addListener((obs, old, val) -> updateFuzzyResults(val));
+        //endregion
+
+
 
         engine.setOnTick(() -> Platform.runLater(() -> {
             timerLabel.setText(engine.getFormattedTime());
@@ -175,7 +183,9 @@ public class PomodoroController {
                 }else{
                     List<ExtractedResult> matches = FuzzySearch.extractTop(input, tasks, 5);
                     for (ExtractedResult match : matches) {
-                        if (match.getScore() > 40) {
+                        System.out.printf("Tarea: [%s] | Score: %d | Tag: %s%n",
+                                match.getString(), match.getScore(), tag);
+                        if (match.getScore() >= 60) {
                             fuzzyResultsContainer.getChildren().add(createResultButton(match.getString(), tag));
                         }
                     }
@@ -188,7 +198,16 @@ public class PomodoroController {
         if (filterTag != null && !isQueryEmpty) {
             Button createBtn = new Button("+ Create Task: '" + input + "' in " + filterTag);
             createBtn.setMaxWidth(Double.MAX_VALUE);
-            createBtn.setOnAction(e -> selectTask(input, filterTag)); //TODO: que lleve a un menu de crear task y quitar el if de arriba
+            createBtn.setOnAction(e -> {
+                DatabaseHandler.getOrCreateTask(filterTag,tagColors.getOrDefault(filterTag, "#ffffff"), input);
+                List<String> tasks = tagsWithTasksMap.getOrDefault(filterTag, new ArrayList<>());
+                if (!tasks.contains(input)) {
+                    tasks.add(input);
+                    tagsWithTasksMap.put(filterTag, tasks);
+                }
+                updateFuzzyResults(input);
+                selectTask(input, filterTag);
+            }); //TODO: que lleve a un menu de crear task y quitar el if de arriba
             fuzzyResultsContainer.getChildren().add(createBtn);
         }
     }
@@ -198,7 +217,7 @@ public class PomodoroController {
         btn.getStyleClass().add("fuzzy-result-button");
         btn.setMaxWidth(Double.MAX_VALUE);
         btn.setAlignment(Pos.CENTER_LEFT);
-        String color = tagColors.getOrDefault(tag, "#4a90e2");
+        String color = tagColors.getOrDefault(tag, "#ffffff");
         btn.setStyle("-fx-border-color: " + color + "; -fx-border-width: 0 0 0 4; -fx-background-color: rgba(255,255,255,0.05);");
         btn.setOnAction(e -> selectTask(task, tag));
         return btn;
@@ -207,8 +226,7 @@ public class PomodoroController {
     private void selectTask(String task, String tag) {
         this.currentSelectedTask = task;
         this.currentSelectedTag = tag;
-        selectedNameLabel.setText(tag + " > " + task);
-        selectedNameLabel.setStyle("-fx-text-fill: " + tagColors.getOrDefault(tag, "#ffffff") + ";");
+        selectedNameLabel.setText("Selected: " + task + " (" + tag + ")");
         selectTaskBtn.setDisable(false);
     }
 
@@ -236,21 +254,28 @@ public class PomodoroController {
     @FXML
     private void handleStartSessionFromSetup() {
         if (currentSelectedTag != null && currentSelectedTask != null) {
-            tagField.setText(currentSelectedTag);
-            taskField.setText(currentSelectedTask);
-
+            updateActiveTaskDisplay(currentSelectedTag, currentSelectedTask);
             toggleSetup();
         }
+        updateUIFromEngine();
     }
 
     @FXML
     private void handleAddNewTag() {
         String name = tagNameInput.getText().trim();
         if (!name.isEmpty()) {
-            String color = "#" + Integer.toHexString(tagColorInput.getValue().hashCode()).substring(0, 6); // TODO: arreglar no funciona los colores
-            DatabaseHandler.createTag(name, color);
+            javafx.scene.paint.Color selectedColor = tagColorInput.getValue();
+
+            String colorHex = String.format("#%02X%02X%02X",
+                    (int) (selectedColor.getRed() * 255),
+                    (int) (selectedColor.getGreen() * 255),
+                    (int) (selectedColor.getBlue() * 255));
+
+            DatabaseHandler.createTag(name, colorHex);
+
             refreshDatabaseData();
             refreshTagsList();
+
             tagNameInput.clear();
         }
     }
@@ -262,7 +287,7 @@ public class PomodoroController {
         int mins = engine.getRealMinutesElapsed();
 
         if (mins >= 1 && currentSelectedTask != null && currentSelectedTag != null) {
-            int taskId = DatabaseHandler.getOrCreateTask(currentSelectedTag, tagColors.getOrDefault(currentSelectedTag, "#3498db"), currentSelectedTask);
+            int taskId = DatabaseHandler.getOrCreateTask(currentSelectedTag, tagColors.getOrDefault(currentSelectedTag, "#ffffff"), currentSelectedTask);
             DatabaseHandler.saveSession(taskId, "Pomodoro", "", mins, startDate, LocalDateTime.now());
             refreshDatabaseData();
         }
@@ -270,9 +295,7 @@ public class PomodoroController {
         engine.stop();
         engine.fullReset();
         engine.resetTimeForState(PomodoroEngine.State.MENU);
-
-        tagField.setText("");
-        taskField.setText("");
+        updateActiveTaskDisplay("No tag selected", null);
 
         currentSelectedTag = null;
         currentSelectedTask = null;
@@ -319,8 +342,7 @@ public class PomodoroController {
     private void showHistoryView() {
         if (historyContainer.isVisible()) return;
 
-        ObservableList<Session> data = DatabaseHandler.getAllSessions();
-        sessionsTable.setItems(data);
+        historyView.refresh();
 
         Region currentVisible = mainContainer.isVisible() ? mainContainer : statsContainer;
         switchPanels(currentVisible, historyContainer);
@@ -363,8 +385,15 @@ public class PomodoroController {
 
     @FXML private void toggleSetup() {
         if (!isSetupOpen) {
+            filterTag = null;
             refreshTagsList();
             selectTaskBtn.setDisable(true);
+
+            if(currentSelectedTag != null && currentSelectedTask != null){
+                selectedNameLabel.setText("Selected: " + currentSelectedTask + " (" + currentSelectedTag + ")");
+            }else{
+                selectedNameLabel.setText("Nothing selected");
+            }
             fuzzySearchInput.clear();
 
             updateFuzzyResults("");
@@ -388,6 +417,35 @@ public class PomodoroController {
         else { settingsPane.setVisible(true); settingsAnim.setToX(0); }
         settingsAnim.play(); isSettingsOpen = !isSettingsOpen;
     }
+
+    public void updateActiveTaskDisplay(String tagName, String taskName) {
+        activeTaskContainer.getChildren().clear();
+        activeTaskContainer.setAlignment(Pos.CENTER);
+        activeTaskContainer.setSpacing(8);
+
+        Label tagLabel = new Label(tagName);
+        String tagColor = tagColors.getOrDefault(tagName, "#a855f7");
+
+        tagLabel.setStyle(
+                "-fx-background-color: transparent; " +
+                        "-fx-border-color: " + tagColor + "; " +
+                        "-fx-border-radius: 12; " +
+                        "-fx-padding: 2 10; " +
+                        "-fx-font-size: 12px; " +
+                        "-fx-font-weight: bold; " +
+                        "-fx-text-fill: " + tagColor + ";"
+        );
+
+        Label taskLabel = new Label(taskName);
+        taskLabel.getStyleClass().add("task-badge");
+        taskLabel.setStyle("-fx-font-size: 11px;");
+
+        boolean isValidTask = taskName == null;
+        taskLabel.setVisible(!isValidTask);
+        taskLabel.setManaged(!isValidTask);
+
+        activeTaskContainer.getChildren().addAll(tagLabel, taskLabel);
+    }
     //endregion
 
     //region UI Updates
@@ -397,7 +455,12 @@ public class PomodoroController {
         boolean isMenu = (current == PomodoroEngine.State.MENU);
 
         if (current == PomodoroEngine.State.MENU) {
-            startPauseBtn.setText("START");
+            if(currentSelectedTag == null){
+                startPauseBtn.setText("SETUP");
+            }else{
+                startPauseBtn.setText("START");
+            }
+
         } else {
             startPauseBtn.setText(current == PomodoroEngine.State.WAITING ? "RESUME" : "PAUSE");
         }
@@ -480,10 +543,13 @@ public class PomodoroController {
 
         if (clickedBtn == menuBtn) {
             showMainView();
+            mainScrollPane.setFitToHeight(true);
         } else if (clickedBtn == statsBtn) {
             showStatsView();
+            mainScrollPane.setFitToHeight(false);
         } else if (clickedBtn == historyBtn) {
             showHistoryView();
+            mainScrollPane.setFitToHeight(false);
         }
     }
 

@@ -23,17 +23,22 @@
             <padding><Insets top="25" right="25" left="25" /></padding>
 
             <columnConstraints>
-                <ColumnConstraints hgrow="SOMETIMES" minWidth="10.0" prefWidth="150.0" /> <ColumnConstraints hgrow="ALWAYS" halignment="CENTER" minWidth="10.0" />   <ColumnConstraints hgrow="SOMETIMES" minWidth="10.0" prefWidth="150.0" halignment="RIGHT" /> </columnConstraints>
+                <ColumnConstraints hgrow="SOMETIMES" minWidth="10.0" prefWidth="150.0" />
+                <ColumnConstraints hgrow="ALWAYS" halignment="CENTER" minWidth="10.0" />
+                <ColumnConstraints hgrow="SOMETIMES" minWidth="10.0" prefWidth="150.0" halignment="RIGHT" />
+            </columnConstraints>
+            <VBox GridPane.columnIndex="0" GridPane.columnSpan="3">
+                <HBox spacing="10" GridPane.columnIndex="1" alignment="CENTER">
+                    <Button fx:id="menuBtn" text="Menu" onAction="#handleNavClick" styleClass="title-button, active" />
+                    <Button fx:id="statsBtn" text="Stats" onAction="#handleNavClick" styleClass="title-button" />
+                    <Button fx:id="historyBtn" text="History" onAction="#handleNavClick" styleClass="title-button" />
+                </HBox>
+            </VBox>
 
-            <HBox spacing="10" GridPane.columnIndex="1" alignment="CENTER">
-                <Button fx:id="menuBtn" text="Menu" onAction="#handleNavClick" styleClass="title-button, active" />
-                <Button fx:id="statsBtn" text="Stats" onAction="#handleNavClick" styleClass="title-button" />
-                <Button fx:id="historyBtn" text="History" onAction="#handleNavClick" styleClass="title-button" />
-            </HBox>
 
             <Button text="⚙ Settings" onAction="#toggleSettings" GridPane.columnIndex="2" styleClass="title-button"/>
         </GridPane>
-        <ScrollPane VBox.vgrow="ALWAYS" fitToWidth="true" styleClass="main-scroll">
+        <ScrollPane fx:id="mainScrollPane" VBox.vgrow="ALWAYS" fitToWidth="true" fitToHeight="true" styleClass="main-scroll">
             <StackPane>
                 <GridPane StackPane.alignment="TOP_CENTER" maxHeight="-Infinity" maxWidth="Infinity">
                     <columnConstraints>
@@ -213,22 +218,23 @@
                     </VBox>
                 </GridPane >
                 <GridPane StackPane.alignment="TOP_CENTER" maxHeight="-Infinity" maxWidth="Infinity">
-                    <columnConstraints>
-                        <ColumnConstraints percentWidth="100" />
-                    </columnConstraints>
+                    <padding>
+                        <Insets right="50" bottom="30" left="50"/>
+                    </padding>
+
                     <rowConstraints>
-                        <RowConstraints vgrow="ALWAYS" />
+                        <RowConstraints percentHeight="15" vgrow="SOMETIMES" />
+                        <RowConstraints percentHeight="70" vgrow="ALWAYS" valignment="CENTER" />
+                        <RowConstraints percentHeight="15" vgrow="SOMETIMES" valignment="BOTTOM" />
                     </rowConstraints>
 
-                    <VBox  fx:id="mainContainer" alignment="TOP_CENTER" spacing="50" GridPane.columnIndex="0" GridPane.fillHeight="true">
+                    <columnConstraints>
+                        <ColumnConstraints percentWidth="100" halignment="CENTER" />
+                    </columnConstraints>
+
+                    <VBox  fx:id="mainContainer" alignment="CENTER" spacing="20" GridPane.rowIndex="1" >
                         <padding><Insets top="80" right="50" bottom="50" left="50"/></padding>
-                        <VBox alignment="CENTER" spacing="15">
-                            <SplitMenuButton fx:id="selectTagButton" text="Add a tag" styleClass="button-split">
-                                <items>
-                                    <SeparatorMenuItem />
-                                    <MenuItem onAction="#toggleSetup" text="Manage Tags" />
-                                </items>
-                            </SplitMenuButton>
+                        <VBox fx:id="activeTaskContainer" alignment="CENTER" spacing="8" minHeight="30">
                         </VBox>
                         <StackPane maxWidth="-Infinity" maxHeight="-Infinity">
 
@@ -249,9 +255,7 @@
                                      strokeLineCap="ROUND"/>
                             </Pane>
                             <VBox alignment="CENTER">
-                                <Label fx:id="stateLabel" text="READY TO START" styleClass="state-label" />
-                                <Label fx:id="tagField" text="" styleClass="state-label" />
-                                <Label fx:id="taskField" text="" styleClass="state-label" />
+                                <Label fx:id="stateLabel" text="Pomodoro" styleClass="state-label" />
                                 <Label fx:id="timerLabel" text="25:00" styleClass="timer-label"/>
                             </VBox>
 
@@ -263,21 +267,19 @@
                         </HBox>
                     </VBox>
                 </GridPane>
-                <VBox fx:id="historyContainer" visible="false" managed="false" alignment="TOP_CENTER" spacing="30" maxHeight="-Infinity" maxWidth="Infinity" styleClass="stats-content-wrapper">
-                    <padding><Insets top="20" right="40" bottom="20" left="40"/></padding>
-                    <TableView fx:id="sessionsTable" maxWidth="1200" styleClass="modern-table" VBox.vgrow="ALWAYS">
-                        <columnResizePolicy>
-                            <TableView fx:constant="CONSTRAINED_RESIZE_POLICY"/>
-                        </columnResizePolicy>
-                        <columns>
-                            <TableColumn fx:id="colDate" text="StartDate" prefWidth="200"/>
-                            <TableColumn fx:id="colSubject" text="Tag" prefWidth="150"/>
-                            <TableColumn fx:id="colTopic" text="Task" prefWidth="150"/>
-                            <TableColumn fx:id="colDescription" text="Description" prefWidth="150"/>
-                            <TableColumn fx:id="colDuration" text="Min"/>
-                        </columns>
-                    </TableView>
-                </VBox>
+                <GridPane StackPane.alignment="TOP_CENTER" maxHeight="-Infinity" maxWidth="Infinity">
+                    <columnConstraints>
+                        <ColumnConstraints percentWidth="25" />
+                        <ColumnConstraints percentWidth="50" />
+                        <ColumnConstraints percentWidth="25" />
+                    </columnConstraints>
+                    <rowConstraints>
+                        <RowConstraints vgrow="ALWAYS" />
+                    </rowConstraints>
+                    <padding><Insets top="80" bottom="50"/></padding>
+                    <VBox fx:id="historyContainer" visible="false" managed="false" alignment="TOP_CENTER" spacing="30" GridPane.columnIndex="1" style="-fx-padding: 0;">
+                    </VBox>
+                </GridPane >
             </StackPane>
         </ScrollPane>
     </VBox>
@@ -375,24 +377,50 @@
             </StackPane>
         </ScrollPane>
     </VBox>
-    <StackPane fx:id="setupPane" visible="false" managed="false">
-        <Region style="-fx-background-color: rgba(0,0,0,0.7);"><effect><GaussianBlur radius="15" /></effect></Region>
-        <HBox spacing="20" maxWidth="800" maxHeight="550" style="-fx-background-color: #1e222b; -fx-padding: 25; -fx-background-radius: 15; -fx-border-color: rgba(255,255,255,0.1); -fx-border-width: 1;">
-            <VBox spacing="10" prefWidth="250">
-                <Label text="TAGS" style="-fx-font-weight: bold; -fx-text-fill: gray;" />
-                <ScrollPane fitToWidth="true" VBox.vgrow="ALWAYS" styleClass="edge-to-edge"><VBox fx:id="tagsListContainer" spacing="5" /></ScrollPane>
-                <Separator /><TextField fx:id="tagNameInput" promptText="New Tag Name" /><ColorPicker fx:id="tagColorInput" maxWidth="Infinity" /><Button text="Add Tag" onAction="#handleAddNewTag" maxWidth="Infinity" />
-            </VBox>
-            <VBox spacing="10" HBox.hgrow="ALWAYS">
-                <HBox alignment="CENTER_LEFT"><Label text="SEARCH TASK" style="-fx-font-weight: bold; -fx-text-fill: gray;" /><Region HBox.hgrow="ALWAYS" /><Button text="✕" onAction="#toggleSetup" style="-fx-background-color: transparent; -fx-text-fill: white;" /></HBox>
-                <TextField fx:id="fuzzySearchInput" promptText="Type to search..." style="-fx-font-size: 14;" />
-                <ScrollPane fitToWidth="true" VBox.vgrow="ALWAYS"><VBox fx:id="fuzzyResultsContainer" spacing="8" /></ScrollPane>
-                <VBox spacing="10" style="-fx-background-color: rgba(255,255,255,0.05); -fx-padding: 15; -fx-background-radius: 10;">
-                    <Label fx:id="selectedNameLabel" text="Nothing selected" style="-fx-font-weight: bold;" />
-                    <Button fx:id="selectTaskBtn" text="SELECT TASK" onAction="#handleStartSessionFromSetup" disable="true" maxWidth="Infinity" styleClass="button-main" />
+    <GridPane fx:id="setupPane" visible="false" managed="false" maxHeight="Infinity" maxWidth="Infinity">
+        <columnConstraints>
+            <ColumnConstraints percentWidth="20" />
+            <ColumnConstraints percentWidth="60" />
+            <ColumnConstraints percentWidth="20" />
+        </columnConstraints>
+        <rowConstraints>
+            <RowConstraints percentHeight="10" />
+            <RowConstraints percentHeight="80" />
+            <RowConstraints percentHeight="10" />
+        </rowConstraints>
+        <Region style="-fx-background-color: rgba(0,0,0,0.7);" GridPane.columnSpan="3" GridPane.rowSpan="3"><effect><GaussianBlur radius="15" /></effect></Region>
+        <StackPane styleClass="setup-pane-root" GridPane.columnIndex="1" GridPane.rowIndex="1">
+            <HBox spacing="20" styleClass="setup-main-box">
+                <VBox spacing="10" prefWidth="250">
+                    <Label text="Tags" alignment="CENTER" styleClass="setup-section-title" />
+                    <ScrollPane fitToWidth="true" VBox.vgrow="ALWAYS" styleClass="setup-scroll">
+                        <VBox fx:id="tagsListContainer" spacing="5" />
+                    </ScrollPane>
+                    <Separator />
+                    <TextField fx:id="tagNameInput" promptText="New Tag Name" />
+                    <ColorPicker fx:id="tagColorInput" maxWidth="Infinity" />
+                    <Button text="Add Tag" onAction="#handleAddNewTag" maxWidth="Infinity" styleClass="button-secondary" />
                 </VBox>
-            </VBox>
-        </HBox>
-    </StackPane>
+
+                <VBox spacing="10" HBox.hgrow="ALWAYS">
+                    <HBox alignment="CENTER_LEFT">
+                        <Label text="Search Tasks" styleClass="setup-section-title" />
+                        <Region HBox.hgrow="ALWAYS" />
+                        <Button maxWidth="-Infinity" maxHeight="-Infinity" text="✕" onAction="#toggleSetup" styleClass="close-button" />
+                    </HBox>
+                    <TextField fx:id="fuzzySearchInput" promptText="Type to search..." styleClass="search-input" />
+                    <ScrollPane fitToWidth="true" VBox.vgrow="ALWAYS" styleClass="setup-scroll">
+                        <VBox fx:id="fuzzyResultsContainer" spacing="8" />
+                    </ScrollPane>
+
+                    <VBox spacing="10" styleClass="selection-preview-box">
+                        <Label fx:id="selectedNameLabel" text="Nothing selected" styleClass="selection-label" />
+                        <Button fx:id="selectTaskBtn" text="Select Task" onAction="#handleStartSessionFromSetup" disable="true" maxWidth="Infinity" styleClass="button-main" />
+                    </VBox>
+                </VBox>
+            </HBox>
+        </StackPane>
+    </GridPane>
+
 
 </StackPane>

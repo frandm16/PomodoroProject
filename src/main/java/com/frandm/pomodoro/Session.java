@@ -1,7 +1,6 @@
 package com.frandm.pomodoro;
 
 
-import java.sql.*;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 
@@ -14,11 +13,12 @@ public class Session {
     private final String description;
     private final int totalMinutes;
     private final String startDate;
+    private final String endDate;
 
     private static final DateTimeFormatter FORMATTER = DateTimeFormatter.ISO_LOCAL_DATE_TIME;
 
     public Session(int id, String tag, String tagColor, String task, String title,
-                   String description, int totalMinutes, String startDate) {
+                   String description, int totalMinutes, String startDate, String endDate) {
         this.id = id;
         this.tag = tag;
         this.tagColor = tagColor;
@@ -27,7 +27,7 @@ public class Session {
         this.description = description;
         this.totalMinutes = totalMinutes;
         this.startDate = startDate;
-
+        this.endDate = endDate;
     }
 
     public int getId() { return id;}
@@ -38,6 +38,7 @@ public class Session {
     public String getDescription() { return description; }
     public int getTotalMinutes() { return totalMinutes; }
     public String getStartDate() { return startDate; }
+    public String getEndDate() { return endDate; }
 
     public LocalDateTime getStartDateTime() {
         if (startDate == null) return null;
