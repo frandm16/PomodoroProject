@@ -1,6 +1,5 @@
 package com.frandm.pomodoro;
 
-
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 
@@ -14,8 +13,10 @@ public class Session {
     private final int totalMinutes;
     private final String startDate;
     private final String endDate;
+    private int rating;
+    private boolean isFavorite;
 
-    private static final DateTimeFormatter FORMATTER = DateTimeFormatter.ISO_LOCAL_DATE_TIME;
+    private static final DateTimeFormatter DB_FORMATTER = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
 
     public Session(int id, String tag, String tagColor, String task, String title,
                    String description, int totalMinutes, String startDate, String endDate) {
@@ -28,9 +29,11 @@ public class Session {
         this.totalMinutes = totalMinutes;
         this.startDate = startDate;
         this.endDate = endDate;
+        this.rating = 0;
+        this.isFavorite = false;
     }
 
-    public int getId() { return id;}
+    public int getId() { return id; }
     public String getTag() { return tag; }
     public String getTagColor() { return tagColor; }
     public String getTask() { return task; }
@@ -40,12 +43,35 @@ public class Session {
     public String getStartDate() { return startDate; }
     public String getEndDate() { return endDate; }
 
+    public int getRating() { return rating; }
+    public void setRating(int rating) { this.rating = rating; }
+
+    public boolean isFavorite() { return isFavorite; }
+    public void setFavorite(boolean favorite) { isFavorite = favorite; }
+
     public LocalDateTime getStartDateTime() {
         if (startDate == null) return null;
         try {
-            return LocalDateTime.parse(startDate);
+            return LocalDateTime.parse(startDate.replace(" ", "T"));
         } catch (Exception e) {
-            return null;
+            try {
+                return LocalDateTime.parse(startDate, DB_FORMATTER);
+            } catch (Exception e2) {
+                return null;
+            }
+        }
+    }
+
+    public LocalDateTime getEndDateTime() {
+        if (endDate == null) return null;
+        try {
+            return LocalDateTime.parse(endDate.replace(" ", "T"));
+        } catch (Exception e) {
+            try {
+                return LocalDateTime.parse(endDate, DB_FORMATTER);
+            } catch (Exception e2) {
+                return null;
+            }
         }
     }
 }

@@ -28,23 +28,30 @@ public class DatabaseHandler {
         File dbFile = new File(configDir, DB_NAME);
         return "jdbc:sqlite:" + dbFile.toPath().toAbsolutePath();
     }
-
+//region core functions
     public static void initializeDatabase() {
         try (Connection conn = DriverManager.getConnection(getDatabaseUrl());
              Statement stmt = conn.createStatement()) {
 
+            //tabla tag
             stmt.execute("CREATE TABLE IF NOT EXISTS tags (" +
                     "id INTEGER PRIMARY KEY AUTOINCREMENT, " +
                     "name TEXT NOT NULL UNIQUE, " +
-                    "color TEXT DEFAULT '#3498db')");
+                    "color TEXT DEFAULT '#ffffff', " +
+                    "is_archived INTEGER DEFAULT 0, " +
+                    "weekly_goal_min INTEGER DEFAULT 0)");
 
+            //tabla task
             stmt.execute("CREATE TABLE IF NOT EXISTS tasks (" +
                     "id INTEGER PRIMARY KEY AUTOINCREMENT, " +
                     "tag_id INTEGER NOT NULL, " +
                     "name TEXT NOT NULL, " +
+                    "is_favorite INTEGER DEFAULT 0, " +
+                    "weekly_goal_min INTEGER DEFAULT 0, " +
                     "FOREIGN KEY (tag_id) REFERENCES tags(id) ON DELETE CASCADE, " +
                     "UNIQUE(tag_id, name))");
 
+            //tabla sessions
             stmt.execute("CREATE TABLE IF NOT EXISTS sessions (" +
                     "id INTEGER PRIMARY KEY AUTOINCREMENT, " +
                     "task_id INTEGER NOT NULL, " +
@@ -53,6 +60,8 @@ public class DatabaseHandler {
                     "total_minutes INTEGER NOT NULL, " +
                     "start_date DATETIME, " +
                     "end_date DATETIME, " +
+                    "rating INTEGER DEFAULT 0, " +
+                    "is_favorite INTEGER DEFAULT 0, " +
                     "FOREIGN KEY (task_id) REFERENCES tasks(id) ON DELETE CASCADE)");
 
         } catch (SQLException e) {
@@ -61,28 +70,12 @@ public class DatabaseHandler {
     }
 
     public static void saveSession(int taskId, String title, String desc, int mins, LocalDateTime start, LocalDateTime end) {
-
         String sql = "INSERT INTO sessions(task_id, title, description, total_minutes, start_date, end_date) VALUES(?, ?, ?, ?, ?, ?)";
-
-            try (Connection conn = DriverManager.getConnection(getDatabaseUrl());
-                 PreparedStatement pst = conn.prepareStatement(sql)) {
-
-                pst.setInt(1, taskId);
-                pst.setString(2, title);
-                pst.setString(3, desc);
-                pst.setInt(4, mins);
-                pst.setString(5, start.format(DATE_FORMATTER));
-                pst.setString(6, end.format(DATE_FORMATTER));
-                pst.executeUpdate();
-            } catch (SQLException e) {
-                System.err.println("Error saving session: " + e.getMessage());
-            }
-
+        executeUpdates(sql, taskId, title, desc, mins, start.format(DATE_FORMATTER), end.format(DATE_FORMATTER));
     }
 
     public static int getOrCreateTask(String tagName, String tagColor, String taskName) {
         try (Connection conn = DriverManager.getConnection(getDatabaseUrl())) {
-            int tagId = -1;
             String sqlTag = "INSERT OR IGNORE INTO tags(name, color) VALUES(?, ?)";
             try (PreparedStatement pst = conn.prepareStatement(sqlTag)) {
                 pst.setString(1, tagName);
@@ -90,6 +83,7 @@ public class DatabaseHandler {
                 pst.executeUpdate();
             }
 
+            int tagId = -1;
             String sqlGetTag = "SELECT id FROM tags WHERE name = ?";
             try (PreparedStatement pst = conn.prepareStatement(sqlGetTag)) {
                 pst.setString(1, tagName);
@@ -116,126 +110,246 @@ public class DatabaseHandler {
         }
         return -1;
     }
-
+//endregion
+//region tag and task update
     public static void createTag(String name, String color) {
         String sql = "INSERT INTO tags (name, color) VALUES (?, ?) ON CONFLICT(name) DO NOTHING";
+        executeUpdates(sql, name, color);
+    }
+
+    public static void updateTagArchived(String name, boolean archived) {
+        String sql = "UPDATE tags SET is_archived = ? WHERE name = ?";
+        executeUpdates(sql, archived ? 1 : 0, name);
+    }
+
+    public static void updateTagGoal(String name, int minutes) {
+        String sql = "UPDATE tags SET weekly_goal_min = ? WHERE name = ?";
+        executeUpdates(sql, minutes, name);
+    }
+
+    public static void updateTaskFavorite(int tagId, String taskName, boolean fav) {
+        String sql = "UPDATE tasks SET is_favorite = ? WHERE tag_id = ? AND name = ?";
+        executeUpdates(sql, fav ? 1 : 0, tagId, taskName);
+    }
+
+    public static void renameTag(String oldName, String newName) {
+        String sql = "UPDATE tags SET name = ? WHERE name = ?";
+        executeUpdates(sql, newName, oldName);
+    }
+
+    public static void updateTagColor(String tagName, String newColor) {
+        String sql = "UPDATE tags SET color = ? WHERE name = ?";
+        executeUpdates(sql, newColor, tagName);
+    }
+//endregion
+//region session updates
+    public static void updateSessionRating(int sessionId, int rating) {
+        String sql = "UPDATE sessions SET rating = ? WHERE id = ?";
+        executeUpdates(sql, rating, sessionId);
+    }
+
+    public static void updateSessionFavorite(int sessionId, boolean fav) {
+        String sql = "UPDATE sessions SET is_favorite = ? WHERE id = ?";
+        executeUpdates(sql, fav ? 1 : 0, sessionId);
+    }
+//endregion
+//region queries
+    public static Map<String, String> getTagColors() {
+        Map<String, String> colors = new LinkedHashMap<>();
+        String sql = "SELECT name, color FROM tags WHERE is_archived = 0 ORDER BY name ASC";
         try (Connection conn = DriverManager.getConnection(getDatabaseUrl());
-             PreparedStatement pstmt = conn.prepareStatement(sql)) {
-            pstmt.setString(1, name);
-            pstmt.setString(2, color);
-            pstmt.executeUpdate();
-        } catch (SQLException e) {
-            System.out.println("Error al crear tag: " + e.getMessage());
-        }
+             Statement stmt = conn.createStatement();
+             ResultSet rs = stmt.executeQuery(sql)) {
+            while (rs.next()) colors.put(rs.getString("name"), rs.getString("color"));
+        } catch (SQLException e) { System.err.println("Error getTagColors: " + e.getMessage()); }
+        return colors;
     }
 
     public static Map<String, List<String>> getTagsWithTasksMap() {
         Map<String, List<String>> map = new HashMap<>();
-        String sql = "SELECT tg.name as tag_name, t.name as task_name FROM tasks t JOIN tags tg ON t.tag_id = tg.id";
+        String sql = "SELECT tg.name as tag_name, t.name as task_name FROM tasks t " +
+                "JOIN tags tg ON t.tag_id = tg.id WHERE tg.is_archived = 0";
         try (Connection conn = DriverManager.getConnection(getDatabaseUrl());
              Statement stmt = conn.createStatement();
              ResultSet rs = stmt.executeQuery(sql)) {
             while (rs.next()) {
                 map.computeIfAbsent(rs.getString("tag_name"), _ -> new ArrayList<>()).add(rs.getString("task_name"));
             }
-        } catch (SQLException e) {
-            System.err.println("Error getTagsWithTasksMap: " + e.getMessage());
-        }
+        } catch (SQLException e) { System.err.println("Error getTagsWithTasksMap: " + e.getMessage()); }
         return map;
-    }
-
-    public static Map<String, String> getTagColors() {
-        Map<String, String> colors = new HashMap<>();
-        String sql = "SELECT name, color FROM tags";
-        try (Connection conn = DriverManager.getConnection(getDatabaseUrl());
-             Statement stmt = conn.createStatement();
-             ResultSet rs = stmt.executeQuery(sql)) {
-            while (rs.next()) {
-                colors.put(rs.getString("name"), rs.getString("color"));
-            }
-        } catch (SQLException e) {
-            System.err.println("Error getTagColors: " + e.getMessage());
-        }
-        return colors;
-    }
-
-    public static void renameTag(String oldName, String newName) {
-        String sql = "UPDATE tags SET name = ? WHERE name = ?";
-        try (Connection conn = DriverManager.getConnection(getDatabaseUrl());
-             PreparedStatement pst = conn.prepareStatement(sql)) {
-            pst.setString(1, newName);
-            pst.setString(2, oldName);
-            pst.executeUpdate();
-        } catch (SQLException e) {
-            System.err.println("Error renameTag: " + e.getMessage());
-        }
-    }
-
-    public static void updateTagColor(String tagName, String newColor) {
-        String sql = "UPDATE tags SET color = ? WHERE name = ?";
-        try (Connection conn = DriverManager.getConnection(getDatabaseUrl());
-             PreparedStatement pst = conn.prepareStatement(sql)) {
-            pst.setString(1, newColor);
-            pst.setString(2, tagName);
-            pst.executeUpdate();
-        } catch (SQLException e) {
-            System.err.println("Error updateTagColor: " + e.getMessage());
-        }
     }
 
     public static ObservableList<Session> getAllSessions() {
         ObservableList<Session> sessions = FXCollections.observableArrayList();
-        String sql = "SELECT s.id, tg.name as tag, tg.color as color, t.name as task, s.title, s.description, s.total_minutes, s.start_date, s.end_date " +
-                "FROM sessions s " +
-                "JOIN tasks t ON s.task_id = t.id " +
-                "JOIN tags tg ON t.tag_id = tg.id " +
-                "ORDER BY s.start_date DESC";
-
+        String sql = "SELECT s.id, tg.name as tag, tg.color as color, t.name as task, " +
+                "s.title, s.description, s.total_minutes, s.start_date, s.end_date, " +
+                "s.rating, s.is_favorite " +
+                "FROM sessions s JOIN tasks t ON s.task_id = t.id " +
+                "JOIN tags tg ON t.tag_id = tg.id ORDER BY s.start_date DESC";
         try (Connection conn = DriverManager.getConnection(getDatabaseUrl());
              Statement stmt = conn.createStatement();
              ResultSet rs = stmt.executeQuery(sql)) {
+            while (rs.next()) {
+                Session s = new Session(rs.getInt("id"), rs.getString("tag"), rs.getString("color"),
+                        rs.getString("task"), rs.getString("title"), rs.getString("description"),
+                        rs.getInt("total_minutes"), rs.getString("start_date"), rs.getString("end_date"));
+                s.setRating(rs.getInt("rating"));
+                s.setFavorite(rs.getInt("is_favorite") == 1);
+                sessions.add(s);
+            }
+        } catch (SQLException e) { System.err.println("Error getAllSessions: " + e.getMessage()); }
+        return sessions;
+    }
+
+    public static List<Session> getSessionsByTagPaged(String tag, int limit, int offset) {
+        List<Session> sessions = new ArrayList<>();
+        String sql = "SELECT s.id, s.title, s.description, s.total_minutes, s.start_date, s.end_date, " +
+                "s.rating, s.is_favorite, t.name AS task_name, tg.name AS tag_name, tg.color AS tag_color " +
+                "FROM sessions s JOIN tasks t ON s.task_id = t.id JOIN tags tg ON t.tag_id = tg.id " +
+                "WHERE tg.name = ? ORDER BY s.is_favorite DESC, s.start_date DESC LIMIT ? OFFSET ?";
+        try (Connection conn = DriverManager.getConnection(getDatabaseUrl());
+             PreparedStatement pstmt = conn.prepareStatement(sql)) {
+            pstmt.setString(1, tag);
+            pstmt.setInt(2, limit);
+            pstmt.setInt(3, offset);
+            ResultSet rs = pstmt.executeQuery();
+            while (rs.next()) {
+                Session s = new Session(rs.getInt("id"), rs.getString("tag_name"), rs.getString("tag_color"),
+                        rs.getString("task_name"), rs.getString("title"), rs.getString("description"),
+                        rs.getInt("total_minutes"), rs.getString("start_date"), rs.getString("end_date"));
+                s.setRating(rs.getInt("rating"));
+                s.setFavorite(rs.getInt("is_favorite") == 1);
+                sessions.add(s);
+            }
+        } catch (SQLException e) { System.err.println("Error getSessionsByTagPaged: " + e.getMessage()); }
+        return sessions;
+    }
+
+    public static Map<LocalDate, Integer> getMinutesPerDayLastYear() {
+        Map<LocalDate, Integer> data = new HashMap<>();
+        String sql = "SELECT date(start_date) as day, SUM(total_minutes) as total FROM sessions " +
+                "WHERE start_date >= date('now', '-1 year') GROUP BY day";
+        try (Connection conn = DriverManager.getConnection(getDatabaseUrl());
+             Statement stmt = conn.createStatement();
+             ResultSet rs = stmt.executeQuery(sql)) {
+            while (rs.next()) {
+                String dayStr = rs.getString("day");
+                if (dayStr != null) data.put(LocalDate.parse(dayStr), rs.getInt("total"));
+            }
+        } catch (SQLException e) { System.err.println("Error heatmap: " + e.getMessage()); }
+        return data;
+    }
+
+    public static double getTagGoalProgress(String tagName) {
+        String sql = "SELECT tg.weekly_goal_min, SUM(s.total_minutes) as total FROM tags tg " +
+                "LEFT JOIN tasks t ON tg.id = t.tag_id " +
+                "LEFT JOIN sessions s ON t.id = s.task_id " +
+                "WHERE tg.name = ? AND s.start_date >= date('now', 'weekday 0', '-7 days')";
+        try (Connection conn = DriverManager.getConnection(getDatabaseUrl());
+             PreparedStatement pstmt = conn.prepareStatement(sql)) {
+            pstmt.setString(1, tagName);
+            ResultSet rs = pstmt.executeQuery();
+            if (rs.next()) {
+                int goal = rs.getInt("weekly_goal_min");
+                int total = rs.getInt("total");
+                if (goal == 0) return 0.0;
+                return Math.min(1.0, (double) total / goal);
+            }
+        } catch (SQLException e) { System.err.println("Error goal progress: " + e.getMessage()); }
+        return 0.0;
+    }
+
+    public static Map<String, Integer> getTaskSummaryByTag(String tag) {
+        Map<String, Integer> summary = new LinkedHashMap<>();
+        String sql = "SELECT t.name AS task_name, SUM(s.total_minutes) as total " +
+                "FROM sessions s JOIN tasks t ON s.task_id = t.id " +
+                "JOIN tags tg ON t.tag_id = tg.id WHERE tg.name = ? " +
+                "GROUP BY t.name ORDER BY total DESC";
+        try (Connection conn = DriverManager.getConnection(getDatabaseUrl());
+             PreparedStatement pstmt = conn.prepareStatement(sql)) {
+            pstmt.setString(1, tag);
+            ResultSet rs = pstmt.executeQuery();
+            while (rs.next()) summary.put(rs.getString("task_name"), rs.getInt("total"));
+        } catch (SQLException e) { System.err.println("Error getTaskSummary: " + e.getMessage()); }
+        return summary;
+    }
+
+    public static List<Session> getSessionsByDate(LocalDate date) {
+        List<Session> sessions = new ArrayList<>();
+        String sql = "SELECT s.id, tg.name as tag, tg.color as tagColor, t.name as task, " +
+                "s.title, s.description, s.total_minutes, s.start_date, s.end_date, s.rating, s.is_favorite " +
+                "FROM sessions s JOIN tasks t ON s.task_id = t.id JOIN tags tg ON t.tag_id = tg.id " +
+                "WHERE date(s.start_date) = ? ORDER BY s.start_date ASC";
+        try (Connection conn = DriverManager.getConnection(getDatabaseUrl());
+             PreparedStatement pstmt = conn.prepareStatement(sql)) {
+            pstmt.setString(1, date.toString());
+            ResultSet rs = pstmt.executeQuery();
+            while (rs.next()) {
+                Session s = new Session(rs.getInt("id"), rs.getString("tag"), rs.getString("tagColor"),
+                        rs.getString("task"), rs.getString("title"), rs.getString("description"),
+                        rs.getInt("total_minutes"), rs.getString("start_date"), rs.getString("end_date"));
+                s.setRating(rs.getInt("rating"));
+                s.setFavorite(rs.getInt("is_favorite") == 1);
+                sessions.add(s);
+            }
+        } catch (SQLException e) { System.err.println("Error getSessionsByDate: " + e.getMessage()); }
+        return sessions;
+    }
+
+    public static List<Session> getSessionsPaged(int limit, int offset) {
+        List<Session> sessions = new ArrayList<>();
+
+        String sql = "SELECT s.id, s.title, s.description, s.total_minutes, s.start_date, s.end_date, " +
+                "t.name AS task_name, tg.name AS tag_name, tg.color AS tag_color " +
+                "FROM sessions s " +
+                "JOIN tasks t ON s.task_id = t.id " +
+                "JOIN tags tg ON t.tag_id = tg.id " +
+                "ORDER BY s.start_date DESC LIMIT ? OFFSET ?";
+
+        try (Connection conn = DriverManager.getConnection(getDatabaseUrl());
+             PreparedStatement pstmt = conn.prepareStatement(sql)) {
+
+            pstmt.setInt(1, limit);
+            pstmt.setInt(2, offset);
+
+            ResultSet rs = pstmt.executeQuery();
 
             while (rs.next()) {
-                sessions.add(new Session(
+                Session session = new Session(
                         rs.getInt("id"),
-                        rs.getString("tag"),
-                        rs.getString("color"),
-                        rs.getString("task"),
+                        rs.getString("tag_name"),
+                        rs.getString("tag_color"),
+                        rs.getString("task_name"),
                         rs.getString("title"),
                         rs.getString("description"),
                         rs.getInt("total_minutes"),
                         rs.getString("start_date"),
                         rs.getString("end_date")
-                ));
+                );
+                sessions.add(session);
             }
         } catch (SQLException e) {
-            System.err.println("Error getAllSessions(): " + e.getMessage());
+            System.err.println("Error getting sessions paged: " + e.getMessage());
         }
+
         return sessions;
     }
+//endregion
 
-    public static java.util.Map<java.time.LocalDate, Integer> getMinutesPerDayLastYear() {
-        java.util.Map<java.time.LocalDate, Integer> data = new java.util.HashMap<>();
-        String sql = "SELECT date(start_date) as day, SUM(total_minutes) as total " +
-                "FROM sessions " +
-                "WHERE start_date >= date('now', '-1 year') " +
-                "GROUP BY day";
+//region utils
+private static void executeUpdates(String sql, Object... params) {
+    try (Connection conn = DriverManager.getConnection(getDatabaseUrl());
+         PreparedStatement pst = conn.prepareStatement(sql)) {
 
-        try (Connection conn = DriverManager.getConnection(getDatabaseUrl());
-             Statement stmt = conn.createStatement();
-             ResultSet rs = stmt.executeQuery(sql)) {
-
-            while (rs.next()) {
-                String dayStr = rs.getString("day");
-                if (dayStr != null) {
-                    data.put(java.time.LocalDate.parse(dayStr), rs.getInt("total"));
-                }
-            }
-        } catch (SQLException e) {
-            System.err.println("Error loading heatmap: " + e.getMessage());
+        for (int i = 0; i < params.length; i++) {
+            pst.setObject(i + 1, params[i]);
         }
-        return data;
+        pst.executeUpdate();
+
+    } catch (SQLException e) {
+        System.err.println("SQL Error en executeUpdates [" + sql + "]: " + e.getMessage());
     }
+}
 
     public static void generateRandomPomodoros() {
         java.util.Random random = new java.util.Random();
@@ -289,129 +403,5 @@ public class DatabaseHandler {
             System.err.println("Error generando datos: " + e.getMessage());
         }
     }
-
-    public static List<Session> getSessionsByDate(LocalDate date) {
-        List<Session> sessions = new java.util.ArrayList<>();
-        String sql = "SELECT s.id, tg.name as tag, tg.color as tagColor, t.name as task, " +
-                "s.title, s.description, s.total_minutes, s.start_date, s.end_date " +
-                "FROM sessions s " +
-                "JOIN tasks t ON s.task_id = t.id " +
-                "JOIN tags tg ON t.tag_id = tg.id " +
-                "WHERE date(s.start_date) = ? " +
-                "ORDER BY s.start_date ASC";
-
-        try (Connection conn = DriverManager.getConnection(getDatabaseUrl());
-             PreparedStatement pstmt = conn.prepareStatement(sql)) {
-
-            pstmt.setString(1, date.toString());
-            ResultSet rs = pstmt.executeQuery();
-
-            while (rs.next()) {
-                sessions.add(new Session(
-                        rs.getInt("id"),
-                        rs.getString("tag"),
-                        rs.getString("tagColor"),
-                        rs.getString("task"),
-                        rs.getString("title"),
-                        rs.getString("description"),
-                        rs.getInt("total_minutes"),
-                        rs.getString("start_date"),
-                        rs.getString("end_date")
-                ));
-            }
-        } catch (SQLException e) {
-            System.err.println("Error en getSessionsByDate: " + e.getMessage());
-        }
-        return sessions;
-    }
-
-    public static List<Session> getSessionsPaged(int limit, int offset) {
-        List<Session> sessions = new ArrayList<>();
-
-        String sql = "SELECT s.id, s.title, s.description, s.total_minutes, s.start_date, s.end_date, " +
-                "t.name AS task_name, tg.name AS tag_name, tg.color AS tag_color " +
-                "FROM sessions s " +
-                "JOIN tasks t ON s.task_id = t.id " +
-                "JOIN tags tg ON t.tag_id = tg.id " +
-                "ORDER BY s.start_date DESC LIMIT ? OFFSET ?";
-
-        try (Connection conn = DriverManager.getConnection(getDatabaseUrl());
-             PreparedStatement pstmt = conn.prepareStatement(sql)) {
-
-            pstmt.setInt(1, limit);
-            pstmt.setInt(2, offset);
-
-            ResultSet rs = pstmt.executeQuery();
-
-            while (rs.next()) {
-                Session session = new Session(
-                        rs.getInt("id"),
-                        rs.getString("tag_name"),
-                        rs.getString("tag_color"),
-                        rs.getString("task_name"),
-                        rs.getString("title"),
-                        rs.getString("description"),
-                        rs.getInt("total_minutes"),
-                        rs.getString("start_date"),
-                        rs.getString("end_date")
-                );
-                sessions.add(session);
-            }
-        } catch (SQLException e) {
-            System.err.println("Error getting sessions paged: " + e.getMessage());
-        }
-
-        return sessions;
-    }
-
-    public static List<Session> getSessionsByTagPaged(String tag, int limit, int offset) {
-        List<Session> sessions = new ArrayList<>();
-        String sql = "SELECT s.id, s.title, s.description, s.total_minutes, s.start_date, s.end_date, " +
-                "t.name AS task_name, tg.name AS tag_name, tg.color AS tag_color " +
-                "FROM sessions s " +
-                "JOIN tasks t ON s.task_id = t.id " +
-                "JOIN tags tg ON t.tag_id = tg.id " +
-                "WHERE tg.name = ? " +
-                "ORDER BY s.start_date DESC LIMIT ? OFFSET ?";
-
-        try (Connection conn = DriverManager.getConnection(getDatabaseUrl());
-             PreparedStatement pstmt = conn.prepareStatement(sql)) {
-            pstmt.setString(1, tag);
-            pstmt.setInt(2, limit);
-            pstmt.setInt(3, offset);
-            ResultSet rs = pstmt.executeQuery();
-            while (rs.next()) {
-                sessions.add(new Session(
-                        rs.getInt("id"), rs.getString("tag_name"), rs.getString("tag_color"),
-                        rs.getString("task_name"), rs.getString("title"), rs.getString("description"),
-                        rs.getInt("total_minutes"), rs.getString("start_date"), rs.getString("end_date")
-                ));
-            }
-        } catch (SQLException e) {
-            System.err.println("Error getSessionsByTagPaged: " + e.getMessage());
-        }
-        return sessions;
-    }
-
-    public static Map<String, Integer> getTaskSummaryByTag(String tag) {
-        Map<String, Integer> summary = new LinkedHashMap<>();
-        String sql = "SELECT t.name AS task_name, SUM(s.total_minutes) as total " +
-                "FROM sessions s " +
-                "JOIN tasks t ON s.task_id = t.id " +
-                "JOIN tags tg ON t.tag_id = tg.id " +
-                "WHERE tg.name = ? " +
-                "GROUP BY t.name ORDER BY total DESC";
-
-        try (Connection conn = DriverManager.getConnection(getDatabaseUrl());
-             PreparedStatement pstmt = conn.prepareStatement(sql)) {
-            pstmt.setString(1, tag);
-            ResultSet rs = pstmt.executeQuery();
-            while (rs.next()) {
-                summary.put(rs.getString("task_name"), rs.getInt("total"));
-            }
-        } catch (SQLException e) {
-            System.err.println("Error getTaskSummaryByTag: " + e.getMessage());
-        }
-        return summary;
-    }
+    //endregion
 }

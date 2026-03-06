@@ -402,3 +402,40 @@
     -fx-text-fill: -text-muted;
     -fx-opacity: 0.8;
 }
+
+
+
+.btn-action {
+    -fx-background-color: transparent;
+    -fx-border-color: -color-border-subtle;
+    -fx-border-radius: 5;
+    -fx-cursor: hand;
+    -fx-text-fill: -text-muted;
+    -fx-font-size: 14px;
+    -fx-min-width: 30;
+    -fx-min-height: 30;
+}
+
+.btn-action:hover {
+    -fx-border-color: -text-main;
+    -fx-text-fill: -text-main;
+}
+
+/* Colores específicos por acción */
+.btn-repeat:hover {
+    -fx-text-fill: -color-accent;
+    -fx-border-color: -color-accent;
+}
+
+.btn-delete:hover {
+    -fx-text-fill: #ff4444;
+    -fx-border-color: #ff4444;
+}
+
+.timeline-card .btn-action {
+    -fx-opacity: 0.6;
+}
+
+.timeline-card:hover .btn-action {
+    -fx-opacity: 1.0;
+}
