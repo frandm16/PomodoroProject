@@ -31,6 +31,7 @@
 
             <HBox spacing="10" GridPane.columnIndex="1" alignment="CENTER">
                 <Button fx:id="menuBtn" text="Timer" onAction="#handleNavClick" styleClass="title-button, active" />
+                <Button fx:id="plannerBtn" text="Planner" onAction="#handleNavClick" styleClass="title-button" />
                 <Button fx:id="statsBtn" text="Stats" onAction="#handleNavClick" styleClass="title-button" />
                 <Button fx:id="historyBtn" text="History" onAction="#handleNavClick" styleClass="title-button" />
             </HBox>
@@ -218,13 +219,17 @@
                     </VBox>
                 </GridPane >
 
-                <GridPane StackPane.alignment="TOP_CENTER" maxHeight="-Infinity" maxWidth="-Infinity">
+                <GridPane fx:id="mainContainer" StackPane.alignment="TOP_CENTER" maxHeight="-Infinity" maxWidth="Infinity">
+                    <columnConstraints>
+                        <ColumnConstraints percentWidth="15" />
+                        <ColumnConstraints  percentWidth="70" />
+                        <ColumnConstraints percentWidth="15" />
+                    </columnConstraints>
                     <padding>
                         <Insets right="50" bottom="30" left="50"/>
                     </padding>
-
-
-                    <VBox  fx:id="mainContainer" spacing="20"  >
+                    <VBox fx:id="scheduleListContainer" spacing="10" alignment="TOP_RIGHT" GridPane.columnIndex="2" />
+                    <VBox  spacing="20" alignment="CENTER" GridPane.columnIndex="1" >
                         <padding><Insets top="80" right="50" bottom="50" left="50"/></padding>
                         <VBox fx:id="activeTaskContainer" alignment="CENTER" spacing="8" minHeight="30">
                         </VBox>
@@ -257,6 +262,19 @@
                             <Button fx:id="skipBtn" onAction="#handleSkip" prefHeight="60" prefWidth="100" text="SKIP" styleClass="button-secondary" />
                             <Button fx:id="finishBtn" onAction="#handleFinish" prefHeight="60" prefWidth="120" text="FINISH" styleClass="button-secondary" />
                         </HBox>
+                    </VBox>
+                </GridPane>
+                <GridPane StackPane.alignment="TOP_CENTER" maxHeight="-Infinity" maxWidth="Infinity">
+                    <columnConstraints>
+                        <ColumnConstraints percentWidth="15" />
+                        <ColumnConstraints percentWidth="70" />
+                        <ColumnConstraints percentWidth="15" />
+                    </columnConstraints>
+                    <rowConstraints>
+                        <RowConstraints vgrow="ALWAYS" />
+                    </rowConstraints>
+                    <VBox fx:id="plannerContainer" visible="false" managed="false" alignment="TOP_CENTER" GridPane.columnIndex="1"  styleClass="view-container">
+                        <padding><Insets top="40" bottom="40" left="50" right="50"/></padding>
                     </VBox>
                 </GridPane>
 

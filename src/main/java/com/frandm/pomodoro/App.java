@@ -1,6 +1,7 @@
 package com.frandm.pomodoro;
 
 import atlantafx.base.theme.PrimerDark;
+import fr.brouillard.oss.cssfx.CSSFX;
 import javafx.application.Application;
 import javafx.fxml.FXMLLoader;
 import javafx.scene.Scene;
@@ -32,6 +33,8 @@ public class App extends Application {
                 stage.setFullScreen(!stage.isFullScreen());
             }
         });
+
+        CSSFX.start();
 
         stage.setScene(scene);
         stage.show();

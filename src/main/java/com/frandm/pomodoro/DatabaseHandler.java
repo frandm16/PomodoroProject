@@ -64,6 +64,27 @@ public class DatabaseHandler {
                     "is_favorite INTEGER DEFAULT 0, " +
                     "FOREIGN KEY (task_id) REFERENCES tasks(id) ON DELETE CASCADE)");
 
+            //tabla schedule sessions
+            stmt.execute("CREATE TABLE IF NOT EXISTS scheduled_sessions (" +
+                    "id INTEGER PRIMARY KEY AUTOINCREMENT, " +
+                    "task_id INTEGER NOT NULL, " +
+                    "title TEXT, " +
+                    "start_time DATETIME NOT NULL, " +
+                    "end_time DATETIME NOT NULL, " +
+                    "is_completed INTEGER DEFAULT 0, " +
+                    "FOREIGN KEY (task_id) REFERENCES tasks(id) ON DELETE CASCADE)");
+
+            //tabla deadlines
+            stmt.execute("CREATE TABLE IF NOT EXISTS deadlines (" +
+                    "id INTEGER PRIMARY KEY AUTOINCREMENT, " +
+                    "title TEXT NOT NULL, " +
+                    "due_date DATETIME NOT NULL, " +
+                    "priority INTEGER DEFAULT 0, " +
+                    "tag_id INTEGER, " +
+                    "task_id INTEGER, " +
+                    "FOREIGN KEY (tag_id) REFERENCES tags(id) ON DELETE SET NULL, " +
+                    "FOREIGN KEY (task_id) REFERENCES tasks(id) ON DELETE SET NULL)");
+
         } catch (SQLException e) {
             System.err.println("Error initializeDatabase: " + e.getMessage());
         }
@@ -335,6 +356,123 @@ public class DatabaseHandler {
         return sessions;
     }
 //endregion
+//region planner
+    public static void saveScheduledSession(String tagName, String taskName, String title, LocalDateTime start, LocalDateTime end) {
+        int taskId = getOrCreateTask(tagName, "#94a3b8", taskName);
+
+        if (taskId == -1) {
+            System.err.println("[ERROR] No se pudo obtener el taskId para: " + taskName);
+            return;
+        }
+
+        String sql = "INSERT INTO scheduled_sessions(task_id, title, start_time, end_time, is_completed) " + "VALUES(?, ?, ?, ?, 0)";
+        executeUpdates(sql, taskId, title, start.format(DATE_FORMATTER), end.format(DATE_FORMATTER));
+    }
+
+    public static void saveDeadline(String title, LocalDateTime dueDate, int priority, Integer tagId, Integer taskId) {
+        String sql = "INSERT INTO deadlines(title, due_date, priority, tag_id, task_id) VALUES(?, ?, ?, ?, ?)";
+        executeUpdates(sql, title, dueDate.format(DATE_FORMATTER), priority, tagId, taskId);
+    }
+
+    public static List<Map<String, Object>> getScheduledSessions(LocalDate start, LocalDate end) {
+        List<Map<String, Object>> list = new ArrayList<>();
+        String sql = "SELECT ss.*, t.name as task_name, tg.name as tag_name, tg.color as tag_color " +
+                "FROM scheduled_sessions ss " +
+                "JOIN tasks t ON ss.task_id = t.id " +
+                "JOIN tags tg ON t.tag_id = tg.id " +
+                "WHERE date(ss.start_time) BETWEEN ? AND ? AND ss.is_completed = 0";
+
+        try (Connection conn = DriverManager.getConnection(getDatabaseUrl());
+             PreparedStatement pstmt = conn.prepareStatement(sql)) {
+            pstmt.setString(1, start.toString());
+            pstmt.setString(2, end.toString());
+            ResultSet rs = pstmt.executeQuery();
+            while (rs.next()) {
+                Map<String, Object> map = new HashMap<>();
+                map.put("id", rs.getInt("id"));
+                map.put("task_id", rs.getInt("task_id"));
+                map.put("title", rs.getString("title"));
+                map.put("start_time", LocalDateTime.parse(rs.getString("start_time"), DATE_FORMATTER));
+                map.put("end_time", LocalDateTime.parse(rs.getString("end_time"), DATE_FORMATTER));
+                map.put("task_name", rs.getString("task_name"));
+                map.put("tag_color", rs.getString("tag_color"));
+                map.put("tag_name", rs.getString("tag_name"));
+                list.add(map);
+            }
+        } catch (SQLException e) { System.err.println("Error getScheduled: " + e.getMessage()); }
+        return list;
+    }
+
+    public static void updateScheduledSession(int id, String taskName, String tagName, LocalDateTime start, LocalDateTime end) {
+        String query = "UPDATE scheduled_sessions SET " +
+                "task_id = (SELECT id FROM tasks WHERE name = ?), " +
+                "tag_id = (SELECT id FROM tags WHERE name = ?), " +
+                "start_time = ?, " +
+                "end_time = ? " +
+                "WHERE id = ?";
+
+        try (Connection conn = DriverManager.getConnection(getDatabaseUrl());
+             PreparedStatement pstmt = conn.prepareStatement(query)) {
+
+            pstmt.setString(1, taskName);
+            pstmt.setString(2, tagName);
+            pstmt.setString(3, start.format(DateTimeFormatter.ISO_LOCAL_DATE_TIME));
+            pstmt.setString(4, end.format(DateTimeFormatter.ISO_LOCAL_DATE_TIME));
+            pstmt.setInt(5, id);
+
+            pstmt.executeUpdate();
+            System.out.println("Sesión actualizada correctamente.");
+        } catch (SQLException e) {
+            System.err.println("Error al actualizar la sesión: " + e.getMessage());
+        }
+    }
+
+    public static void cleanCorruptSessions() {
+        String sql = "DELETE FROM scheduled_sessions WHERE tag_id IS NULL OR " +
+                "tag_id NOT IN (SELECT id FROM tags)";
+        try (Connection conn = DriverManager.getConnection(getDatabaseUrl());
+             Statement stmt = conn.createStatement()) {
+            int deleted = stmt.executeUpdate(sql);
+            if (deleted > 0) {
+                System.out.println("Se han eliminado " + deleted + " sesiones corruptas.");
+            }
+        } catch (SQLException e) {
+            System.err.println("Error limpiando sesiones: " + e.getMessage());
+        }
+    }
+
+    public static void markScheduledAsCompleted(int scheduledId) {
+        String sql = "UPDATE scheduled_sessions SET is_completed = 1 WHERE id = ?";
+        executeUpdates(sql, scheduledId);
+    }
+
+    public static List<Map<String, Object>> getDeadlines(LocalDate start, LocalDate end) {
+        List<Map<String, Object>> list = new ArrayList<>();
+        String sql = "SELECT d.*, tg.color as tag_color FROM deadlines d " +
+                "LEFT JOIN tags tg ON d.tag_id = tg.id " +
+                "WHERE date(d.due_date) BETWEEN ? AND ?";
+        try (Connection conn = DriverManager.getConnection(getDatabaseUrl());
+             PreparedStatement pstmt = conn.prepareStatement(sql)) {
+            pstmt.setString(1, start.toString());
+            pstmt.setString(2, end.toString());
+            ResultSet rs = pstmt.executeQuery();
+            while (rs.next()) {
+                Map<String, Object> map = new HashMap<>();
+                map.put("title", rs.getString("title"));
+                map.put("due_date", LocalDateTime.parse(rs.getString("due_date"), DATE_FORMATTER));
+                map.put("color", rs.getString("tag_color") != null ? rs.getString("tag_color") : "#ff4757");
+                map.put("priority", rs.getInt("priority"));
+                list.add(map);
+            }
+        } catch (SQLException e) { System.err.println("Error getDeadlines: " + e.getMessage()); }
+        return list;
+    }
+
+    public static List<Map<String, Object>> getScheduleSessionsForToday() {
+        LocalDate today = LocalDate.now();
+        return getScheduledSessions(today, today);
+    }
+    //endregion
 
 //region utils
 private static void executeUpdates(String sql, Object... params) {

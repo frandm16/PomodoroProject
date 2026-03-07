@@ -421,7 +421,6 @@
     -fx-text-fill: -text-main;
 }
 
-/* Colores específicos por acción */
 .btn-repeat:hover {
     -fx-text-fill: -color-accent;
     -fx-border-color: -color-accent;
@@ -438,4 +437,95 @@
 
 .timeline-card:hover .btn-action {
     -fx-opacity: 1.0;
+}
+
+/* --- calendar view --- */
+.calendar-grid {
+    -fx-background-color: transparent;
+}
+
+.calendar-month-label {
+    -fx-text-fill: -color-fg-default;
+    -fx-font-size: 20px;
+    -fx-font-weight: bold;
+}
+
+.calendar-day-name {
+    -fx-text-fill: -color-fg-muted;
+    -fx-font-size: 11px;
+    -fx-font-weight: 700;
+    -fx-letter-spacing: 0.5px;
+}
+
+.calendar-day-name-today {
+    -fx-text-fill: -color-accent;
+    -fx-font-size: 11px;
+    -fx-font-weight: 800;
+}
+
+.calendar-day-num {
+    -fx-text-fill: -color-fg-default;
+    -fx-font-size: 15px;
+}
+
+.calendar-day-num-today {
+    -fx-text-fill: -color-bg-default;
+    -fx-font-size: 15px;
+    -fx-font-weight: bold;
+}
+
+.calendar-today-circle {
+    -fx-fill: -color-accent;
+    -fx-effect: dropshadow(three-pass-box, rgba(0,0,0,0.15), 5, 0, 0, 1);
+}
+
+.calendar-hour-label {
+    -fx-text-fill: -color-fg-default;
+    -fx-font-size: 10px;
+    -fx-font-family: "JetBrains Mono", "Inter", monospace;
+}
+
+.calendar-cell {
+    -fx-border-color: -color-border-subtle;
+    -fx-border-width: 0 0 0.5 0.5;
+}
+
+.calendar-hour-cell {
+    -fx-border-color: -color-fg-muted;
+    -fx-border-width: 1 0 0 0;
+}
+
+
+.calendar-session-block {
+    -fx-background-radius: 6;
+    -fx-border-radius: 6;
+    -fx-border-width: 0 0 0 4;
+    -fx-padding: 6 10;
+    -fx-cursor: hand;
+}
+
+.calendar-session-block:hover {
+    -fx-effect: dropshadow(three-pass-box, rgba(0,0,0,0.2), 10, 0, 0, 4);
+}
+
+.calendar-session-task {
+    -fx-text-fill: -color-fg-default;
+    -fx-font-size: 12px;
+    -fx-font-weight: 600;
+}
+
+.calendar-session-tag {
+    -fx-font-size: 9px;
+    -fx-font-weight: 800;
+    -fx-text-transform: uppercase;
+}
+
+.calendar-popup {
+    -fx-background-color: -bg-panels;
+    -fx-border-color: -color-border-default;
+    -fx-border-width: 1px;
+    -fx-border-radius: 12px;
+    -fx-background-radius: 12px;
+    -fx-padding: 20px;
+    -fx-effect: dropshadow(three-pass-box, rgba(0,0,0,0.3), 20, 0, 0, 10);
 }

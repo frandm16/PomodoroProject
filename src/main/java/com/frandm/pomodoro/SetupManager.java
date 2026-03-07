@@ -99,5 +99,10 @@ public class SetupManager {
     public String getSelectedTag() { return selectedTag; }
     public String getSelectedTask() { return selectedTask; }
     public String getFilterTag() { return filterTag; }
+
+    public void setSelectedTag(String tag) { this.selectedTag = tag; }
+    public void setSelectedTask(String task) { this.selectedTask = task; }
+    public void setFilterTag(String tag) { this.filterTag = tag; }
+
     public void resetSelection() { selectedTag = null; selectedTask = null; }
 }

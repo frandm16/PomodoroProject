@@ -8,6 +8,8 @@ import javafx.application.Application;
 import javafx.application.Platform;
 import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
+import javafx.geometry.Insets;
+import javafx.geometry.Pos;
 import javafx.scene.chart.AreaChart;
 import javafx.scene.chart.CategoryAxis;
 import javafx.scene.chart.PieChart;
@@ -18,19 +20,20 @@ import javafx.scene.shape.Arc;
 import javafx.scene.shape.Circle;
 import javafx.util.Duration;
 import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
 import java.util.*;
 
 public class PomodoroController {
 
     //region FXML
     @FXML private ScrollPane mainScrollPane;
-    @FXML private GridPane setupPane;
+    @FXML private GridPane setupPane, mainContainer;
     @FXML private StackPane rootPane;
-    @FXML private VBox mainContainer, settingsPane, statsContainer, historyContainer, statsPlaceholder, streakVBox, streakImage, fuzzyResultsContainer, tagsListContainer, activeTaskContainer;
+    @FXML private VBox settingsPane, scheduleListContainer, statsContainer, plannerContainer, historyContainer, statsPlaceholder, streakVBox, streakImage, fuzzyResultsContainer, tagsListContainer, activeTaskContainer;
     @FXML private Label timerLabel, stateLabel, workValLabel, shortValLabel, longValLabel, intervalValLabel,
             alarmVolumeValLabel, widthSliderValLabel, streakLabel, timeThisWeekLabel,
             timeLastMonthLabel, tasksLabel, bestDayLabel, selectedNameLabel;
-    @FXML private Button startPauseBtn, skipBtn, finishBtn, menuBtn, statsBtn, historyBtn, selectTaskBtn;
+    @FXML private Button startPauseBtn, skipBtn, finishBtn, menuBtn, statsBtn, plannerBtn, historyBtn, selectTaskBtn;
     @FXML private ToggleButton autoBreakToggle, autoPomoToggle, countBreakTime;
     @FXML public TextField tagNameInput, fuzzySearchInput;
     @FXML public ColorPicker tagColorInput;
@@ -51,7 +54,9 @@ public class PomodoroController {
     private final UIManager uiManager = new UIManager();
 
     private StatsDashboard statsDashboard;
+    private CalendarView calendarView;
     private HistoryView historyView;
+
     private boolean isSettingsOpen = false;
     private boolean isDarkMode = true;
     private TranslateTransition settingsAnim;
@@ -67,6 +72,13 @@ public class PomodoroController {
         ConfigManager.load(engine);
         refreshDatabaseData();
         applyTheme();
+
+        //region calendar view
+        calendarView = new CalendarView(this);
+        plannerContainer.getChildren().clear();
+        plannerContainer.getChildren().add(calendarView);
+        VBox.setVgrow(calendarView, Priority.ALWAYS);
+        //endregion
 
         //region history view
         historyView = new HistoryView(tagColors);
@@ -84,6 +96,7 @@ public class PomodoroController {
         //region paneles
         settingsPane.setTranslateX(-600);
         //endregion
+        refreshSideMenu();
 
         updateActiveTaskDisplay("No tag selected", null);
 
@@ -206,6 +219,7 @@ public class PomodoroController {
     private void handleNavClick(ActionEvent event) {
         Button clickedBtn = (Button) event.getSource();
         menuBtn.getStyleClass().remove("active");
+        plannerBtn.getStyleClass().remove("active");
         statsBtn.getStyleClass().remove("active");
         historyBtn.getStyleClass().remove("active");
         clickedBtn.getStyleClass().add("active");
@@ -213,6 +227,10 @@ public class PomodoroController {
         if (clickedBtn == menuBtn) {
             switchPanels(getActivePanel(), mainContainer);
             mainScrollPane.setFitToHeight(true);
+        } else if (clickedBtn == plannerBtn) {
+            calendarView.refresh();
+            switchPanels(getActivePanel(), plannerContainer);
+            mainScrollPane.setFitToHeight(false);
         } else if (clickedBtn == statsBtn) {
             statsDashboard.refresh();
             switchPanels(getActivePanel(), statsContainer);
@@ -272,7 +290,8 @@ public class PomodoroController {
     private Region getActivePanel() {
         if (mainContainer.isVisible()) return mainContainer;
         if (statsContainer.isVisible()) return statsContainer;
-        return historyContainer;
+        if (historyContainer.isVisible()) return historyContainer;
+        return plannerContainer;
     }
 
     private void switchPanels(Region toHide, Region toShow) {
@@ -443,5 +462,67 @@ public class PomodoroController {
                 timerLabel.setText(engine.getFormattedTime());
             }
         });
+    }
+
+    private VBox createTodaySchedulesList() {
+        VBox container = new VBox(10);
+        container.setPadding(new Insets(15));
+        container.getStyleClass().add("menu-today-container");
+
+        Label title = new Label("PROGRAMADO PARA HOY");
+        title.setStyle("-fx-font-weight: bold; -fx-font-size: 11px; -fx-text-fill: -color-fg-muted;");
+
+        VBox list = new VBox(5);
+        List<Map<String, Object>> todaySessions = DatabaseHandler.getScheduleSessionsForToday();
+
+        if (todaySessions.isEmpty()) {
+            Label empty = new Label("No hay sesiones para hoy");
+            empty.setStyle("-fx-font-style: italic; -fx-opacity: 0.6;");
+            list.getChildren().add(empty);
+        } else {
+            // Ordenar por hora de inicio
+            todaySessions.sort(Comparator.comparing(s -> (LocalDateTime) s.get("start_time")));
+
+            for (Map<String, Object> session : todaySessions) {
+                list.getChildren().add(createMiniSessionItem(session));
+            }
+        }
+
+        container.getChildren().addAll(title, list);
+        return container;
+    }
+
+    private HBox createMiniSessionItem(Map<String, Object> session) {
+        HBox item = new HBox(10);
+        item.setAlignment(Pos.CENTER_LEFT);
+        item.setPadding(new Insets(8));
+        item.getStyleClass().add("menu-session-item");
+        item.setStyle("-fx-background-color: -color-bg-subtle; -fx-background-radius: 6; -fx-cursor: hand;");
+
+        // Indicador de color de la categoría
+        String color = (String) session.getOrDefault("tag_color", "#94a3b8");
+        Region colorIndicator = new Region();
+        colorIndicator.setPrefSize(4, 20);
+        colorIndicator.setStyle("-fx-background-color: " + color + "; -fx-background-radius: 2;");
+
+        VBox info = new VBox(2);
+        Label lblTitle = new Label((String) session.get("title"));
+        lblTitle.setStyle("-fx-font-weight: bold; -fx-font-size: 13px;");
+
+        LocalDateTime start = (LocalDateTime) session.get("start_time");
+        Label lblTime = new Label(start.format(DateTimeFormatter.ofPattern("HH:mm")));
+        lblTime.setStyle("-fx-font-size: 11px; -fx-opacity: 0.7;");
+
+        info.getChildren().addAll(lblTitle, lblTime);
+        item.getChildren().addAll(colorIndicator, info);
+
+        return item;
+    }
+
+    public void refreshSideMenu() {
+        if (scheduleListContainer != null) {
+            scheduleListContainer.getChildren().clear();
+            scheduleListContainer.getChildren().add(createTodaySchedulesList());
+        }
     }
 }
