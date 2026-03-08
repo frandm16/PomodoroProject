@@ -467,6 +467,12 @@ public class DatabaseHandler {
         LocalDate today = LocalDate.now();
         return getScheduledSessions(today, today);
     }
+
+    public static void deleteScheduledSession(int sessionId) {
+        String sql = "DELETE FROM scheduled_sessions WHERE id = ?";
+        executeUpdates(sql, sessionId);
+    }
+
     //endregion
 
 //region utils

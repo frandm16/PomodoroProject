@@ -6,6 +6,8 @@ import javafx.scene.control.*;
 import javafx.scene.layout.*;
 import javafx.scene.shape.Circle;
 import javafx.stage.Popup;
+
+import javax.xml.crypto.Data;
 import java.time.Duration;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
@@ -281,7 +283,7 @@ public class CalendarView extends VBox {
             btnDelete.getStyleClass().add("button-danger");
             btnDelete.setMaxWidth(Double.MAX_VALUE);
             btnDelete.setOnAction(e -> {
-                DatabaseHandler.markScheduledAsCompleted((int)existingSession.get("id")); // TODO hacer un delete de verdad
+                DatabaseHandler.deleteScheduledSession((int)existingSession.get("id"));
                 popup.hide();
                 refresh();
             });
