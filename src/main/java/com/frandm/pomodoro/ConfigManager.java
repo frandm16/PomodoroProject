@@ -7,7 +7,6 @@ public class ConfigManager {
 
     private static final String FOLDER_NAME = ".StudyTracker";
     private static final String FILE_NAME = "settings.properties";
-
     private static File getConfigFile() {
         String userHome = System.getProperty("user.home");
         File configDir = new File(userHome, FOLDER_NAME);

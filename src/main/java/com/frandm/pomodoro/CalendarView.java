@@ -6,8 +6,7 @@ import javafx.scene.control.*;
 import javafx.scene.layout.*;
 import javafx.scene.shape.Circle;
 import javafx.stage.Popup;
-
-import javax.xml.crypto.Data;
+import org.kordamp.ikonli.javafx.FontIcon;
 import java.time.Duration;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
@@ -42,6 +41,10 @@ public class CalendarView extends VBox {
         header.setPadding(new Insets(10));
 
         MenuButton btnCreate = new MenuButton("Add");
+        FontIcon icon = new FontIcon("mdi2p-plus");
+        icon.getStyleClass().add("calendar-icon");
+        btnCreate.setGraphic(icon);
+        btnCreate.getStyleClass().add("calendar-button-add");
         MenuItem itemSession = new MenuItem("Schedule session");
         itemSession.setOnAction(e -> {
             javafx.geometry.Point2D point = btnCreate.localToScreen(0, btnCreate.getHeight());
@@ -52,12 +55,16 @@ public class CalendarView extends VBox {
         });
         btnCreate.getItems().add(itemSession);
 
-        Button btnPrev = new Button("<");
-        Button btnNext = new Button(">");
+        Button btnPrev = new Button();
+        Button btnNext = new Button();
         Button btnToday = new Button("Today");
-        btnPrev.getStyleClass().add("button-main");
-        btnNext.getStyleClass().add("button-main");
-        btnToday.getStyleClass().add("button-secondary");
+
+        controller.updateIcon(btnPrev, "calendar-icon", "mdi2c-chevron-left", "Previous week");
+        controller.updateIcon(btnNext, "calendar-icon", "mdi2c-chevron-right", "Next week");
+
+        btnPrev.getStyleClass().add("calendar-button-icon");
+        btnNext.getStyleClass().add("calendar-button-icon");
+        btnToday.getStyleClass().add("calendar-button-today");
 
         Label lblMonth = new Label();
         lblMonth.getStyleClass().add("calendar-month-label");

@@ -468,7 +468,7 @@
 }
 
 .calendar-month-label {
-    -fx-text-fill: -color-fg-default;
+    -fx-text-fill: -color-border;
     -fx-font-size: 20px;
     -fx-font-weight: bold;
 }
@@ -553,11 +553,57 @@
     -fx-effect: dropshadow(three-pass-box, rgba(0,0,0,0.3), 20, 0, 0, 10);
 }
 
-.menu-session-item {
+.calendar-icon {
+    -fx-icon-size: 30px;
+    -fx-cursor: hand;
+    -fx-icon-color: -color-border;
+}
+
+.calendar-button-icon{
     -fx-background-color: transparent;
+    -fx-padding: 0;
+
+}
+
+.calendar-button-today {
+    -fx-font-size: 15px;
+    -fx-background-color: -color-border-subtle-light;
+    -fx-background-radius: 25;
+    -fx-border-color: -color-border;
+    -fx-border-radius: 25;
+    -fx-text-fill: -color-border;
+    -fx-padding: 10 20 10 20;
+    -fx-cursor: hand;
+}
+
+.calendar-button-add {
+    -fx-background-color: -bg-panels !important;
+    -fx-background-radius: 15;
+    -fx-cursor: hand;
+    -fx-effect: dropshadow(gaussian, rgba(0, 0, 0, 0.2), 10, 0, 0, 4);
+
+}
+
+.calendar-button-add .label{
+    -fx-text-fill: -color-border;
+    -fx-font-weight: bold;
+}
+
+.calendar-button-add .arrow {
+    -fx-background-color: -color-border;
+}
+
+.calendar-button-add .context-menu {
+    -fx-background-color: -bg-panels;
     -fx-border-color: -color-border-subtle;
-    -fx-border-radius: 10;
+    -fx-border-radius: 5;
     -fx-background-radius: 6;
+}
+.calendar-button-add .menu-item {
+    -fx-background-color: transparent;
+    -fx-cursor: hand;
+    -fx-padding: 8 15;
+    -fx-background-radius: 10;
 }
 
 /* --- summary pane --- */

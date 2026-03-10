@@ -25,7 +25,7 @@ public class SetupManager {
         boolean isQueryEmpty = (input == null || input.trim().isEmpty());
 
         AtomicInteger totalResults = new AtomicInteger(0);
-        int GLOBAL_LIMIT = 20;
+        int GLOBAL_LIMIT = 100;
 
         if (!isQueryEmpty){
             Button createBtn = new Button("+ Create Task: '" + input + "'");

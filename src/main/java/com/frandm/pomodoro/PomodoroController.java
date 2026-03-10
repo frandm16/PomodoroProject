@@ -296,19 +296,15 @@ public class PomodoroController {
 
         if (clickedBtn == menuBtn) {
             uiManager.switchPanels(getActivePanel(), mainContainer);
-            mainScrollPane.setFitToHeight(true);
         } else if (clickedBtn == plannerBtn) {
             calendarView.refresh();
             uiManager.switchPanels(getActivePanel(), plannerContainer);
-            mainScrollPane.setFitToHeight(false);
         } else if (clickedBtn == statsBtn) {
             statsDashboard.refresh();
             uiManager.switchPanels(getActivePanel(), statsContainer);
-            mainScrollPane.setFitToHeight(false);
         } else if (clickedBtn == historyBtn) {
             historyView.refreshTagsGrid();
             uiManager.switchPanels(getActivePanel(), historyContainer);
-            mainScrollPane.setFitToHeight(false);
         }
     }
 
@@ -372,9 +368,9 @@ public class PomodoroController {
 
 
         if (current == PomodoroEngine.State.MENU) {
-            updateIcon(startPauseBtn, setupManager.getSelectedTag() == null ? "mdi2p-plus" : "mdi2p-play",setupManager.getSelectedTag() == null ? "Setup" : "Play");
+            updateIcon(startPauseBtn, "menu-icon", setupManager.getSelectedTag() == null ? "mdi2p-plus" : "mdi2p-play",setupManager.getSelectedTag() == null ? "Setup" : "Play");
         } else {
-            updateIcon(startPauseBtn, current == PomodoroEngine.State.WAITING ? "mdi2p-play" : "mdi2p-pause", current == PomodoroEngine.State.WAITING ? "Play" : "Pause");
+            updateIcon(startPauseBtn, "menu-icon", current == PomodoroEngine.State.WAITING ? "mdi2p-play" : "mdi2p-pause", current == PomodoroEngine.State.WAITING ? "Play" : "Pause");
         }
 
         boolean isMenu = (current == PomodoroEngine.State.MENU);
@@ -435,6 +431,10 @@ public class PomodoroController {
         boolean opening = !settingsPane.isVisible();
         settingsPane.setVisible(opening);
         settingsPane.setManaged(opening);
+
+        updateEngineSettings();
+        ConfigManager.save(engine);
+
     }
 
     private void applyTheme() {
@@ -631,10 +631,10 @@ public class PomodoroController {
         updateStarsUI();
     }
 
-    public void updateIcon(Button button, String iconCode, String tooltipText) {
+    public void updateIcon(Button button, String style, String iconCode, String tooltipText) {
         FontIcon icon = new FontIcon(iconCode);
         icon.setIconSize(24);
-        icon.getStyleClass().add("menu-icon");
+        icon.getStyleClass().add(style);
 
         button.setGraphic(icon);
         button.setText("");
@@ -663,9 +663,11 @@ public class PomodoroController {
     }
 
     public void playScheduleSession(String tag, String task) {
+        if(engine.getCurrentState() != PomodoroEngine.State.MENU) return;
         setupManager.setSelectedTag(tag);
         setupManager.setSelectedTask(task);
         updateActiveTaskDisplay(setupManager.getSelectedTag(), setupManager.getSelectedTask());
+        updateUIFromEngine();
         uiManager.switchPanels(getActivePanel(), mainContainer);
     }
 
