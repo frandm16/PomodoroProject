@@ -242,21 +242,21 @@
                                      fill="transparent"
                                      strokeLineCap="ROUND"
                                      mouseTransparent="true" />
-                                <VBox maxWidth="-Infinity" maxHeight="-Infinity" alignment="CENTER" spacing="40">
+                                <VBox maxWidth="-Infinity" maxHeight="-Infinity" alignment="CENTER">
                                     <VBox  fx:id="timerTextContainer" maxWidth="-Infinity" maxHeight="-Infinity" alignment="CENTER">
                                         <Label fx:id="stateLabel" text="Pomodoro" styleClass="state-label" />
                                         <Label fx:id="timerLabel" text="25:00" styleClass="timer-label"/>
+                                        <Button fx:id="skipBtn" onAction="#handleSkip"
+                                                styleClass="menu-button" alignment="CENTER"
+                                                contentDisplay="GRAPHIC_ONLY" >
+                                            <graphic>
+                                                <FontIcon iconLiteral="mdi2s-skip-next" styleClass="menu-icon" />
+                                            </graphic>
+                                            <tooltip>
+                                                <Tooltip text="Skip" showDelay="250ms" />
+                                            </tooltip>
+                                        </Button>
                                     </VBox>
-                                    <Button fx:id="skipBtn" onAction="#handleSkip"
-                                            styleClass="menu-button" alignment="CENTER"
-                                            contentDisplay="GRAPHIC_ONLY" >
-                                        <graphic>
-                                            <FontIcon iconLiteral="mdi2s-skip-next" styleClass="menu-icon" />
-                                        </graphic>
-                                        <tooltip>
-                                            <Tooltip text="Skip" showDelay="250ms" />
-                                        </tooltip>
-                                    </Button>
                                 </VBox>
 
                             </StackPane>
@@ -420,7 +420,7 @@
                                     <Region HBox.hgrow="ALWAYS"/>
                                     <Label fx:id="circleSizeValLabel" text="25" styleClass="val-label"/>
                                 </HBox>
-                                <Slider fx:id="circleSizeSlider" min="20" max="80" value="50"/>
+                                <Slider fx:id="circleSizeSlider" min="30" max="75" value="50"/>
                             </VBox>
                             <Button onAction="#toggleTheme" text="Toggle Theme (light/dark)" styleClass="reset-button"/>
                         </VBox>

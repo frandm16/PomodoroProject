@@ -132,6 +132,8 @@ public class PomodoroController {
 
         stackpaneCircle.widthProperty().addListener((obs, oldVal, newVal) -> resizeCircle());
         stackpaneCircle.heightProperty().addListener((obs, oldVal, newVal) -> resizeCircle());
+        SIZE_FACTOR=engine.getUiSize()* 0.005;
+        resizeCircle();
 
         NotificationManager.init(notificationContainer);
 
@@ -242,10 +244,12 @@ public class PomodoroController {
             timerTextContainer.setScaleX(scaleFactor);
             timerTextContainer.setScaleY(scaleFactor);
 
+            double relativeScale = scaleButtons / scaleFactor;
+            skipBtn.setScaleX(relativeScale);
+            skipBtn.setScaleY(relativeScale);
+
             startPauseBtn.setScaleX(scaleButtons);
             startPauseBtn.setScaleY(scaleButtons);
-            skipBtn.setScaleX(scaleButtons);
-            skipBtn.setScaleY(scaleButtons);
             finishBtn.setScaleX(scaleButtons);
             finishBtn.setScaleY(scaleButtons);
 
@@ -480,7 +484,7 @@ public class PomodoroController {
 
     private void updateProgressCircle() {
         double remaining = engine.getSecondsRemaining();
-        double total = engine.getTotalSecondsForCurrentState();
+        double total = engine.getTotalSecondsActive();
         double elapsed = total - remaining;
         double ratio = (total > 0) ? (elapsed/total) : 0;
         double angle = ratio * -360;

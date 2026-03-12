@@ -23,6 +23,7 @@ public class PomodoroEngine {
     private int secondsElapsed = 0;
     private int sessionCounter = 0;
     private int timePerSeconds = 1;
+    private int totalSecondsInActiveSession;
 
     private int alarmSoundVolume = 100;
     private int widthStats = 50;
@@ -93,6 +94,7 @@ public class PomodoroEngine {
             if (currentState == State.MENU) {
                 currentState = State.WORK;
                 secondsElapsed = 0;
+                this.totalSecondsInActiveSession = getTotalSecondsForCurrentState();
             } else {
                 currentState = lastActiveState;
             }
@@ -192,6 +194,9 @@ public class PomodoroEngine {
             case LONG_BREAK -> longMins * 60;
             default -> workMins * 60;
         };
+    }
+    public int getTotalSecondsActive() {
+        return totalSecondsInActiveSession > 0 ? totalSecondsInActiveSession : getTotalSecondsForCurrentState();
     }
     public int getSecondsRemaining() {
         return secondsRemaining;
