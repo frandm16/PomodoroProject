@@ -246,28 +246,26 @@
                                     <VBox  fx:id="timerTextContainer" maxWidth="-Infinity" maxHeight="-Infinity" alignment="CENTER">
                                         <Label fx:id="stateLabel" text="Pomodoro" styleClass="state-label" />
                                         <Label fx:id="timerLabel" text="25:00" styleClass="timer-label"/>
-                                        <Button fx:id="skipBtn" onAction="#handleSkip"
-                                                styleClass="menu-button" alignment="CENTER"
-                                                contentDisplay="GRAPHIC_ONLY" >
-                                            <graphic>
-                                                <FontIcon iconLiteral="mdi2s-skip-next" styleClass="menu-icon" />
-                                            </graphic>
-                                            <tooltip>
-                                                <Tooltip text="Skip" showDelay="250ms" />
-                                            </tooltip>
-                                        </Button>
                                     </VBox>
                                 </VBox>
 
                             </StackPane>
-                            <HBox alignment="CENTER" >
+                            <HBox alignment="CENTER" fx:id="buttonsHbox" >
 
                                 <Button fx:id="startPauseBtn" onAction="#handleMainAction"
                                         styleClass="menu-button" alignment="CENTER"
                                         contentDisplay="GRAPHIC_ONLY" >
                                 </Button>
-
-
+                                <Button fx:id="skipBtn" onAction="#handleSkip"
+                                        styleClass="menu-button" alignment="CENTER"
+                                        contentDisplay="GRAPHIC_ONLY" >
+                                    <graphic>
+                                        <FontIcon iconLiteral="mdi2s-skip-next" styleClass="menu-icon" />
+                                    </graphic>
+                                    <tooltip>
+                                        <Tooltip text="Skip" showDelay="250ms" />
+                                    </tooltip>
+                                </Button>
                                 <Button fx:id="finishBtn" onAction="#handleFinish"
                                         styleClass="menu-button" alignment="CENTER"
                                         contentDisplay="GRAPHIC_ONLY" >
@@ -397,6 +395,20 @@
                                     <Label text="Count Break Time" HBox.hgrow="ALWAYS" maxWidth="Infinity"/>
                                     <ToggleButton fx:id="countBreakTime" text="OFF" styleClass="toggle-sidebar"/>
                                 </HBox>
+                            </VBox>
+
+                            <VBox spacing="10">
+                                <Label text="Timer Mode" />
+                                <ComboBox fx:id="modeComboBox" maxWidth="Infinity" />
+                            </VBox>
+
+                            <VBox spacing="5">
+                                <HBox alignment="CENTER_LEFT">
+                                    <Label text="Countdown Timer" />
+                                    <Pane HBox.hgrow="ALWAYS" />
+                                    <Label fx:id="countdownValLabel" text="10" styleClass="val-label" />
+                                </HBox>
+                                <Slider fx:id="countdownSlider" min="1" max="180" />
                             </VBox>
                         </VBox>
                     </ScrollPane>
