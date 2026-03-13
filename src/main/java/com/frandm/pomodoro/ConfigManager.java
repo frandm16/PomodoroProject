@@ -34,6 +34,8 @@ public class ConfigManager {
         props.setProperty("alarmSoundVolume", String.valueOf(engine.getAlarmSoundVolume()));
         props.setProperty("widthStats", String.valueOf(engine.getWidthStats()));
         props.setProperty("uiSizeFactor", String.valueOf(engine.getUiSize()));
+        props.setProperty("currentMode", engine.getCurrentMode().name());
+        props.setProperty("countdownMins", String.valueOf(engine.getCountdownMins()));
 
         File configFile = getConfigFile();
 
@@ -66,7 +68,9 @@ public class ConfigManager {
                     Boolean.parseBoolean(props.getProperty("countBreaks", String.valueOf(engine.isCountBreakTime()))),
                     Integer.parseInt(props.getProperty("alarmSoundVolume", String.valueOf(engine.getAlarmSoundVolume()))),
                     Integer.parseInt(props.getProperty("widthStats", String.valueOf(engine.getWidthStats()))),
-                    Integer.parseInt(props.getProperty("uiSizeFactor", String.valueOf(engine.getUiSize())))
+                    Integer.parseInt(props.getProperty("uiSizeFactor", String.valueOf(engine.getUiSize()))),
+                    PomodoroEngine.Mode.valueOf(props.getProperty("currentMode", String.valueOf(engine.getCurrentMode()))),
+                    Integer.parseInt(props.getProperty("countdownMins", String.valueOf(engine.getCountdownMins())))
             );
         } catch (IOException | NumberFormatException e) {
             System.err.println("Error loading config file: " + e.getMessage());
