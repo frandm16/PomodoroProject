@@ -101,14 +101,17 @@ public class SoundManager {
 
             Timeline fadeOut = new Timeline(
                     new KeyFrame(Duration.millis(50), e -> {
-                        double newVol = musicPlayer.getVolume() - volumeStep;
-                        if (newVol <= 0) {
-                            musicPlayer.stop();
-                            musicPlayer.dispose();
-                            musicPlayer = null;
-                        } else {
-                            musicPlayer.setVolume(newVol);
+                        if(musicPlayer != null) {
+                            double newVol = musicPlayer.getVolume() - volumeStep;
+                            if (newVol <= 0) {
+                                musicPlayer.stop();
+                                musicPlayer.dispose();
+                                musicPlayer = null;
+                            } else {
+                                musicPlayer.setVolume(newVol);
+                            }
                         }
+
                     })
             );
 
