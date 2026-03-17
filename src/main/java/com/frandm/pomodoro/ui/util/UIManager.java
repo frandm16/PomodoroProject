@@ -5,7 +5,6 @@ import javafx.animation.*;
 import javafx.beans.property.SimpleObjectProperty;
 import javafx.scene.control.Button;
 import javafx.scene.layout.*;
-import javafx.scene.media.AudioClip;
 import javafx.scene.paint.Color;
 import javafx.scene.paint.Paint;
 import javafx.scene.shape.Circle;
@@ -32,19 +31,6 @@ public class UIManager {
             in.play();
         });
         out.play();
-    }
-
-    public void playAlarmSound(int volumePercent) {
-        try {
-            URL url = getClass().getResource("sounds/birds.mp3");
-            if (url != null) {
-                AudioClip clip = new AudioClip(url.toExternalForm());
-                clip.setVolume((double) volumePercent / 100);
-                clip.play();
-            }
-        } catch (Exception e) {
-            System.err.println("Error UIManager.playAlarmSound: " + e.getMessage());
-        }
     }
 
     public void animateCircleColor(Circle circle, String cssVar) {

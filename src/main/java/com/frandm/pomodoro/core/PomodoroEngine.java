@@ -32,7 +32,11 @@ public class PomodoroEngine {
     private final int timePerSeconds = 102;
     private int totalSecondsInActiveSession;
 
-    private int alarmSoundVolume = 100;
+    private int masterVolume = 100;
+    private int alarmVolume = 100;
+    private int notificationVolume = 100;
+    private int backgroundMusicVolume = 100;
+
     private int widthStats = 50;
     private int uiSize = 55;
 
@@ -90,7 +94,7 @@ public class PomodoroEngine {
         if (onTick != null) onTick.run();
         if (onStateChange != null) onStateChange.run();
     }
-    public void updateSettings(int w, int s, int l, int i, boolean aBreak, boolean aPomo, boolean cBreak, int alarmVolume, int inWidthStats, int uiSize, Mode mode, int countdownMins) {
+    public void updateSettings(int w, int s, int l, int i, boolean aBreak, boolean aPomo, boolean cBreak, int masterVolume, int alarmVolume, int notificationVolume, int backgroundMusicVolume, int inWidthStats, int uiSize, Mode mode, int countdownMins) {
         this.workMins = w;
         this.shortMins = s;
         this.longMins = l;
@@ -98,10 +102,14 @@ public class PomodoroEngine {
         this.autoStartBreaks = aBreak;
         this.autoStartPomodoros = aPomo;
         this.countBreakTime = cBreak;
-        this.alarmSoundVolume = alarmVolume;
         this.widthStats = inWidthStats;
         this.uiSize = uiSize;
         this.CountdownMins = countdownMins;
+
+        this.alarmVolume = alarmVolume;
+        this.masterVolume = masterVolume;
+        this.notificationVolume = notificationVolume;
+        this.backgroundMusicVolume = backgroundMusicVolume;
 
         if (currentState == State.MENU) {
             setMode(mode);
@@ -193,7 +201,6 @@ public class PomodoroEngine {
     public void setOnTick(Runnable r) { this.onTick = r; }
     public void setOnStateChange(Runnable r) { this.onStateChange = r; }
     public void setOnTimerFinished(Runnable r) {this.onTimerFinished = r;}
-    public void setAlarmSoundVolume(int alarmSoundVolume) {this.alarmSoundVolume = alarmSoundVolume;}
     public void setWidthStats(int widthStats) {this.widthStats = widthStats;}
     public void setUiSize(int uiSize) { this.uiSize = uiSize; }
     public void setMode(Mode mode) {
@@ -224,6 +231,11 @@ public class PomodoroEngine {
             if (onTick != null) onTick.run();
         }
     }
+
+    public void setMasterVolume(int masterVolume) {this.masterVolume = masterVolume;}
+    public void setAlarmVolume(int alarmVolume) {this.alarmVolume = alarmVolume;}
+    public void setNotificationVolume(int notificationVolume) {this.notificationVolume = notificationVolume;}
+    public void setBackgroundMusicVolume(int backgroundMusicVolume) {this.backgroundMusicVolume = backgroundMusicVolume;}
     //endregion
 
     //region Getters
@@ -268,10 +280,14 @@ public class PomodoroEngine {
     public int getSecondsRemaining() {
         return secondsRemaining;
     }
-    public int getAlarmSoundVolume() {return alarmSoundVolume;}
     public int getWidthStats() {return widthStats;}
     public int getUiSize() { return uiSize; }
     public int getCountdownMins() { return CountdownMins; }
     public Mode getCurrentMode() { return currentMode; }
+
+    public int getMasterVolume() {return masterVolume;}
+    public int getAlarmVolume() {return alarmVolume;}
+    public int getNotificationVolume() {return notificationVolume;}
+    public int getBackgroundMusicVolume() {return backgroundMusicVolume;}
     //endregion
 }

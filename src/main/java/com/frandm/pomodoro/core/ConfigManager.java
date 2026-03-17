@@ -31,7 +31,10 @@ public class ConfigManager {
         props.setProperty("autoBreak", String.valueOf(engine.isAutoStartBreaks()));
         props.setProperty("autoPomo", String.valueOf(engine.isAutoStartPomo()));
         props.setProperty("countBreaks", String.valueOf(engine.isCountBreakTime()));
-        props.setProperty("alarmSoundVolume", String.valueOf(engine.getAlarmSoundVolume()));
+        props.setProperty("masterVolume", String.valueOf(engine.getMasterVolume()));
+        props.setProperty("alarmVolume", String.valueOf(engine.getAlarmVolume()));
+        props.setProperty("notificationVolume", String.valueOf(engine.getNotificationVolume()));
+        props.setProperty("backgroundMusicVolume", String.valueOf(engine.getBackgroundMusicVolume()));
         props.setProperty("widthStats", String.valueOf(engine.getWidthStats()));
         props.setProperty("uiSizeFactor", String.valueOf(engine.getUiSize()));
         props.setProperty("currentMode", engine.getCurrentMode().name());
@@ -65,7 +68,10 @@ public class ConfigManager {
                     Boolean.parseBoolean(props.getProperty("autoBreak", String.valueOf(engine.isAutoStartBreaks()))),
                     Boolean.parseBoolean(props.getProperty("autoPomo", String.valueOf(engine.isAutoStartPomo()))),
                     Boolean.parseBoolean(props.getProperty("countBreaks", String.valueOf(engine.isCountBreakTime()))),
-                    Integer.parseInt(props.getProperty("alarmSoundVolume", String.valueOf(engine.getAlarmSoundVolume()))),
+                    Integer.parseInt(props.getProperty("masterVolume", String.valueOf(engine.getMasterVolume()))),
+                    Integer.parseInt(props.getProperty("alarmVolume", String.valueOf(engine.getAlarmVolume()))),
+                    Integer.parseInt(props.getProperty("notificationVolume", String.valueOf(engine.getNotificationVolume()))),
+                    Integer.parseInt(props.getProperty("backgroundMusicVolume", String.valueOf(engine.getBackgroundMusicVolume()))),
                     Integer.parseInt(props.getProperty("widthStats", String.valueOf(engine.getWidthStats()))),
                     Integer.parseInt(props.getProperty("uiSizeFactor", String.valueOf(engine.getUiSize()))),
                     PomodoroEngine.Mode.valueOf(props.getProperty("currentMode", String.valueOf(engine.getCurrentMode()))),

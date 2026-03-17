@@ -29,6 +29,7 @@
                 <ColumnConstraints hgrow="ALWAYS" halignment="CENTER" />
                 <ColumnConstraints hgrow="SOMETIMES" minWidth="150.0" halignment="RIGHT" />
             </columnConstraints>
+            <Button fx:id="musicBtn" text="Music Test" onAction="#handleMusicToggle" styleClass="title-button" />
 
             <HBox spacing="10" GridPane.columnIndex="1" alignment="CENTER">
                 <Button fx:id="menuBtn" text="Timer" onAction="#handleNavClick" styleClass="title-button, active" />
@@ -449,11 +450,35 @@
                             <Label text="Sound Settings" styleClass="section-label"/>
                             <VBox spacing="8">
                                 <HBox alignment="CENTER_LEFT">
+                                    <Label text="Master Volume"/>
+                                    <Region HBox.hgrow="ALWAYS"/>
+                                    <Label fx:id="masterVolumeLabel" text="100%" styleClass="val-label"/>
+                                </HBox>
+                                <Slider fx:id="masterVolumeSlider"/>
+                            </VBox>
+                            <VBox spacing="8">
+                                <HBox alignment="CENTER_LEFT">
                                     <Label text="Alarm Volume"/>
                                     <Region HBox.hgrow="ALWAYS"/>
                                     <Label fx:id="alarmVolumeValLabel" text="100%" styleClass="val-label"/>
                                 </HBox>
                                 <Slider fx:id="alarmVolumeSlider"/>
+                            </VBox>
+                            <VBox spacing="8">
+                                <HBox alignment="CENTER_LEFT">
+                                    <Label text="Notification Volume"/>
+                                    <Region HBox.hgrow="ALWAYS"/>
+                                    <Label fx:id="notificationVolumeLabel" text="100%" styleClass="val-label"/>
+                                </HBox>
+                                <Slider fx:id="notificationVolumeSlider"/>
+                            </VBox>
+                            <VBox spacing="8">
+                                <HBox alignment="CENTER_LEFT">
+                                    <Label text="Background Music"/>
+                                    <Region HBox.hgrow="ALWAYS"/>
+                                    <Label fx:id="backgroundMusicVolumeLabel" text="100%" styleClass="val-label"/>
+                                </HBox>
+                                <Slider fx:id="backgroundMusicVolumeSlider"/>
                             </VBox>
                         </VBox>
                     </ScrollPane>

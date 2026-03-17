@@ -104,6 +104,7 @@ public class NotificationManager {
 
         container.getChildren().addFirst(toastRoot);
         updateContainerTransparency();
+        SoundManager.play(SoundManager.SoundType.NOTIFICATION);
         slideIn.play();
         progressTimeline.play();
         delay.play();

@@ -68,6 +68,13 @@ public class PomodoroController {
     private final PomodoroEngine engine = new PomodoroEngine();
     private final SetupManager setupManager = new SetupManager(this);
     private final UIManager uiManager = new UIManager();
+    public Slider notificationVolumeSlider;
+    public Label notificationVolumeLabel;
+    public Slider masterVolumeSlider;
+    public Label masterVolumeLabel;
+    public Slider backgroundMusicVolumeSlider;
+    public Label backgroundMusicVolumeLabel;
+    public Button musicBtn;
 
     private StatsDashboard statsDashboard;
     private PlannerView plannerView;
@@ -145,18 +152,28 @@ public class PomodoroController {
     }
 
     private void setupSettingsPanel() {
-        setupSlider(workSlider, workValLabel, engine.getWorkMins(), engine::setWorkMins, "");
-        setupSlider(shortSlider, shortValLabel, engine.getShortMins(), engine::setShortMins, "");
-        setupSlider(longSlider, longValLabel, engine.getLongMins(), engine::setLongMins, "");
-        setupSlider(intervalSlider, intervalValLabel, engine.getInterval(), engine::setInterval, "");
-        setupSlider(alarmVolumeSlider, alarmVolumeValLabel, engine.getAlarmSoundVolume(), engine::setAlarmSoundVolume, "%");
-        setupSlider(widthSlider, widthSliderValLabel, engine.getWidthStats(), engine::setWidthStats, "%");
-        setupSlider(countdownSlider, countdownValLabel, engine.getCountdownMins(), engine::setCountdownMins, "");
+        setupSlider(workSlider, workValLabel, engine.getWorkMins(), engine::setWorkMins, " min");
+        setupSlider(shortSlider, shortValLabel, engine.getShortMins(), engine::setShortMins, " min");
+        setupSlider(longSlider, longValLabel, engine.getLongMins(), engine::setLongMins, " min");
+        setupSlider(intervalSlider, intervalValLabel, engine.getInterval(), engine::setInterval, " min");
+        setupSlider(masterVolumeSlider, masterVolumeLabel, engine.getMasterVolume(), (newVolume) -> {
+            engine.setMasterVolume(newVolume);
+            SoundManager.updateMusicVolume();
+        }, " %");
+        setupSlider(alarmVolumeSlider, alarmVolumeValLabel, engine.getAlarmVolume(), engine::setAlarmVolume, " %");
+        setupSlider(notificationVolumeSlider, notificationVolumeLabel, engine.getNotificationVolume(), engine::setNotificationVolume, " %");
+        setupSlider(backgroundMusicVolumeSlider, backgroundMusicVolumeLabel, engine.getBackgroundMusicVolume(), (newVolume) -> {
+            engine.setBackgroundMusicVolume(newVolume);
+            SoundManager.updateMusicVolume();
+        }, " %");
+        setupSlider(widthSlider, widthSliderValLabel, engine.getWidthStats(), engine::setWidthStats, " %");
+        setupSlider(countdownSlider, countdownValLabel, engine.getCountdownMins(), engine::setCountdownMins, " min");
         setupSlider(circleSizeSlider, circleSizeValLabel, engine.getUiSize(), (newVal) -> {
             engine.setUiSize(newVal);
             SIZE_FACTOR = newVal * 0.005;
             resizeCircle();
-        }, "%");
+        }, " %");
+        SoundManager.setEngine(engine);
 
         autoBreakToggle.setSelected(engine.isAutoStartBreaks());
         autoPomoToggle.setSelected(engine.isAutoStartPomo());
@@ -223,7 +240,7 @@ public class PomodoroController {
         }));
 
         engine.setOnTimerFinished(() -> Platform.runLater(() -> {
-            uiManager.playAlarmSound(engine.getAlarmSoundVolume());
+            SoundManager.play(SoundManager.SoundType.ALARM);
             if (engine.getCurrentMode() == PomodoroEngine.Mode.COUNTDOWN) {
                 handleFinish();
             }
@@ -275,7 +292,10 @@ public class PomodoroController {
                 autoBreakToggle.isSelected(),
                 autoPomoToggle.isSelected(),
                 countBreakTime.isSelected(),
+                (int)masterVolumeSlider.getValue(),
                 (int)alarmVolumeSlider.getValue(),
+                (int)notificationVolumeSlider.getValue(),
+                (int)backgroundMusicVolumeSlider.getValue(),
                 (int)widthSlider.getValue(),
                 (int)circleSizeSlider.getValue(),
                 engine.getCurrentMode(),
@@ -837,6 +857,11 @@ public class PomodoroController {
         pomoModeBtn.setDisable(false);
         timerModeBtn.setDisable(false);
         countdownModeBtn.setDisable(false);
+    }
+
+    @FXML
+    private void handleMusicToggle() {
+        SoundManager.toggleMusic(SoundManager.SoundType.BACKGROUND_MUSIC);
     }
     //endregion
 
