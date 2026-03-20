@@ -1,5 +1,6 @@
 package com.frandm.studytracker.core;
 
+import com.frandm.studytracker.client.ApiClient;
 import com.frandm.studytracker.controllers.PomodoroController;
 import javafx.geometry.Pos;
 import javafx.scene.control.*;
@@ -35,7 +36,11 @@ public class SetupManager {
             createBtn.setMaxWidth(Double.MAX_VALUE);
             if(filterTag != null){
                 createBtn.setOnAction(e -> {
-                    DatabaseHandler.getOrCreateTask(filterTag, colors.getOrDefault(filterTag, "#ffffff"), input);
+                    try {
+                        ApiClient.getOrCreateTask(filterTag, colors.getOrDefault(filterTag, "#ffffff"), input);
+                    } catch (Exception err) {
+                        System.err.println("Error creating task: " + err.getMessage());
+                    }
                     selectedTask = input;
                     selectedTag = filterTag;
                     controller.refreshDatabaseData();

@@ -1,5 +1,6 @@
 package com.frandm.studytracker.ui.views.logs;
 
+import com.frandm.studytracker.client.ApiClient;
 import com.frandm.studytracker.models.Session;
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;
@@ -10,7 +11,9 @@ import org.kordamp.ikonli.javafx.FontIcon;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
+import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 
 public class HistoryTab extends VBox {
     private final LogsController logsController;
@@ -94,13 +97,21 @@ public class HistoryTab extends VBox {
     private void updateTaskFilterCombo(String tagName) {
         taskFilterCombo.getItems().clear();
         taskFilterCombo.getItems().add("All Tasks");
-        taskFilterCombo.getItems().addAll(DatabaseHandler.getTasksByTag(tagName));
+        try {
+            ApiClient.getTasksByTag(tagName).forEach(t -> taskFilterCombo.getItems().add((String) t.get("name")));
+        } catch (Exception e) {
+            System.err.println("Error loading tasks: " + e.getMessage());
+        }
     }
 
     private void refreshFilters() {
         tagFilterCombo.getItems().clear();
         tagFilterCombo.getItems().add("All Tags");
-        tagFilterCombo.getItems().addAll(DatabaseHandler.getTagColors().keySet());
+        try {
+            ApiClient.getTags().forEach(t -> tagFilterCombo.getItems().add((String) t.get("name")));
+        } catch (Exception e) {
+            System.err.println("Error loading tags: " + e.getMessage());
+        }
     }
 
     public void resetAndReload() {
@@ -114,7 +125,29 @@ public class HistoryTab extends VBox {
     }
 
     private void loadMore() {
-        List<Session> sessions = DatabaseHandler.getFilteredSessions(currentTag, currentTask, PAGE_SIZE, currentOffset);
+        List<Session> sessions;
+        try {
+            Map<String, Object> result = ApiClient.getSessions(currentTag, currentTask, currentOffset / PAGE_SIZE);
+            List<Map<String, Object>> content = (List<Map<String, Object>>) result.get("content");
+            sessions = content.stream().map(m -> {
+                Session s = new Session(
+                        ((Number) m.get("id")).intValue(),
+                        (String) m.get("tag"),
+                        (String) m.get("tagColor"),
+                        (String) m.get("task"),
+                        (String) m.get("title"),
+                        (String) m.get("description"),
+                        ((Number) m.get("totalMinutes")).intValue(),
+                        (String) m.get("startDate"),
+                        (String) m.get("endDate")
+                );
+                if (m.get("rating") != null) s.setRating(((Number) m.get("rating")).intValue());
+                return s;
+            }).collect(java.util.stream.Collectors.toList());
+        } catch (Exception e) {
+            System.err.println("Error loading sessions: " + e.getMessage());
+            sessions = new ArrayList<>();
+        }
         LocalDate today = LocalDate.now();
 
         if (currentOffset == 0) {

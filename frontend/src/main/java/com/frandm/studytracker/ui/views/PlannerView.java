@@ -1,5 +1,6 @@
 package com.frandm.studytracker.ui.views;
 
+import com.frandm.studytracker.client.ApiClient;
 import com.frandm.studytracker.controllers.PomodoroController;
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;
@@ -234,7 +235,22 @@ public class PlannerView extends VBox {
         comboTags.setMaxWidth(Double.MAX_VALUE);
         comboTasks.setMaxWidth(Double.MAX_VALUE);
 
-        Map<String, List<String>> tagTasksMap = DatabaseHandler.getTagsWithTasksMap();
+        final Map<String, List<String>> tagTasksMap = new java.util.LinkedHashMap<>();
+        try {
+            ApiClient.getTags().forEach(t -> {
+                String tagName = (String) t.get("name");
+                try {
+                    List<String> tasks = ApiClient.getTasksByTag(tagName).stream()
+                            .map(task -> (String) task.get("name"))
+                            .collect(java.util.stream.Collectors.toList());
+                    tagTasksMap.put(tagName, tasks);
+                } catch (Exception e) {
+                    tagTasksMap.put(tagName, new ArrayList<>());
+                }
+            });
+        } catch (Exception e) {
+            System.err.println("Error loading tags: " + e.getMessage());
+        }
         comboTags.getItems().addAll(tagTasksMap.keySet());
 
         comboTags.setOnAction(_ -> {
@@ -286,9 +302,29 @@ public class PlannerView extends VBox {
             if (sessionTitle.isEmpty()) sessionTitle = "";
 
             if (existingSession == null) {
-                DatabaseHandler.saveScheduledSession(comboTags.getValue(), comboTasks.getValue(), sessionTitle , finalStart, finalEnd);
+                try {
+                    ApiClient.saveScheduledSession(
+                            comboTags.getValue(),
+                            comboTasks.getValue(),
+                            sessionTitle,
+                            finalStart.toString(),
+                            finalEnd.toString()
+                    );
+                } catch (Exception e) {
+                    System.err.println("Error saving scheduled session: " + e.getMessage());
+                }
             } else {
-                DatabaseHandler.updateScheduledSession((int)existingSession.get("id"), comboTasks.getValue(), comboTags.getValue(), finalStart, finalEnd);
+                try {
+                    ApiClient.updateScheduledSession(
+                            (int) existingSession.get("id"),
+                            comboTags.getValue(),
+                            comboTasks.getValue(),
+                            finalStart.toString(),
+                            finalEnd.toString()
+                    );
+                } catch (Exception e) {
+                    System.err.println("Error updating scheduled session: " + e.getMessage());
+                }
             }
             popup.hide();
             refresh();
@@ -309,7 +345,11 @@ public class PlannerView extends VBox {
             btnDelete.getStyleClass().add("button-danger");
             btnDelete.setMaxWidth(Double.MAX_VALUE);
             btnDelete.setOnAction(_ -> {
-                DatabaseHandler.deleteScheduledSession((int)existingSession.get("id"));
+                try {
+                    ApiClient.deleteScheduledSession((int) existingSession.get("id"));
+                } catch (Exception e) {
+                    System.err.println("Error deleting scheduled session: " + e.getMessage());
+                }
                 popup.hide();
                 refresh();
             });
@@ -342,7 +382,16 @@ public class PlannerView extends VBox {
     }
 
     private void drawContent() {
-        List<Map<String, Object>> sessions = DatabaseHandler.getScheduledSessions(currentWeekStart, currentWeekStart.plusDays(6));
+        List<Map<String, Object>> sessions;
+        try {
+            sessions = ApiClient.getScheduledSessions(
+                    currentWeekStart.atStartOfDay().toString(),
+                    currentWeekStart.plusDays(6).atTime(23, 59, 59).toString()
+            );
+        } catch (Exception e) {
+            System.err.println("Error loading scheduled sessions: " + e.getMessage());
+            sessions = new ArrayList<>();
+        }
 
         Map<Integer, List<Map<String, Object>>> dayMap = new HashMap<>();
         for (Map<String, Object> s : sessions) {

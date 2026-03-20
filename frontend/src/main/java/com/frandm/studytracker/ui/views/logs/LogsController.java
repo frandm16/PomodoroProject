@@ -1,5 +1,6 @@
 package com.frandm.studytracker.ui.views.logs;
 
+import com.frandm.studytracker.client.ApiClient;
 import com.frandm.studytracker.controllers.PomodoroController;
 import com.frandm.studytracker.models.Session;
 import com.frandm.studytracker.core.NotificationManager;
@@ -36,7 +37,11 @@ public class LogsController {
 
     public void executeDeletion() {
         if (sessionToDelete != null) {
-            DatabaseHandler.deleteSession(sessionToDelete.getId());
+            try {
+                ApiClient.deleteSession(sessionToDelete.getId());
+            } catch (Exception e) {
+                System.err.println("Error deleting session: " + e.getMessage());
+            }
             refreshAll();
             sessionToDelete = null;
             NotificationManager.show("Session Deleted", "Success", NotificationManager.NotificationType.SUCCESS);
@@ -55,7 +60,11 @@ public class LogsController {
         title.setText(sessionToEdit.getTitle());
         desc.setText(sessionToEdit.getDescription());
 
-        tagCombo.getItems().setAll(DatabaseHandler.getTagColors().keySet());
+        try {
+            ApiClient.getTags().forEach(t -> tagCombo.getItems().add((String) t.get("name")));
+        } catch (Exception e) {
+            System.err.println("Error loading tags: " + e.getMessage());
+        }
         tagCombo.setValue(sessionToEdit.getTag());
 
         updateTaskCombo(taskCombo, sessionToEdit.getTag());
@@ -73,7 +82,11 @@ public class LogsController {
     }
 
     private void updateTaskCombo(ComboBox<String> taskCombo, String tagName) {
-        taskCombo.getItems().setAll(DatabaseHandler.getTasksByTag(tagName));
+        try {
+            ApiClient.getTasksByTag(tagName).forEach(t -> taskCombo.getItems().add((String) t.get("name")));
+        } catch (Exception e) {
+            System.err.println("Error loading tasks: " + e.getMessage());
+        }
     }
 
     public void handleStarClick(int rating, List<FontIcon> starNodes) {
@@ -110,8 +123,16 @@ public class LogsController {
 
     public void saveEdit(String title, String desc, String tagName, String taskName) {
         if (sessionToEdit != null) {
-            int taskId = DatabaseHandler.getOrCreateTask(tagName, DatabaseHandler.getTagColors().get(tagName), taskName);
-            DatabaseHandler.updateSessionEdit(sessionToEdit.getId(), taskId, title, desc, editRating);
+            try {
+                ApiClient.updateSession(
+                        sessionToEdit.getId(),
+                        title,
+                        desc,
+                        editRating
+                );
+            } catch (Exception e) {
+                System.err.println("Error updating session: " + e.getMessage());
+            }
             refreshAll();
             sessionToEdit = null;
             NotificationManager.show("Success", "Session updated", NotificationManager.NotificationType.SUCCESS);

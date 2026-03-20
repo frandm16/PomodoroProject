@@ -1,5 +1,6 @@
 package com.frandm.studytracker.ui.views.logs;
 
+import com.frandm.studytracker.client.ApiClient;
 import com.frandm.studytracker.models.Session;
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;
@@ -145,7 +146,16 @@ public class CalendarTab extends VBox {
     }
 
     private void drawContent() {
-        List<Map<String, Object>> sessions = DatabaseHandler.getCompletedSessionsForCalendar(currentWeekStart, currentWeekStart.plusDays(6));
+        List<Map<String, Object>> sessions;
+        try {
+            sessions = ApiClient.getSessionsByRange(
+                    currentWeekStart.atStartOfDay().toString(),
+                    currentWeekStart.plusDays(6).atTime(23, 59, 59).toString()
+            );
+        } catch (Exception e) {
+            System.err.println("Error loading calendar sessions: " + e.getMessage());
+            sessions = new ArrayList<>();
+        }
         Map<Integer, List<Map<String, Object>>> dayMap = new HashMap<>();
 
         for (Map<String, Object> s : sessions) {

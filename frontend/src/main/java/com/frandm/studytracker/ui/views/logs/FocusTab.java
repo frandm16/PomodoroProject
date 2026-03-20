@@ -1,5 +1,6 @@
 package com.frandm.studytracker.ui.views.logs;
 
+import com.frandm.studytracker.client.ApiClient;
 import javafx.geometry.Pos;
 import javafx.scene.control.Button;
 import javafx.scene.control.Label;
@@ -8,6 +9,8 @@ import javafx.scene.control.Tooltip;
 import javafx.scene.layout.*;
 import javafx.util.Duration;
 import org.kordamp.ikonli.javafx.FontIcon;
+
+import java.util.LinkedHashMap;
 import java.util.Map;
 
 public class FocusTab extends StackPane {
@@ -67,7 +70,16 @@ public class FocusTab extends StackPane {
         detailRoot.setVisible(true);
         detailRoot.setManaged(true);
         detailTitleLabel.setText(tagName);
-        String color = DatabaseHandler.getTagColors().getOrDefault(tagName, "#ffffff");
+        String color;
+        try {
+            color = ApiClient.getTags().stream()
+                    .filter(t -> tagName.equals(t.get("name")))
+                    .map(t -> (String) t.get("color"))
+                    .findFirst()
+                    .orElse("#ffffff");
+        } catch (Exception e) {
+            color = "#ffffff";
+        }
         detailTitleLabel.setStyle("-fx-text-fill: " + color + ";");
         loadTagSummary(tagName);
     }
@@ -83,7 +95,19 @@ public class FocusTab extends StackPane {
             grid.getColumnConstraints().add(colConst);
         }
 
-        Map<String, String> updatedTags = DatabaseHandler.getTagColors();
+        Map<String, String> updatedTags;
+        try {
+            updatedTags = ApiClient.getTags().stream()
+                    .collect(java.util.stream.Collectors.toMap(
+                            t -> (String) t.get("name"),
+                            t -> (String) t.get("color"),
+                            (a, b) -> a,
+                            java.util.LinkedHashMap::new
+                    ));
+        } catch (Exception e) {
+            System.err.println("Error loading tags: " + e.getMessage());
+            updatedTags = new LinkedHashMap<>();
+        }
         int col = 0, row = 0;
         for (Map.Entry<String, String> entry : updatedTags.entrySet()) {
             grid.add(createTagCard(entry.getKey(), entry.getValue()), col++, row);
@@ -118,7 +142,13 @@ public class FocusTab extends StackPane {
 
     private void loadTagSummary(String tagName) {
         tasksSummaryContainer.getChildren().clear();
-        Map<String, Integer> summary = DatabaseHandler.getTaskSummaryByTag(tagName);
+        Map<String, Integer> summary;
+        try {
+            summary = ApiClient.getSummaryByTag(tagName);
+        } catch (Exception e) {
+            System.err.println("Error loading summary: " + e.getMessage());
+            summary = new LinkedHashMap<>();
+        }
 
         if (summary.isEmpty()) {
             Label emptyLabel = new Label("No tasks found for this tag");

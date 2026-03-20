@@ -1,5 +1,6 @@
 package com.frandm.studytracker.ui.views;
 
+import com.frandm.studytracker.client.ApiClient;
 import com.frandm.studytracker.models.Session;
 import javafx.collections.ObservableList;
 import javafx.geometry.HPos;
@@ -45,8 +46,42 @@ public class StatsDashboard {
     }
 
     public void refresh() {
-        ObservableList<Session> sessions = DatabaseHandler.getAllSessions();
-        Map<LocalDate, Integer> heatmapData = DatabaseHandler.getMinutesPerDayLastYear();
+        ObservableList<Session> sessions;
+        try {
+            sessions = javafx.collections.FXCollections.observableArrayList(
+                    ApiClient.getAllSessions().stream().map(m -> {
+                        Session s = new Session(
+                                ((Number) m.get("id")).intValue(),
+                                (String) ((Map<?,?>)m.get("task")).get("tag") != null ?
+                                        (String)((Map<?,?>)((Map<?,?>)m.get("task")).get("tag")).get("name") : "",
+                                (String) ((Map<?,?>)m.get("task")).get("tag") != null ?
+                                        (String)((Map<?,?>)((Map<?,?>)m.get("task")).get("tag")).get("color") : "#ffffff",
+                                (String) ((Map<?,?>)m.get("task")).get("name"),
+                                (String) m.get("title"),
+                                (String) m.get("description"),
+                                ((Number) m.get("totalMinutes")).intValue(),
+                                m.get("startDate") != null ? m.get("startDate").toString() : null,
+                                m.get("endDate") != null ? m.get("endDate").toString() : null
+                        );
+                        if (m.get("rating") != null) s.setRating(((Number) m.get("rating")).intValue());
+                        return s;
+                    }).collect(java.util.stream.Collectors.toList())
+            );
+        } catch (Exception e) {
+            System.err.println("Error loading sessions: " + e.getMessage());
+            sessions = javafx.collections.FXCollections.observableArrayList();
+        }
+        Map<LocalDate, Integer> heatmapData;
+        try {
+            heatmapData = ApiClient.getHeatmap().entrySet().stream()
+                    .collect(java.util.stream.Collectors.toMap(
+                            e -> LocalDate.parse(e.getKey()),
+                            Map.Entry::getValue
+                    ));
+        } catch (Exception e) {
+            System.err.println("Error loading heatmap: " + e.getMessage());
+            heatmapData = new java.util.HashMap<>();
+        }
 
         updateCards(sessions);
         updateCharts(sessions);

@@ -4,6 +4,7 @@ import atlantafx.base.controls.ProgressSliderSkin;
 import atlantafx.base.controls.ToggleSwitch;
 import atlantafx.base.theme.PrimerDark;
 import atlantafx.base.theme.PrimerLight;
+import com.frandm.studytracker.client.ApiClient;
 import com.frandm.studytracker.core.*;
 import com.frandm.studytracker.models.Session;
 import com.frandm.studytracker.ui.util.Animations;
@@ -29,6 +30,7 @@ import javafx.scene.shape.Circle;
 import javafx.util.Duration;
 import org.kordamp.ikonli.javafx.FontIcon;
 
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.*;
@@ -103,8 +105,6 @@ public class PomodoroController {
 
     //region initialize
     private void initializeCoreSystems() {
-        DatabaseHandler.initializeDatabase();
-        MigrationManager.checkAndMigrate();
         // ---------------- TEST ---------------------
         //DatabaseHandler.generateRandomPomodoros();
         //DatabaseHandler.generateRandomSchedule();
@@ -276,8 +276,27 @@ public class PomodoroController {
 
     //region data
     public void refreshDatabaseData() {
-        tagsWithTasksMap = DatabaseHandler.getTagsWithTasksMap();
-        tagColors = DatabaseHandler.getTagColors();
+        try {
+            final Map<String, String> colors = new java.util.LinkedHashMap<>();
+            ApiClient.getTags().forEach(t -> colors.put((String) t.get("name"), (String) t.get("color")));
+            tagColors = colors;
+
+            final Map<String, List<String>> map = new java.util.LinkedHashMap<>();
+            ApiClient.getTags().forEach(t -> {
+                String tagName = (String) t.get("name");
+                try {
+                    List<String> tasks = ApiClient.getTasksByTag(tagName).stream()
+                            .map(task -> (String) task.get("name"))
+                            .collect(java.util.stream.Collectors.toList());
+                    map.put(tagName, tasks);
+                } catch (Exception ex) {
+                    map.put(tagName, new ArrayList<>());
+                }
+            });
+            tagsWithTasksMap = map;
+        } catch (Exception e) {
+            System.err.println("Error refreshing data: " + e.getMessage());
+        }
 
         setupManager.renderTagsList(tagsListContainer, tagColors, () ->
                 setupManager.updateFuzzyResults(fuzzySearchInput.getText(), fuzzyResultsContainer, tagsWithTasksMap, tagColors, this::onTaskSelected)
@@ -350,13 +369,22 @@ public class PomodoroController {
             NotificationManager.show("Info", "Required 1 min to save session", NotificationManager.NotificationType.INFO);
             return;
         }
-        int taskId = DatabaseHandler.getOrCreateTask(
-                setupManager.getSelectedTag(),
-                tagColors.getOrDefault(setupManager.getSelectedTag(), "#ffffff"),
-                setupManager.getSelectedTask()
-        );
+        try {
+            ApiClient.saveSession(
+                    setupManager.getSelectedTag(),
+                    tagColors.getOrDefault(setupManager.getSelectedTag(), "#ffffff"),
+                    setupManager.getSelectedTask(),
+                    summaryTitle.getText(),
+                    summaryDesc.getText(),
+                    engine.getRealMinutesElapsed(),
+                    startDate.toString(),
+                    LocalDateTime.now().toString(),
+                    currentRating
+            );
+        } catch (Exception e) {
+            System.err.println("Error saving session: " + e.getMessage());
+        }
 
-        DatabaseHandler.saveSession(taskId, summaryTitle.getText(), summaryDesc.getText(), engine.getRealMinutesElapsed(), startDate, LocalDateTime.now(), currentRating);
         refreshDatabaseData();
         currentRating=0;
         updateStarsUI();
@@ -432,7 +460,11 @@ public class PomodoroController {
                     (int)(selectedColor.getGreen() * 255),
                     (int)(selectedColor.getBlue() * 255));
 
-            DatabaseHandler.getOrCreateTask(newTagName, hexColor, null);
+            try {
+                ApiClient.createTag(newTagName, hexColor);
+            } catch (Exception e) {
+                System.err.println("Error creating tag: " + e.getMessage());
+            }
 
             tagNameInput.clear();
             refreshDatabaseData();
@@ -636,7 +668,15 @@ public class PomodoroController {
         title.setStyle("-fx-font-weight: bold; -fx-font-size: 11px; -fx-text-fill: -color-fg-muted;");
 
         VBox list = new VBox(5);
-        List<Map<String, Object>> todaySessions = DatabaseHandler.getScheduleSessionsForToday();
+        List<Map<String, Object>> todaySessions;
+        try {
+            String today = LocalDate.now().atStartOfDay().toString();
+            String endOfDay = LocalDate.now().atTime(23, 59, 59).toString();
+            todaySessions = ApiClient.getScheduledSessions(today, endOfDay);
+        } catch (Exception e) {
+            System.err.println("Error loading today sessions: " + e.getMessage());
+            todaySessions = new ArrayList<>();
+        }
 
         if (todaySessions.isEmpty()) {
             Label empty = new Label("No scheduled sessions for today");
@@ -811,7 +851,11 @@ public class PomodoroController {
     @FXML
     private void onConfirmDeleteTagClick() {
         if (tagToDelete != null) {
-            DatabaseHandler.deleteTag(tagToDelete);
+            try {
+                ApiClient.deleteTag(tagToDelete);
+            } catch (Exception e) {
+                System.err.println("Error deleting tag: " + e.getMessage());
+            }
             closeConfirmDeleteTag();
             refreshDatabaseData();
             NotificationManager.show("Tag Deleted", "Success", NotificationManager.NotificationType.SUCCESS);
