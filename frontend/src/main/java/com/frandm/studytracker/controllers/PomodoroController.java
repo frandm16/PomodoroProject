@@ -108,8 +108,8 @@ public class PomodoroController {
     //region initialize
     private void initializeCoreSystems() {
         // ---------------- TEST ---------------------
-        // ApiClient.generateRandomPomodoros();
-        // ApiClient.generateRandomSchedule();
+         ApiClient.generateRandomPomodoros();
+         ApiClient.generateRandomSchedule();
         // -------------------------------------------
         ConfigManager.load(engine);
         refreshDatabaseData();

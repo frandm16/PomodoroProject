@@ -6,6 +6,7 @@ import org.springframework.data.domain.Page;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
 import java.util.List;
 import java.util.Map;
 
@@ -46,6 +47,7 @@ public class SessionController {
 
     @PostMapping
     public Session save(@RequestBody Map<String, Object> body) {
+        DateTimeFormatter fmt = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
         return sessionService.save(
                 (String) body.get("tagName"),
                 (String) body.get("tagColor"),
@@ -53,8 +55,8 @@ public class SessionController {
                 (String) body.get("title"),
                 (String) body.get("description"),
                 (Integer) body.get("totalMinutes"),
-                LocalDateTime.parse((String) body.get("startDate")),
-                LocalDateTime.parse((String) body.get("endDate")),
+                LocalDateTime.parse((String) body.get("startDate"), fmt),
+                LocalDateTime.parse((String) body.get("endDate"), fmt),
                 (Integer) body.get("rating")
         );
     }

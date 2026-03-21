@@ -151,6 +151,7 @@ public class ApiClient {
 
     // --- Development ---
     public static void generateRandomPomodoros() {
+        System.out.println("[generateRandomPomodoros] Starting...");
         Random random = new Random();
         LocalDate today = LocalDate.now();
         String[] verbs = {"Study", "Code", "Design", "Review", "Write", "Analyze", "Read"};
@@ -170,8 +171,9 @@ public class ApiClient {
                 }
             }
 
-            List<Map<String, Object>> taskList = mapper.readValue(
-                    get("/tasks/all"), new TypeReference<>() {});
+            String tasksJson = get("/tasks/all");
+            System.out.println("[DEBUG] /tasks/all response: " + tasksJson);
+            List<Map<String, Object>> taskList = mapper.readValue(tasksJson, new TypeReference<>() {});
 
             if (taskList.isEmpty()) {
                 return;
@@ -189,35 +191,47 @@ public class ApiClient {
                         LocalDateTime start = currentTime;
                         LocalDateTime end = start.plusMinutes(duration);
 
-                        String tagName = (String) ((Map<?, ?>) task.get("tag")).get("name");
-                        String tagColor = (String) ((Map<?, ?>) task.get("tag")).get("color");
+                        @SuppressWarnings("unchecked")
+                        Map<String, Object> tagMap = (Map<String, Object>) task.get("tag");
+                        String tagName = (String) tagMap.get("name");
+                        String tagColor = (String) tagMap.get("color");
                         String taskName = (String) task.get("name");
 
-                        saveSession(tagName, tagColor, taskName,
-                                "Test session", "Generated session",
-                                duration,
-                                start.format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss")),
-                                end.format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss")),
-                                random.nextInt(6));
+                        try {
+                            String response = post("/sessions", Map.of(
+                                    "tagName", tagName, "tagColor", tagColor, "taskName", taskName,
+                                    "title", "Test session", "description", "Generated session",
+                                    "totalMinutes", duration,
+                                    "startDate", start.format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss")),
+                                    "endDate", end.format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss")),
+                                    "rating", random.nextInt(6)
+                            ));
+                            System.out.println("[DEBUG] saveSession response: " + response);
+                        } catch (Exception ex) {
+                            System.err.println("[ERROR] saveSession failed: " + ex.getMessage());
+                        }
 
                         currentTime = end.plusMinutes(random.nextInt(30) + 5);
                         if (currentTime.getHour() >= 23) break;
                     }
                 }
             }
+            System.out.println("[generateRandomPomodoros] Done");
         } catch (Exception e) {
-            System.err.println("Error generateRandomPomodoros: " + e.getMessage());
+            e.printStackTrace();
         }
     }
 
     public static void generateRandomSchedule() {
+        System.out.println("[generateRandomSchedule] Starting...");
         Random random = new Random();
         LocalDate today = LocalDate.now();
         String[] titles = {"Deep Work Session", "Study Sprint", "Focus Block", "Practice Run", "Module Review"};
 
         try {
-            List<Map<String, Object>> taskList = mapper.readValue(
-                    get("/tasks/all"), new TypeReference<>() {});
+            String tasksJson = get("/tasks/all");
+            System.out.println("[DEBUG] /tasks/all response: " + tasksJson);
+            List<Map<String, Object>> taskList = mapper.readValue(tasksJson, new TypeReference<>() {});
 
             if (taskList.isEmpty()) {
                 return;
@@ -231,7 +245,9 @@ public class ApiClient {
 
                     for (int s = 0; s < sessionsToday; s++) {
                         Map<String, Object> task = taskList.get(random.nextInt(taskList.size()));
-                        String tagName = (String) ((Map<?, ?>) task.get("tag")).get("name");
+                        @SuppressWarnings("unchecked")
+                        Map<String, Object> tagMap = (Map<String, Object>) task.get("tag");
+                        String tagName = (String) tagMap.get("name");
                         String taskName = (String) task.get("name");
                         int duration = 60 + (random.nextInt(7) * 15);
                         LocalDateTime start = currentTime;
@@ -248,7 +264,7 @@ public class ApiClient {
                 }
             }
         } catch (Exception e) {
-            System.err.println("Error generateRandomSchedule: " + e.getMessage());
+            e.printStackTrace();
         }
     }
 }
