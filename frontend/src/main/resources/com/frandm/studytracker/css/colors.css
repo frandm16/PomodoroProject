@@ -19,7 +19,7 @@
     -text-dark: #e6edf3;
     -text-muted: -color-fg-muted;
     -stat-card-normal-bg: rgba(255, 183, 0, 0.1);
-    -stat-card-red-bg: rgba(255, 57, 22, 0.1);
+    -stat-card-red-bg: rgba(255, 217, 118, 0.15);
     -stat-card-secundary-bg: rgba(32, 38, 58, 0.1);
 
     -heatmap-empty: -stat-card-secundary-bg;
@@ -64,7 +64,7 @@
     -text-dark: #2d0f1e;
     -text-muted: #9c6070;
     -stat-card-normal-bg: rgba(228, 163, 179, 0.12);
-    -stat-card-red-bg: rgba(210, 80, 100, 0.1);
+    -stat-card-red-bg: rgba(192, 80, 112, 0.15);
     -stat-card-secundary-bg: rgba(255, 255, 255, 0.5);
 
     -heatmap-empty: rgba(228, 163, 179, 0.1);
@@ -109,7 +109,7 @@
     -text-dark: #f0fbff;
     -text-muted: #00b4ff;
     -stat-card-normal-bg: rgba(0, 212, 255, 0.1);
-    -stat-card-red-bg: rgba(244, 63, 94, 0.15);
+    -stat-card-red-bg: rgba(128, 240, 255, 0.15);
     -stat-card-secundary-bg: rgba(0, 21, 41, 0.5);
 
     -heatmap-empty: rgba(0, 21, 41, 0.8);
@@ -154,7 +154,7 @@
     -text-dark: #cdd6f4;
     -text-muted: #6c7086;
     -stat-card-normal-bg: rgba(203, 166, 247, 0.08);
-    -stat-card-red-bg: rgba(243, 139, 168, 0.08);
+    -stat-card-red-bg: rgba(137, 220, 235, 0.15);
     -stat-card-secundary-bg: rgba(49, 50, 68, 0.3);
 
     -heatmap-empty: rgba(49, 50, 68, 0.5);

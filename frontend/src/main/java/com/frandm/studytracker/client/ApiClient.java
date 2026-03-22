@@ -11,7 +11,6 @@ import java.net.http.HttpResponse;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Random;
@@ -118,7 +117,9 @@ public class ApiClient {
 
     // --- Scheduled sessions ---
     public static List<Map<String, Object>> getScheduledSessions(String start, String end) throws Exception {
-        return mapper.readValue(get("/scheduled?start=" + start + "&end=" + end), new TypeReference<>() {});
+        String Start = start.replace(" ", "%20");
+        String End = end.replace(" ", "%20");
+        return mapper.readValue(get("/scheduled?start=" + Start + "&end=" + End), new TypeReference<>() {});
     }
 
     public static void saveScheduledSession(String tagName, String taskName,
@@ -173,7 +174,6 @@ public class ApiClient {
             }
 
             String tasksJson = get("/tasks/all");
-            System.out.println("[DEBUG] /tasks/all response: " + tasksJson);
             List<Map<String, Object>> taskList = mapper.readValue(tasksJson, new TypeReference<>() {});
 
             if (taskList.isEmpty()) {
@@ -181,6 +181,9 @@ public class ApiClient {
             }
 
             for (int i = 0; i < 365; i++) {
+                if (i % 30 == 0) {
+                    System.out.printf("[generateRandomPomodoros] Progreso: %d/365 días (%.0f%%)%n", i, (i / 365.0) * 100);
+                }
                 LocalDate date = today.minusDays(i);
                 if (random.nextDouble() < 0.80) {
                     LocalDateTime currentTime = date.atTime(7 + random.nextInt(3), 0);
@@ -188,7 +191,7 @@ public class ApiClient {
 
                     for (int s = 0; s < sessionsToday; s++) {
                         Map<String, Object> task = taskList.get(random.nextInt(taskList.size()));
-                        int duration = 10 + random.nextInt(75);
+                        int duration = 60 + (random.nextInt(7) * 15);
                         LocalDateTime start = currentTime;
                         LocalDateTime end = start.plusMinutes(duration);
 
@@ -198,26 +201,21 @@ public class ApiClient {
                         String tagColor = (String) tagMap.get("color");
                         String taskName = (String) task.get("name");
 
-                        try {
-                            String response = post("/sessions", Map.of(
-                                    "tagName", tagName, "tagColor", tagColor, "taskName", taskName,
-                                    "title", "Test session", "description", "Generated session",
-                                    "totalMinutes", duration,
-                                    "startDate", start.format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss")),
-                                    "endDate", end.format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss")),
-                                    "rating", random.nextInt(6)
-                            ));
-                            System.out.println("[DEBUG] saveSession response: " + response);
-                        } catch (Exception ex) {
-                            System.err.println("[ERROR] saveSession failed: " + ex.getMessage());
-                        }
+                        post("/sessions", Map.of(
+                                "tagName", tagName, "tagColor", tagColor, "taskName", taskName,
+                                "title", "Test session", "description", "Generated session",
+                                "totalMinutes", duration,
+                                "startDate", start.format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss")),
+                                "endDate", end.format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss")),
+                                "rating", random.nextInt(6)
+                        ));
 
                         currentTime = end.plusMinutes(random.nextInt(30) + 5);
                         if (currentTime.getHour() >= 23) break;
                     }
                 }
             }
-            System.out.println("[generateRandomPomodoros] Done");
+            System.out.println("[generateRandomPomodoros] Done ✓ 365/365 días (100%)");
         } catch (Exception e) {
             e.printStackTrace();
         }
@@ -231,14 +229,18 @@ public class ApiClient {
 
         try {
             String tasksJson = get("/tasks/all");
-            System.out.println("[DEBUG] /tasks/all response: " + tasksJson);
             List<Map<String, Object>> taskList = mapper.readValue(tasksJson, new TypeReference<>() {});
 
             if (taskList.isEmpty()) {
                 return;
             }
+            int total = 28;
+            int count = 0;
 
-            for (int i = -4; i <= 10; i++) {
+            for (int i = -14; i <= 14; i++) {
+                count++;
+                System.out.printf("[generateRandomSchedule] Progreso: %d/%d días%n", count, total);
+
                 LocalDate date = today.plusDays(i);
                 if (random.nextDouble() < 0.90) {
                     LocalDateTime currentTime = date.atTime(7 + random.nextInt(3), 0);
@@ -264,6 +266,7 @@ public class ApiClient {
                     }
                 }
             }
+            System.out.println("[generateRandomSchedule] Done ✓");
         } catch (Exception e) {
             e.printStackTrace();
         }

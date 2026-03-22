@@ -108,8 +108,8 @@ public class PomodoroController {
     //region initialize
     private void initializeCoreSystems() {
         // ---------------- TEST ---------------------
-         ApiClient.generateRandomPomodoros();
-         ApiClient.generateRandomSchedule();
+        // ApiClient.generateRandomPomodoros();
+        // ApiClient.generateRandomSchedule();
         // -------------------------------------------
         ConfigManager.load(engine);
         refreshDatabaseData();
@@ -683,8 +683,9 @@ public class PomodoroController {
         VBox list = new VBox(5);
         List<Map<String, Object>> todaySessions;
         try {
-            String today = LocalDate.now().atStartOfDay().toString();
-            String endOfDay = LocalDate.now().atTime(23, 59, 59).toString();
+            DateTimeFormatter fmt = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
+            String today = LocalDate.now().atStartOfDay().format(fmt);
+            String endOfDay = LocalDate.now().atTime(23, 59, 59).format(fmt);
             todaySessions = ApiClient.getScheduledSessions(today, endOfDay);
         } catch (Exception e) {
             System.err.println("Error loading today sessions: " + e.getMessage());

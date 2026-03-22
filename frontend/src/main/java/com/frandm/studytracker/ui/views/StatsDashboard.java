@@ -52,11 +52,9 @@ public class StatsDashboard {
                     ApiClient.getAllSessions().stream().map(m -> {
                         Session s = new Session(
                                 ((Number) m.get("id")).intValue(),
-                                (String) ((Map<?,?>)m.get("task")).get("tag") != null ?
-                                        (String)((Map<?,?>)((Map<?,?>)m.get("task")).get("tag")).get("name") : "",
-                                (String) ((Map<?,?>)m.get("task")).get("tag") != null ?
-                                        (String)((Map<?,?>)((Map<?,?>)m.get("task")).get("tag")).get("color") : "#ffffff",
-                                (String) ((Map<?,?>)m.get("task")).get("name"),
+                                (String) m.get("tag"),
+                                (String) m.get("tagColor"),
+                                (String) m.get("task"),
                                 (String) m.get("title"),
                                 (String) m.get("description"),
                                 ((Number) m.get("totalMinutes")).intValue(),
@@ -64,6 +62,7 @@ public class StatsDashboard {
                                 m.get("endDate") != null ? m.get("endDate").toString() : null
                         );
                         if (m.get("rating") != null) s.setRating(((Number) m.get("rating")).intValue());
+                        if (m.get("isFavorite") != null) s.setFavorite((Boolean) m.get("isFavorite"));
                         return s;
                     }).collect(java.util.stream.Collectors.toList())
             );
@@ -71,6 +70,7 @@ public class StatsDashboard {
             System.err.println("Error loading sessions: " + e.getMessage());
             sessions = javafx.collections.FXCollections.observableArrayList();
         }
+
         Map<LocalDate, Integer> heatmapData;
         try {
             heatmapData = ApiClient.getHeatmap().entrySet().stream()
@@ -241,7 +241,6 @@ public class StatsDashboard {
         }
 
         int maxMinutes = data.values().stream().max(Integer::compare).orElse(0);
-        System.out.println(maxMinutes);
 
         heatmapGrid.getChildren().clear();
         heatmapGrid.getColumnConstraints().clear();

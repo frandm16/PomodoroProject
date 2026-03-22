@@ -303,6 +303,8 @@ public class PlannerView extends VBox {
                 finalEnd = finalEnd.plusMinutes(1);
             }
 
+            DateTimeFormatter fmt = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
+
             String sessionTitle = txtTitle.getText().trim();
             if (sessionTitle.isEmpty()) sessionTitle = "";
 
@@ -312,8 +314,8 @@ public class PlannerView extends VBox {
                             comboTags.getValue(),
                             comboTasks.getValue(),
                             sessionTitle,
-                            finalStart.toString(),
-                            finalEnd.toString()
+                            finalStart.format(fmt),
+                            finalEnd.format(fmt)
                     );
                 } catch (Exception e) {
                     System.err.println("Error saving scheduled session: " + e.getMessage());
@@ -324,8 +326,8 @@ public class PlannerView extends VBox {
                             (int) existingSession.get("id"),
                             comboTags.getValue(),
                             comboTasks.getValue(),
-                            finalStart.toString(),
-                            finalEnd.toString()
+                            finalStart.format(fmt),
+                            finalEnd.format(fmt)
                     );
                 } catch (Exception e) {
                     System.err.println("Error updating scheduled session: " + e.getMessage());
@@ -389,9 +391,10 @@ public class PlannerView extends VBox {
     private void drawContent() {
         List<Map<String, Object>> sessions;
         try {
+            DateTimeFormatter fmt = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
             sessions = ApiClient.getScheduledSessions(
-                    currentWeekStart.atStartOfDay().toString(),
-                    currentWeekStart.plusDays(6).atTime(23, 59, 59).toString()
+                    currentWeekStart.atStartOfDay().format(fmt),
+                    currentWeekStart.plusDays(6).atTime(23, 59, 59).format(fmt)
             );
         } catch (Exception e) {
             System.err.println("Error loading scheduled sessions: " + e.getMessage());
@@ -402,10 +405,16 @@ public class PlannerView extends VBox {
         for (Map<String, Object> s : sessions) {
             String startStr = getStartTime(s);
             if (startStr == null) continue;
-            LocalDateTime start = LocalDateTime.parse(startStr);
+            LocalDateTime start = startStr.contains("T")
+                    ? LocalDateTime.parse(startStr)
+                    : LocalDateTime.parse(startStr, DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"));
             s.put("start_time", start);
             String endStr = getEndTime(s);
-            if (endStr != null) s.put("end_time", LocalDateTime.parse(endStr));
+            if (endStr != null) {
+                s.put("end_time", endStr.contains("T")
+                        ? LocalDateTime.parse(endStr)
+                        : LocalDateTime.parse(endStr, DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss")));
+            }
 
             String taskName = getTaskName(s);
             String tagName = getTagName(s);
