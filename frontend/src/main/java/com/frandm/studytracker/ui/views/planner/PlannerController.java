@@ -20,6 +20,8 @@ public class PlannerController {
     public PlannerController(PomodoroController controller) {
         this.dailyTab = new DailyTab(controller);
         this.weeklyTab = new WeeklyTab(controller);
+        this.dailyTab.setRefreshAction(this::refresh);
+        this.weeklyTab.setRefreshAction(this::refresh);
         this.view = new PlannerView(controller, this, dailyTab, weeklyTab);
         refresh();
     }
@@ -54,13 +56,13 @@ public class PlannerController {
     private void process(List<Map<String, Object>> items, String startKey, String endKey) {
         if (items == null) return;
         for (Map<String, Object> item : items) {
-            LocalDateTime start = parse(item.get(startKey));
+            LocalDateTime start = parse(firstNonNull(item.get(startKey), item.get("dueDate"), item.get("deadline"), item.get("startTime")));
             if (start != null) {
                 item.put("start_time", start);
                 item.put("dueDate", start.format(apiFmt));
             }
             if (endKey != null) {
-                item.put("end_time", parse(item.get(endKey)));
+                item.put("end_time", parse(firstNonNull(item.get(endKey), item.get("endTime"))));
             }
 
             if (item.containsKey("task") && item.get("task") instanceof Map) {
@@ -76,6 +78,13 @@ public class PlannerController {
                 }
             }
         }
+    }
+
+    private Object firstNonNull(Object... values) {
+        for (Object value : values) {
+            if (value != null) return value;
+        }
+        return null;
     }
 
     private LocalDateTime parse(Object val) {

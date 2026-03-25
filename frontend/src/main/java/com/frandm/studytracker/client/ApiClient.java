@@ -325,4 +325,26 @@ public class ApiClient {
         ));
     }
 
+    public static void updateDeadline(long id, String tagName, String tagColor, String taskName,
+                                      String title, String description, String urgency,
+                                      String dueDate, boolean allDay) throws Exception {
+        var req = HttpRequest.newBuilder()
+                .uri(URI.create(BASE_URL + "/deadlines/" + id))
+                .header("Content-Type", "application/json")
+                .PUT(HttpRequest.BodyPublishers.ofString(mapper.writeValueAsString(Map.of(
+                        "tagName", tagName, "tagColor", tagColor, "taskName", taskName,
+                        "title", title, "description", description, "urgency", urgency,
+                        "dueDate", dueDate, "allDay", allDay
+                ))))
+                .build();
+        HttpResponse<String> response = http.send(req, HttpResponse.BodyHandlers.ofString());
+        if (response.statusCode() >= 400) {
+            throw new RuntimeException("Deadline update failed: HTTP " + response.statusCode() + " - " + response.body());
+        }
+    }
+
+    public static void deleteDeadline(long id) throws Exception {
+        delete("/deadlines/" + id);
+    }
+
 }

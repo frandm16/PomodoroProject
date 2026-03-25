@@ -29,8 +29,20 @@ public class DeadlineService {
     public Deadline save(String tagName, String tagColor, String taskName,
                          String title, String description, String urgency,
                          LocalDateTime dueDate, Boolean allDay) {
-
         Deadline deadline = new Deadline();
+        return populateAndSave(deadline, tagName, tagColor, taskName, title, description, urgency, dueDate, allDay);
+    }
+
+    public Deadline update(Long id, String tagName, String tagColor, String taskName,
+                           String title, String description, String urgency,
+                           LocalDateTime dueDate, Boolean allDay) {
+        Deadline deadline = deadlineRepository.findById(id).orElseThrow();
+        return populateAndSave(deadline, tagName, tagColor, taskName, title, description, urgency, dueDate, allDay);
+    }
+
+    private Deadline populateAndSave(Deadline deadline, String tagName, String tagColor, String taskName,
+                                     String title, String description, String urgency,
+                                     LocalDateTime dueDate, Boolean allDay) {
 
         if (taskName != null && !taskName.isEmpty()) {
             Task task = taskService.getOrCreate(tagName, tagColor, taskName);

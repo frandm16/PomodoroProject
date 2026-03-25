@@ -686,6 +686,17 @@
     -fx-font-size: 12 px;
 }
 
+
+.calendar-all-day-label {
+    -fx-text-fill: -color-fg-muted;
+    -fx-font-size: 13px;
+    -fx-translate-y: -7;
+}
+
+.calendar-all-day-pill {
+    -fx-background-color: rgba(239, 68, 68, 0.14);
+}
+
 .calendar-cell {
     -fx-border-color: -color-border-subtle;
     -fx-border-width: 0 0 0.5 0.5;
@@ -1485,9 +1496,37 @@
     -fx-text-fill: -color-fg-secundary;
 }
 
+.badge-urgency-high {
+    -fx-background-color: transparent;
+    -fx-border-color: #ff4a4a;
+    -fx-text-fill: #ff4a4a;
+    -fx-border-radius: 15;
+}
+
+.badge-urgency-medium {
+    -fx-background-color: transparent;
+    -fx-border-color: #ff892b;
+    -fx-text-fill: #ff892b;
+    -fx-border-radius: 15;
+}
+
+.badge-urgency-low {
+    -fx-background-color: transparent;
+    -fx-border-color: #2cff7c;
+    -fx-text-fill: #2cff7c;
+    -fx-border-radius: 15;
+}
+
 .deadline-row .ikonli-font-icon {
     -fx-icon-color: -icon-main;
     -fx-icon-size: 16px;
+}
+
+.deadline-row {
+    -fx-background-color: -color-bg-subtle;
+    -fx-background-radius: 10;
+    -fx-padding: 15;
+    -fx-spacing: 15;
 }
 
 .event-row {

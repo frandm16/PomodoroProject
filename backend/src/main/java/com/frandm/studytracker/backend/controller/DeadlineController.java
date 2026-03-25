@@ -54,6 +54,21 @@ public class DeadlineController {
         );
     }
 
+    @PutMapping("/{id}")
+    public Deadline update(@PathVariable Long id, @RequestBody Map<String, Object> body) {
+        return deadlineService.update(
+                id,
+                (String) body.get("tagName"),
+                (String) body.get("tagColor"),
+                (String) body.get("taskName"),
+                (String) body.get("title"),
+                (String) body.get("description"),
+                (String) body.get("urgency"),
+                LocalDateTime.parse((String) body.get("dueDate"), fmt),
+                (Boolean) body.get("allDay")
+        );
+    }
+
     @PatchMapping("/{id}/toggle")
     public Deadline toggle(@PathVariable Long id) {
         return deadlineService.toggleCompleted(id);

@@ -1,24 +1,43 @@
 package com.frandm.studytracker.ui.views.planner;
 
 import atlantafx.base.theme.Styles;
+import com.frandm.studytracker.client.ApiClient;
 import com.frandm.studytracker.controllers.PomodoroController;
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;
 import javafx.scene.Node;
-import javafx.scene.control.*;
-import javafx.scene.layout.*;
+import javafx.scene.control.Button;
+import javafx.scene.control.CheckBox;
+import javafx.scene.control.ComboBox;
+import javafx.scene.control.DatePicker;
+import javafx.scene.control.Label;
+import javafx.scene.control.ScrollPane;
+import javafx.scene.control.TextArea;
+import javafx.scene.control.TextField;
+import javafx.scene.control.Tooltip;
+import javafx.scene.layout.HBox;
+import javafx.scene.layout.Priority;
+import javafx.scene.layout.Region;
+import javafx.scene.layout.VBox;
+import javafx.stage.Popup;
 import org.kordamp.ikonli.javafx.FontIcon;
 import org.kordamp.ikonli.materialdesign2.MaterialDesignC;
 import org.kordamp.ikonli.materialdesign2.MaterialDesignP;
+
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
+import java.time.format.DateTimeParseException;
 import java.time.format.TextStyle;
 import java.time.temporal.ChronoUnit;
+import java.util.Comparator;
+import java.util.ArrayList;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.function.Function;
+import java.util.stream.Collectors;
 
 public class DailyTab extends VBox {
 
@@ -26,14 +45,21 @@ public class DailyTab extends VBox {
     private final VBox dayEventsContainer = new VBox(10);
     private final PomodoroController pomodoroController;
     private LocalDate currentDate = LocalDate.now();
+    private Runnable refreshAction = () -> {};
+    private Popup activePopup;
 
-    private static final DateTimeFormatter TIME_FMT = DateTimeFormatter.ofPattern("d MMM • HH:mm");
+    private static final DateTimeFormatter TIME_FMT = DateTimeFormatter.ofPattern("HH:mm");
+    private static final DateTimeFormatter API_FMT = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
 
     public DailyTab(PomodoroController pomodoroController) {
         this.pomodoroController = pomodoroController;
         this.getStyleClass().add("daily-tab");
         VBox.setVgrow(this, Priority.ALWAYS);
         initLayout();
+    }
+
+    public void setRefreshAction(Runnable refreshAction) {
+        this.refreshAction = refreshAction != null ? refreshAction : () -> {};
     }
 
     private void initLayout() {
@@ -61,8 +87,24 @@ public class DailyTab extends VBox {
     }
 
     public void refreshData(List<Map<String, Object>> scheduled, List<Map<String, Object>> deadlines) {
-        fill(deadlinesContainer, deadlines, "No deadlines for this day.", this::createDeadlineRow);
-        fill(dayEventsContainer, scheduled, "No events scheduled.", this::createEventRow);
+        List<Map<String, Object>> sortedDeadlines = deadlines == null ? List.of() : deadlines.stream()
+                .sorted(Comparator
+                        .comparing((Map<String, Object> item) -> !Boolean.TRUE.equals(item.get("allDay")))
+                        .thenComparing(item -> {
+                            LocalDateTime due = parse(firstNonNull(item.get("start_time"), item.get("dueDate"), item.get("deadline")));
+                            return due != null ? due : LocalDateTime.MAX;
+                        }))
+                .collect(Collectors.toList());
+
+        List<Map<String, Object>> sortedScheduled = scheduled == null ? List.of() : scheduled.stream()
+                .sorted(Comparator.comparing(item -> {
+                    LocalDateTime start = parse(firstNonNull(item.get("start_time"), item.get("startTime"), item.get("full_start")));
+                    return start != null ? start : LocalDateTime.MAX;
+                }))
+                .collect(Collectors.toList());
+
+        fill(deadlinesContainer, sortedDeadlines, "No deadlines for this day.", this::createDeadlineRow);
+        fill(dayEventsContainer, sortedScheduled, "No events scheduled.", this::createEventRow);
     }
 
     public String getHeaderTitle() {
@@ -79,10 +121,11 @@ public class DailyTab extends VBox {
             empty.setMaxWidth(Double.MAX_VALUE);
             empty.setAlignment(Pos.CENTER);
             container.getChildren().add(empty);
-        } else {
-            for (Map<String, Object> item : data) {
-                container.getChildren().add(mapper.apply(item));
-            }
+            return;
+        }
+
+        for (Map<String, Object> item : data) {
+            container.getChildren().add(mapper.apply(item));
         }
     }
 
@@ -90,8 +133,10 @@ public class DailyTab extends VBox {
         HBox row = baseRow();
         row.getStyleClass().add("deadline-row");
 
-        LocalDateTime due = parse(data.get("start_time"));
-        long diff = ChronoUnit.DAYS.between(LocalDate.now(), due.toLocalDate());
+        LocalDateTime due = parse(firstNonNull(data.get("start_time"), data.get("dueDate"), data.get("deadline")));
+        boolean allDay = Boolean.TRUE.equals(data.get("allDay"));
+        long diff = due != null ? ChronoUnit.DAYS.between(LocalDate.now(), due.toLocalDate()) : 0;
+        String urgency = String.valueOf(data.getOrDefault("urgency", "Medium"));
 
         VBox info = new VBox(2);
         info.getStyleClass().add("row-info-container");
@@ -99,10 +144,10 @@ public class DailyTab extends VBox {
         Label title = new Label(String.valueOf(data.getOrDefault("title", "Untitled")));
         title.getStyleClass().add("row-title");
 
-        Label sub = new Label(String.valueOf(data.getOrDefault("taskName", "General")));
+        Label sub = new Label(String.valueOf(data.getOrDefault("taskName", data.getOrDefault("task_name", "General"))));
         sub.getStyleClass().add(Styles.TEXT_MUTED);
 
-        Label status = new Label(diff < 0 ? "Overdue " + Math.abs(diff) + " days" : (diff == 0 ? "Due Today" : "Due in " + diff + " days"));
+        Label status = new Label(buildDeadlineStatus(diff, allDay));
         status.getStyleClass().add(diff < 0 ? Styles.DANGER : Styles.SUCCESS);
         status.getStyleClass().add(Styles.TEXT_SMALL);
 
@@ -114,11 +159,18 @@ public class DailyTab extends VBox {
         HBox badges = new HBox(8);
         badges.setAlignment(Pos.CENTER_RIGHT);
         badges.getChildren().addAll(
-                badge(due.format(DateTimeFormatter.ofPattern("HH:mm")), MaterialDesignC.CLOCK_OUTLINE, "badge-time"),
-                badge(String.valueOf(data.getOrDefault("tagName", "")), null, "badge-tag")
+                badge(allDay ? "All day" : formatTime(due), MaterialDesignC.CLOCK_OUTLINE, "badge-time"),
+                badge(urgency, null, urgencyBadgeClass(urgency)),
+                badge(String.valueOf(data.getOrDefault("tagName", data.getOrDefault("tag_name", ""))), null, "badge-tag")
         );
 
-        row.getChildren().addAll(new FontIcon(MaterialDesignP.PENCIL), info, spacer, badges);
+        FontIcon deadlineIcon = new FontIcon("mdi2a-alarm");
+        row.getChildren().addAll(deadlineIcon, info, spacer, badges);
+        row.setOnMouseClicked(e -> {
+            showDeadlinePopup(data, e.getScreenX(), e.getScreenY());
+            e.consume();
+        });
+        row.setCursor(javafx.scene.Cursor.HAND);
         return row;
     }
 
@@ -130,17 +182,24 @@ public class DailyTab extends VBox {
         row.setStyle("-fx-border-color: transparent transparent transparent " + tagColor + "; -fx-border-width: 0 0 0 4;");
 
         LocalDateTime start = parse(data.get("start_time"));
+        LocalDateTime end = parse(data.get("end_time"));
+
         VBox info = new VBox(2);
         info.getStyleClass().add("row-info-container");
 
         Label title = new Label(String.valueOf(data.getOrDefault("title", "Event")));
         title.getStyleClass().add("row-title");
 
-        Label time = new Label(start.format(DateTimeFormatter.ofPattern("HH:mm")));
+        Label time = new Label(formatTimeRange(start, end));
         time.getStyleClass().addAll(Styles.TEXT_MUTED, Styles.TEXT_SMALL);
 
         info.getChildren().addAll(title, time);
         row.getChildren().add(info);
+        row.setOnMouseClicked(e -> {
+            showScheduledSessionPopup(data, e.getScreenX(), e.getScreenY());
+            e.consume();
+        });
+        row.setCursor(javafx.scene.Cursor.HAND);
         return row;
     }
 
@@ -154,10 +213,10 @@ public class DailyTab extends VBox {
 
     private Label badge(String text, MaterialDesignC icon, String customClass) {
         if (text == null || text.isEmpty() || text.equals("null")) return new Label();
-        Label l = new Label(text);
-        if (icon != null) l.setGraphic(new FontIcon(icon));
-        l.getStyleClass().addAll("planner-badge", customClass);
-        return l;
+        Label label = new Label(text);
+        if (icon != null) label.setGraphic(new FontIcon(icon));
+        label.getStyleClass().addAll("planner-badge", customClass);
+        return label;
     }
 
     private Label createHeader(String title) {
@@ -166,8 +225,347 @@ public class DailyTab extends VBox {
         return header;
     }
 
+    private void showScheduledSessionPopup(Map<String, Object> data, double screenX, double screenY) {
+        closeActivePopup();
+
+        Popup popup = buildPopup();
+        VBox root = popupRoot();
+
+        TextField titleField = new TextField(String.valueOf(data.getOrDefault("title", "")));
+        titleField.getStyleClass().add("input-calendar");
+
+        LocalDateTime start = parse(firstNonNull(data.get("full_start"), data.get("start_time"), data.get("startTime")));
+        LocalDateTime end = parse(firstNonNull(data.get("full_end"), data.get("end_time"), data.get("endTime")));
+        if (start == null) start = currentDate.atTime(9, 0);
+        if (end == null) end = start.plusHours(1);
+
+        DatePicker dpStart = new DatePicker(start.toLocalDate());
+        TextField hs = createTimeField(String.format("%02d", start.getHour()), 23);
+        TextField ms = createTimeField(String.format("%02d", start.getMinute()), 59);
+        HBox startRow = new HBox(10, dpStart, new HBox(3, hs, new Label(":"), ms));
+        startRow.setAlignment(Pos.CENTER_LEFT);
+
+        DatePicker dpEnd = new DatePicker(end.toLocalDate());
+        TextField he = createTimeField(String.format("%02d", end.getHour()), 23);
+        TextField me = createTimeField(String.format("%02d", end.getMinute()), 59);
+        HBox endRow = new HBox(10, dpEnd, new HBox(3, he, new Label(":"), me));
+        endRow.setAlignment(Pos.CENTER_LEFT);
+
+        ComboBox<String> tags = new ComboBox<>();
+        ComboBox<String> tasks = new ComboBox<>();
+        TagSelectionData tagData = loadTagData();
+        Map<String, List<String>> tagMap = tagData.tagMap();
+        tags.getItems().addAll(tagMap.keySet());
+        tags.setMaxWidth(Double.MAX_VALUE);
+        tasks.setMaxWidth(Double.MAX_VALUE);
+        tags.setOnAction(_ -> {
+            tasks.getItems().setAll(tagMap.getOrDefault(tags.getValue(), List.of()));
+            if (!tasks.getItems().isEmpty()) tasks.getSelectionModel().selectFirst();
+        });
+
+        String initialTask = String.valueOf(data.getOrDefault("task_name", ""));
+        preselectTask(tagMap, tags, tasks, initialTask);
+
+        Button save = new Button("Update");
+        save.getStyleClass().add("button-primary");
+        save.setMaxWidth(Double.MAX_VALUE);
+        save.setOnAction(_ -> {
+            if (dpStart.getValue() == null || dpEnd.getValue() == null || tasks.getValue() == null) return;
+            LocalDateTime newStart = dpStart.getValue().atTime(parseInt(hs.getText()), parseInt(ms.getText()));
+            LocalDateTime newEnd = dpEnd.getValue().atTime(parseInt(he.getText()), parseInt(me.getText()));
+            try {
+                ApiClient.updateScheduledSession(
+                        ((Number) data.get("id")).longValue(),
+                        tags.getValue(),
+                        tasks.getValue(),
+                        titleField.getText().trim(),
+                        newStart.format(API_FMT),
+                        newEnd.format(API_FMT)
+                );
+            } catch (Exception ignored) {}
+            popup.hide();
+            refreshAction.run();
+        });
+
+        Button delete = new Button("Delete");
+        delete.getStyleClass().add("button-danger");
+        delete.setMaxWidth(Double.MAX_VALUE);
+        delete.setOnAction(_ -> {
+            try {
+                ApiClient.deleteScheduledSession(((Number) data.get("id")).longValue());
+            } catch (Exception ignored) {}
+            popup.hide();
+            refreshAction.run();
+        });
+
+        root.getChildren().addAll(
+                sectionTitle("Edit Scheduled Session"),
+                new Label("Title"), titleField,
+                new Label("Tag"), tags,
+                new Label("Task"), tasks,
+                new Label("Start"), startRow,
+                new Label("End"), endRow,
+                save,
+                delete
+        );
+
+        showPopup(popup, root, screenX, screenY);
+    }
+
+    private void showDeadlinePopup(Map<String, Object> data, double screenX, double screenY) {
+        closeActivePopup();
+
+        Popup popup = buildPopup();
+        VBox root = popupRoot();
+
+        TextField titleField = new TextField(String.valueOf(data.getOrDefault("title", "")));
+        titleField.getStyleClass().add("input-calendar");
+
+        TextArea descriptionArea = new TextArea(String.valueOf(data.getOrDefault("description", "")));
+        descriptionArea.setWrapText(true);
+        descriptionArea.setPrefRowCount(3);
+
+        LocalDateTime due = parse(firstNonNull(data.get("start_time"), data.get("dueDate"), data.get("deadline")));
+        if (due == null) due = currentDate.atTime(0, 0);
+
+        DatePicker dueDate = new DatePicker(due.toLocalDate());
+        TextField hourField = createTimeField(String.format("%02d", due.getHour()), 23);
+        TextField minuteField = createTimeField(String.format("%02d", due.getMinute()), 59);
+        HBox dueRow = new HBox(10, dueDate, new HBox(3, hourField, new Label(":"), minuteField));
+        dueRow.setAlignment(Pos.CENTER_LEFT);
+
+        CheckBox allDay = new CheckBox("All day");
+        allDay.setSelected(Boolean.TRUE.equals(data.get("allDay")));
+        toggleTimeFields(hourField, minuteField, allDay.isSelected());
+        allDay.selectedProperty().addListener((_, _, selected) -> toggleTimeFields(hourField, minuteField, selected));
+
+        ComboBox<String> urgency = new ComboBox<>();
+        urgency.getItems().addAll("High", "Medium", "Low");
+        urgency.setValue(String.valueOf(data.getOrDefault("urgency", "Medium")));
+        urgency.setMaxWidth(Double.MAX_VALUE);
+
+        ComboBox<String> tags = new ComboBox<>();
+        ComboBox<String> tasks = new ComboBox<>();
+        TagSelectionData tagData = loadTagData();
+        Map<String, List<String>> tagMap = tagData.tagMap();
+        tags.getItems().addAll(tagMap.keySet());
+        tags.setMaxWidth(Double.MAX_VALUE);
+        tasks.setMaxWidth(Double.MAX_VALUE);
+        tags.setOnAction(_ -> {
+            tasks.getItems().setAll(tagMap.getOrDefault(tags.getValue(), List.of()));
+            if (!tasks.getItems().isEmpty()) tasks.getSelectionModel().selectFirst();
+        });
+
+        String initialTask = String.valueOf(data.getOrDefault("task_name", data.getOrDefault("taskName", "")));
+        preselectTask(tagMap, tags, tasks, initialTask);
+
+        Button save = new Button("Update");
+        save.getStyleClass().add("button-primary");
+        save.setMaxWidth(Double.MAX_VALUE);
+        save.setOnAction(_ -> {
+            if (dueDate.getValue() == null || tasks.getValue() == null || urgency.getValue() == null) return;
+            int hour = allDay.isSelected() ? 0 : parseInt(hourField.getText());
+            int minute = allDay.isSelected() ? 0 : parseInt(minuteField.getText());
+            LocalDateTime newDue = dueDate.getValue().atTime(hour, minute);
+
+            try {
+                ApiClient.updateDeadline(
+                        ((Number) data.get("id")).longValue(),
+                        tags.getValue(),
+                        tagData.tagColors().getOrDefault(tags.getValue(), ""),
+                        tasks.getValue(),
+                        titleField.getText().trim(),
+                        descriptionArea.getText().trim(),
+                        urgency.getValue(),
+                        newDue.format(API_FMT),
+                        allDay.isSelected()
+                );
+            } catch (Exception updateError) {
+                try {
+                    ApiClient.deleteDeadline(((Number) data.get("id")).longValue());
+                    ApiClient.saveDeadline(
+                            tags.getValue(),
+                            tagData.tagColors().getOrDefault(tags.getValue(), ""),
+                            tasks.getValue(),
+                            titleField.getText().trim(),
+                            descriptionArea.getText().trim(),
+                            urgency.getValue(),
+                            newDue.format(API_FMT),
+                            allDay.isSelected()
+                    );
+                } catch (Exception ignored) {}
+            }
+            popup.hide();
+            refreshAction.run();
+        });
+
+        Button delete = new Button("Delete");
+        delete.getStyleClass().add("button-danger");
+        delete.setMaxWidth(Double.MAX_VALUE);
+        delete.setOnAction(_ -> {
+            try {
+                ApiClient.deleteDeadline(((Number) data.get("id")).longValue());
+            } catch (Exception ignored) {}
+            popup.hide();
+            refreshAction.run();
+        });
+
+        root.getChildren().addAll(
+                sectionTitle("Edit Deadline"),
+                new Label("Title"), titleField,
+                new Label("Description"), descriptionArea,
+                new Label("Tag"), tags,
+                new Label("Task"), tasks,
+                new Label("Urgency"), urgency,
+                new Label("Due"), dueRow,
+                allDay,
+                save,
+                delete
+        );
+
+        showPopup(popup, root, screenX, screenY);
+    }
+
+    private Popup buildPopup() {
+        Popup popup = new Popup();
+        popup.setAutoHide(true);
+        popup.setOnHidden(_ -> {
+            if (activePopup == popup) activePopup = null;
+        });
+        activePopup = popup;
+        return popup;
+    }
+
+    private VBox popupRoot() {
+        VBox root = new VBox(12);
+        root.getStyleClass().addAll("calendar-popup", pomodoroController.getCurrentTheme());
+        root.getStylesheets().add(getClass().getResource("/com/frandm/studytracker/css/styles.css").toExternalForm());
+        root.setPadding(new Insets(20));
+        root.setPrefWidth(420);
+        return root;
+    }
+
+    private Label sectionTitle(String text) {
+        Label label = new Label(text);
+        label.getStyleClass().add("title-schedule-session");
+        return label;
+    }
+
+    private void showPopup(Popup popup, VBox root, double screenX, double screenY) {
+        popup.getContent().add(root);
+        popup.show(getScene().getWindow(), screenX, screenY);
+    }
+
+    private void closeActivePopup() {
+        if (activePopup != null && activePopup.isShowing()) {
+            activePopup.hide();
+        }
+        activePopup = null;
+    }
+
+    private TagSelectionData loadTagData() {
+        Map<String, List<String>> tagMap = new LinkedHashMap<>();
+        Map<String, String> tagColors = new LinkedHashMap<>();
+        try {
+            ApiClient.getTags().forEach(tag -> {
+                String tagName = String.valueOf(tag.get("name"));
+                tagColors.put(tagName, String.valueOf(tag.getOrDefault("color", "")));
+                try {
+                    List<String> taskNames = ApiClient.getTasksByTag(tagName)
+                            .stream()
+                            .map(task -> String.valueOf(task.get("name")))
+                            .collect(Collectors.toList());
+                    tagMap.put(tagName, taskNames);
+                } catch (Exception ex) {
+                    tagMap.put(tagName, new ArrayList<>());
+                }
+            });
+        } catch (Exception ignored) {}
+        return new TagSelectionData(tagMap, tagColors);
+    }
+
+    private void preselectTask(Map<String, List<String>> tagMap, ComboBox<String> tags, ComboBox<String> tasks, String taskName) {
+        tagMap.entrySet().stream()
+                .filter(entry -> entry.getValue().contains(taskName))
+                .findFirst()
+                .ifPresent(entry -> {
+                    tags.getSelectionModel().select(entry.getKey());
+                    tasks.getItems().setAll(entry.getValue());
+                    tasks.getSelectionModel().select(taskName);
+                });
+
+        if (tags.getValue() == null && !tags.getItems().isEmpty()) {
+            tags.getSelectionModel().selectFirst();
+            tasks.getItems().setAll(tagMap.getOrDefault(tags.getValue(), List.of()));
+            if (!tasks.getItems().isEmpty()) tasks.getSelectionModel().selectFirst();
+        }
+    }
+
+    private TextField createTimeField(String initial, int max) {
+        TextField field = new TextField(initial);
+        field.setPrefWidth(65);
+        field.setAlignment(Pos.CENTER);
+        field.textProperty().addListener((_, _, newValue) -> {
+            if (!newValue.matches("\\d*")) field.setText(newValue.replaceAll("\\D", ""));
+            if (field.getText().length() > 2) field.setText(field.getText().substring(0, 2));
+            if (!field.getText().isEmpty()) {
+                int value = Integer.parseInt(field.getText());
+                if (value > max) field.setText(String.valueOf(max));
+            }
+        });
+        return field;
+    }
+
+    private void toggleTimeFields(TextField hourField, TextField minuteField, boolean disabled) {
+        hourField.setDisable(disabled);
+        minuteField.setDisable(disabled);
+    }
+
+    private int parseInt(String value) {
+        if (value == null || value.isBlank()) return 0;
+        return Integer.parseInt(value);
+    }
+
+    private String buildDeadlineStatus(long diff, boolean allDay) {
+        String timing = diff < 0 ? "Overdue " + Math.abs(diff) + " days" : (diff == 0 ? "Due Today" : "Due in " + diff + " days");
+        return allDay ? timing + " • All day" : timing;
+    }
+
+    private String urgencyBadgeClass(String urgency) {
+        String normalized = urgency == null ? "" : urgency.toLowerCase(Locale.ROOT);
+        if (normalized.contains("high")) return "badge-urgency-high";
+        if (normalized.contains("low")) return "badge-urgency-low";
+        return "badge-urgency-medium";
+    }
+
+    private String formatTime(LocalDateTime value) {
+        return value != null ? value.format(TIME_FMT) : "--:--";
+    }
+
+    private String formatTimeRange(LocalDateTime start, LocalDateTime end) {
+        if (start == null && end == null) return "--:--";
+        if (start == null) return formatTime(end);
+        if (end == null) return formatTime(start);
+        return formatTime(start) + " - " + formatTime(end);
+    }
+
+    private Object firstNonNull(Object... values) {
+        for (Object value : values) {
+            if (value != null) return value;
+        }
+        return null;
+    }
+
     private LocalDateTime parse(Object val) {
         if (val instanceof LocalDateTime) return (LocalDateTime) val;
-        return LocalDateTime.now();
+        if (val == null) return null;
+        String str = val.toString();
+        try {
+            return str.contains("T") ? LocalDateTime.parse(str) : LocalDateTime.parse(str, API_FMT);
+        } catch (DateTimeParseException e) {
+            return null;
+        }
     }
+
+    private record TagSelectionData(Map<String, List<String>> tagMap, Map<String, String> tagColors) {}
 }
