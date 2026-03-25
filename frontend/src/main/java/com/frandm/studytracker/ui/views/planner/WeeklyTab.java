@@ -66,10 +66,16 @@ public class WeeklyTab extends VBox {
         for (GridPane grid : new GridPane[]{headerGrid, calendarGrid}) {
             grid.getColumnConstraints().clear();
             grid.setHgap(8);
-            grid.getColumnConstraints().add(new ColumnConstraints(55));
+
+            ColumnConstraints timeCol = new ColumnConstraints(55);
+            timeCol.setMinWidth(55);
+            timeCol.setMaxWidth(55);
+            grid.getColumnConstraints().add(timeCol);
+
             for (int i = 0; i < 7; i++) {
                 ColumnConstraints dayCol = new ColumnConstraints();
                 dayCol.setHgrow(Priority.ALWAYS);
+                dayCol.setPrefWidth(0);
                 dayCol.setMinWidth(100);
                 grid.getColumnConstraints().add(dayCol);
             }
@@ -80,8 +86,8 @@ public class WeeklyTab extends VBox {
         LocalDate today = LocalDate.now();
         headerGrid.getChildren().clear();
         calendarGrid.getChildren().clear();
+
         Pane timeColumn = new Pane();
-        timeColumn.setPrefWidth(55);
         timeColumn.getStyleClass().add("calendar-time-column");
 
         for (int h = 0; h < 24; h++) {
@@ -341,15 +347,17 @@ public class WeeklyTab extends VBox {
         lblNum.getStyleClass().add(isToday ? "calendar-day-num-today" : "calendar-day-num");
         StackPane numStack = new StackPane();
 
+        Circle c = new Circle(14);
+
         if (isToday) {
-            Circle c = new Circle(14);
             c.getStyleClass().add("calendar-today-circle");
-            numStack.getChildren().add(c);
+        } else {
+            c.getStyleClass().add("calendar-nottoday-circle");
         }
 
-        numStack.getChildren().add(lblNum);
+        numStack.getChildren().addAll(c, lblNum);
         VBox v = new VBox(2, lblName, numStack);
-        v.setAlignment(Pos.CENTER);
+        v.setAlignment(Pos.TOP_CENTER);
         v.setPadding(new Insets(10, 0, 10, 0));
         return v;
     }
@@ -619,6 +627,32 @@ public class WeeklyTab extends VBox {
             if (!tf.getText().isEmpty()) { int val = Integer.parseInt(tf.getText()); if (val > max) tf.setText(String.valueOf(max)); }
         });
         return tf;
+    }
+
+    private void updateSessionTime(Map<String, Object> s, int newHour, int newMinute) {
+        LocalDateTime oldStart = (LocalDateTime) s.get("full_start");
+        LocalDateTime oldEnd = (LocalDateTime) s.get("full_end");
+
+        long durationMinutes = java.time.Duration.between(oldStart, oldEnd).toMinutes();
+
+        LocalDateTime newStart = oldStart.withHour(newHour).withMinute(newMinute).withSecond(0);
+        LocalDateTime newEnd = newStart.plusMinutes(durationMinutes);
+
+        DateTimeFormatter dbFmt = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
+
+        try {
+            ApiClient.updateScheduledSession(
+                    (int) s.get("id"),
+                    (String) s.get("tag_name"),
+                    (String) s.get("task_name"),
+                    (String) s.getOrDefault("title", ""),
+                    newStart.format(dbFmt),
+                    newEnd.format(dbFmt)
+            );
+            refresh();
+        } catch (Exception e) {
+            refresh();
+        }
     }
 
     private String getStartTime(Map<String, Object> s) { return s.get("startTime") != null ? s.get("startTime").toString() : null; }

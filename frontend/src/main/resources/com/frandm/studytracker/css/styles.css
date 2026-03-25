@@ -677,6 +677,10 @@
     -fx-effect: dropshadow(three-pass-box, rgba(0,0,0,0.15), 5, 0, 0, 1);
 }
 
+.calendar-nottoday-circle {
+    -fx-fill: transparent;
+}
+
 .calendar-hour-label {
     -fx-text-fill: -color-fg-muted;
     -fx-font-size: 12 px;
@@ -1560,7 +1564,3 @@
 
 
 
-/* Hover sobre una columna completa */
-.day-column-wrapper:hover {
-    -fx-background-color: rgba(255, 255, 255, 0.05);
-}
