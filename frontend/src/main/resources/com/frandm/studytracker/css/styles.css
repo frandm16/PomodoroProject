@@ -6,7 +6,6 @@
 }
 /* --- labels --- */
 .timer-label {
-    -fx-font-family: "JetBrains Mono", "Monospaced";
     -fx-font-size: 100px;
     -fx-font-weight: bold;
     -fx-text-fill: -text-main;
@@ -218,6 +217,9 @@
 .default-color3.chart-pie { -fx-pie-color: -heatmap-low; }
 .default-color4.chart-pie { -fx-pie-color: -heatmap-very-high; }
 .default-color5.chart-pie { -fx-pie-color: -heatmap-high; }
+.chart-plot-background {
+    -fx-background-color: -stat-card-secundary-bg;
+}
 
 .chart-series-area-line {
     -fx-stroke: -color-accent;
@@ -388,7 +390,6 @@
 }
 
 .timeline-day-num {
-    -fx-font-family: "JetBrains Mono";
     -fx-font-weight: bold;
     -fx-font-size: 18px;
     -fx-text-fill: -text-main;
@@ -501,7 +502,6 @@
 .summary-task-time {
     -fx-text-fill: -color-accent;
     -fx-font-weight: bold;
-    -fx-font-family: "JetBrains Mono";
 }
 
 .today-status-inline {
@@ -677,10 +677,13 @@
     -fx-effect: dropshadow(three-pass-box, rgba(0,0,0,0.15), 5, 0, 0, 1);
 }
 
+.calendar-nottoday-circle {
+    -fx-fill: transparent;
+}
+
 .calendar-hour-label {
-    -fx-text-fill: -color-fg-default;
-    -fx-font-size: 10px;
-    -fx-font-family: "JetBrains Mono", "Inter", monospace;
+    -fx-text-fill: -color-fg-muted;
+    -fx-font-size: 12 px;
 }
 
 .calendar-cell {
@@ -700,15 +703,62 @@
 }
 
 .calendar-session-block {
+    -fx-background-color: -session-bg-color;
     -fx-background-radius: 6;
-    -fx-border-radius: 6;
-    -fx-border-width: 0 0 0 4;
-    -fx-padding: 6 10;
     -fx-cursor: hand;
+    -fx-padding: 5;
 }
 
 .calendar-session-block:hover {
-    -fx-effect: dropshadow(three-pass-box, rgba(0,0,0,0.2), 10, 0, 0, 4);
+    -fx-effect: dropshadow(three-pass-box, rgba(0,0,0,0.15), 8, 0, 0, 2);
+}
+
+.session-color-bar {
+    -fx-min-width: 4;
+    -fx-pref-width: 4;
+    -fx-max-width: 4;
+    -fx-background-color: -session-color;
+    -fx-background-radius: 6;
+}
+
+.session-content-container {
+    -fx-spacing: 3;
+    -fx-padding: 0 3;
+    -fx-alignment: TOP_LEFT;
+}
+
+.session-title {
+    -fx-text-fill: -session-color;
+    -fx-font-weight: bold;
+    -fx-font-size: 13px;
+}
+
+.session-time-container {
+    -fx-spacing: 2;
+    -fx-alignment: CENTER_LEFT;
+}
+
+.session-time-icon {
+    -fx-icon-color: -session-color;
+    -fx-icon-size: 11;
+    -fx-translate-y: -1;
+}
+
+.session-time-label {
+    -fx-text-fill: -session-color;
+    -fx-font-size: 11px;
+}
+
+.session-tag-badge {
+    -fx-text-fill: -session-color;
+    -fx-border-color: derive(-session-color, -10%);
+    -fx-border-width: 1;
+    -fx-border-radius: 10;
+    -fx-background-radius: 10;
+    -fx-background-color: transparent;
+    -fx-font-size: 9px;
+    -fx-font-weight: bold;
+    -fx-padding: 1 6 1 6;
 }
 
 .calendar-session-task {
@@ -1255,22 +1305,23 @@
 
 /* --- segmented buttons settings --- */
 .segmented-button .toggle-button {
-    -fx-background-radius: 0;
+    -fx-background-radius: 18;
     -fx-border-color: -color-border-subtle-light;
     -fx-background-color: transparent;
-    -fx-border-width: 1 0 1 1;
+    -fx-border-width: 1 0 1 0;
     -fx-font-size: 15px;
 }
 
 .segmented-button .left-pill {
-    -fx-background-radius: 18 0 0 18;
+    -fx-background-radius: 18;
     -fx-border-radius: 18 0 0 18;
+    -fx-border-width: 1 0 1 1;
 }
 
 .segmented-button .right-pill {
-    -fx-background-radius: 0 18 18 0;
+    -fx-background-radius: 18;
     -fx-border-radius: 0 18 18 0;
-    -fx-border-width: 1 1 1 1;
+    -fx-border-width: 1 1 1 0;
 }
 
 .segmented-button .toggle-button:hover {
@@ -1350,3 +1401,166 @@
     -fx-text-fill: -text-muted;
     -fx-font-size: 20px;
 }
+
+/* --- daily view --- */
+
+.daily-tab {
+    -fx-background-color: -color-bg-default;
+}
+
+.planner-nav-bar {
+    -fx-padding: 15 10;
+    -fx-spacing: 15;
+}
+
+.planner-date-label {
+    -fx-text-fill: -text-main;
+}
+
+.daily-content-wrapper {
+    -fx-spacing: 30;
+}
+
+.daily-container {
+    -fx-spacing: 10;
+}
+
+.planner-scroll-pane {
+    -fx-background: transparent;
+    -fx-background-color: transparent;
+}
+
+.planner-row-base {
+    -fx-background-color: -color-bg-subtle;
+    -fx-background-radius: 10;
+    -fx-padding: 15;
+    -fx-spacing: 15;
+    -fx-effect: dropshadow(three-pass-box, -shadow-default, 10, 0, 0, 0);
+}
+
+.row-info-container {
+    -fx-spacing: 2;
+}
+
+.row-title {
+    -fx-text-fill: -text-main;
+    -fx-font-weight: bold;
+    -fx-font-size: 14px;
+}
+
+.section-header {
+    -fx-text-fill: -text-muted;
+    -fx-font-size: 11px;
+    -fx-font-weight: bold;
+}
+
+.empty-state-label {
+    -fx-padding: 30;
+    -fx-border-color: -color-border-subtle-light;
+    -fx-border-style: dashed;
+    -fx-border-radius: 8;
+    -fx-text-fill: -text-muted;
+}
+
+.planner-badge {
+    -fx-padding: 4 10;
+    -fx-background-radius: 15;
+    -fx-text-fill: white;
+    -fx-font-size: 11px;
+    -fx-border-color: rgba(255, 255, 255, 0.1);
+    -fx-border-radius: 15;
+}
+
+.badge-container {
+    -fx-spacing: 8;
+}
+
+.badge-time {
+    -fx-background-color: -stat-card-secundary-bg;
+    -fx-text-fill: -text-main;
+}
+
+.badge-tag {
+    -fx-background-color: -color-accent;
+    -fx-text-fill: -color-fg-secundary;
+}
+
+.deadline-row .ikonli-font-icon {
+    -fx-icon-color: -icon-main;
+    -fx-icon-size: 16px;
+}
+
+.event-row {
+    -fx-border-width: 0 0 0 4;
+    -fx-background-radius: 8;
+}
+
+.calendar-button-icon {
+    -fx-background-color: transparent;
+}
+
+.calendar-button-icon .ikonli-font-icon {
+    -fx-icon-color: -icon-subtle;
+}
+
+.calendar-button-icon:hover .ikonli-font-icon {
+    -fx-icon-color: -color-accent;
+}
+
+/* --- floating deck --- */
+.floating-dock {
+    -fx-background-color: derive(-color-bg-subtle, 10%);
+    -fx-background-radius: 24;
+    -fx-border-color: -color-border-subtle-light;
+    -fx-border-radius: 24;
+    -fx-padding: 10 18 10 18;
+    -fx-effect: dropshadow(three-pass-box, -shadow-default, 20, 0, 0, 10);
+}
+
+.dock-button {
+    -fx-background-color: transparent;
+    -fx-background-radius: 14;
+    -fx-cursor: hand;
+}
+
+.dock-icon {
+    -fx-icon-color: -icon-subtle;
+    -fx-icon-size: 28;
+}
+
+.dock-button:hover {
+    -fx-background-color: -color-hover;
+}
+
+.dock-button:hover .dock-icon {
+    -fx-icon-color: -color-accent;
+}
+
+.dock-button:selected {
+    -fx-background-color: -color-accent-light;
+    -fx-effect: dropshadow(two-pass-box, rgba(0, 0, 0, 0.2), 5, 0, 0, 0);
+}
+
+.dock-button:selected .dock-icon {
+    -fx-icon-color: -color-accent;
+}
+
+.floating-dock .separator {
+    -fx-opacity: 0.5;
+    -fx-padding: 0 5 0 5;
+}
+
+.floating-dock .separator .line {
+    -fx-border-color: -text-muted;
+    -fx-border-width: 0 1 0 0;
+}
+
+
+.day-column-wrapper {
+    -fx-background-color: rgba(255, 255, 255, 0.01);
+    -fx-background-radius: 15;
+}
+
+
+
+

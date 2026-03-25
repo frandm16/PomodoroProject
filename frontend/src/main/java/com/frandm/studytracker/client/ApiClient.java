@@ -131,10 +131,10 @@ public class ApiClient {
     }
 
     public static void updateScheduledSession(long id, String tagName, String taskName,
-                                              String start, String end) throws Exception {
+                                              String title, String start, String end) throws Exception {
         put("/scheduled/" + id, Map.of(
                 "tagName", tagName, "taskName", taskName,
-                "startTime", start, "endTime", end
+                "title", title, "startTime", start, "endTime", end
         ));
     }
 
@@ -270,5 +270,71 @@ public class ApiClient {
         } catch (Exception e) {
             e.printStackTrace();
         }
+    }
+
+    public static void generateRandomDeadlines() {
+        System.out.println("[generateRandomDeadlines] Starting...");
+        Random random = new Random();
+        LocalDate today = LocalDate.now();
+        String[] titles = {"Final Exam", "Project Delivery", "Lab Report", "Essay Submission", "Quiz", "Thesis Draft"};
+        String[] urgencies = {"High", "Medium", "Low"};
+        DateTimeFormatter fmt = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
+
+        try {
+            String tasksJson = get("/tasks/all");
+            List<Map<String, Object>> taskList = mapper.readValue(tasksJson, new TypeReference<>() {});
+            if (taskList.isEmpty()) return;
+
+            for (int i = 0; i < 15; i++) {
+                Map<String, Object> task = taskList.get(random.nextInt(taskList.size()));
+                Map<String, Object> tagMap = (Map<String, Object>) task.get("tag");
+
+                LocalDate dueDate = today.plusDays(random.nextInt(21) - 7);
+                LocalDateTime dueDateTime = dueDate.atTime(random.nextInt(24), 0);
+
+                saveDeadline(
+                        (String) tagMap.get("name"),
+                        (String) tagMap.get("color"),
+                        (String) task.get("name"),
+                        titles[random.nextInt(titles.length)] + " - " + task.get("name"),
+                        "Generated automatic deadline for testing UI",
+                        urgencies[random.nextInt(urgencies.length)],
+                        dueDateTime.format(fmt),
+                        random.nextBoolean()
+                );
+            }
+            System.out.println("[generateRandomDeadlines] Done ✓");
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
+
+    // --- Deadlines ---
+    public static List<Map<String, Object>> getDeadlines(String start, String end) throws Exception {
+        String Start = start.replace(" ", "%20");
+        String End = end.replace(" ", "%20");
+        return mapper.readValue(get("/deadlines?start=" + Start + "&end=" + End), new TypeReference<>() {});
+    }
+
+    public static void saveDeadline(String tagName, String tagColor, String taskName,
+                                    String title, String description, String urgency,
+                                    String dueDate, boolean allDay) throws Exception {
+        post("/deadlines", Map.of(
+                "tagName", tagName, "tagColor", tagColor, "taskName", taskName,
+                "title", title, "description", description, "urgency", urgency,
+                "dueDate", dueDate, "allDay", allDay
+        ));
+    }
+
+    public static void toggleDeadline(long id) throws Exception {
+        HttpRequest req = HttpRequest.newBuilder()
+                .uri(URI.create(BASE_URL + "/deadlines/" + id + "/toggle"))
+                .method("PATCH", HttpRequest.BodyPublishers.noBody())
+                .build();
+        http.send(req, HttpResponse.BodyHandlers.ofString());
+    }
+
+    public static void deleteDeadline(long id) throws Exception {
+        delete("/deadlines/" + id);
     }
 }

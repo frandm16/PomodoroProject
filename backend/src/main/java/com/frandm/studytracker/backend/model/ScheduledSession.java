@@ -15,6 +15,7 @@ public class ScheduledSession {
     @JoinColumn(name = "task_id", nullable = false)
     private Task task;
 
+    @Column(name = "title")
     private String title;
 
     @Column(name = "start_time", nullable = false)

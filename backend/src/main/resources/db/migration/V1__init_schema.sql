@@ -35,3 +35,15 @@ CREATE TABLE scheduled_sessions (
     end_time TIMESTAMP NOT NULL,
     is_completed BOOLEAN DEFAULT false
 );
+
+CREATE TABLE deadlines (
+    id BIGSERIAL PRIMARY KEY,
+    title VARCHAR(255) NOT NULL,
+    tag_id BIGINT REFERENCES tags(id) ON DELETE SET NULL,
+    task_id BIGINT REFERENCES tasks(id) ON DELETE SET NULL,
+    urgency VARCHAR(10) DEFAULT 'MEDIUM',
+    due_date TIMESTAMP NOT NULL,
+    all_day BOOLEAN DEFAULT FALSE,
+    description TEXT,
+    is_completed BOOLEAN DEFAULT FALSE
+);

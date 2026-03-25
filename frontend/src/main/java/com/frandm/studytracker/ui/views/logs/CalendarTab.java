@@ -23,18 +23,16 @@ public class CalendarTab extends VBox {
     private ScrollPane scrollPane;
     private LocalDate currentWeekStart;
     private final LogsController logsController;
-    private final LogsView logsView;
     private final double ROW_HEIGHT = 60.0;
     private final Pane[] dayColumns = new Pane[7];
     private final DateTimeFormatter timeFormatter = DateTimeFormatter.ofPattern("HH:mm");
     private final DateTimeFormatter dbFormatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
     private static final double MIN_BLOCK_HEIGHT = 20.0;
 
-    public CalendarTab(LogsController logsController, LogsView logsView) {
+    public CalendarTab(LogsController logsController) {
         this.currentWeekStart = LocalDate.now().with(java.time.DayOfWeek.MONDAY);
         this.getStyleClass().add("calendar-root");
         this.logsController = logsController;
-        this.logsView = logsView;
         VBox.setVgrow(this, Priority.ALWAYS);
         initializeUI();
     }

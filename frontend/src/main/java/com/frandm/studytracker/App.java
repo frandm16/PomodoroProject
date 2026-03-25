@@ -12,6 +12,7 @@ import javafx.scene.image.Image;
 import javafx.scene.input.KeyCode;
 import javafx.scene.input.KeyEvent;
 import javafx.scene.paint.Color;
+import javafx.scene.text.Font;
 import javafx.stage.Stage;
 import javafx.util.Duration;
 
@@ -25,6 +26,9 @@ public class App extends Application {
 
         FXMLLoader fxmlLoader = new FXMLLoader(App.class.getResource("/com/frandm/studytracker/fxml/main_view.fxml"));
         Parent root = fxmlLoader.load();
+
+        Font.loadFont(getClass().getResourceAsStream("/com/frandm/studytracker/fonts/SF-Pro-Display-Regular.otf"), 12);
+        Font.loadFont(getClass().getResourceAsStream("/com/frandm/studytracker/fonts/SF-Pro-Display-Bold.otf"), 12);
 
         javafx.scene.Node content = ((javafx.scene.layout.Pane) root).getChildren().getFirst();
 

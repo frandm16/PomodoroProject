@@ -1,4 +1,6 @@
 .root {
+
+    -fx-font-family: "SF Pro Display";
     -icon-red : #ff7a00;
 }
 
@@ -10,7 +12,7 @@
     -color-bg-subtle: #161b22;
     -color-accent: -heatmap-high;
     -color-accent-secundary: -color-fg-secundary;
-    -color-accent-light: -heatmap-low;
+    -color-accent-light: -heatmap-very-low;
 
     -color-menu: -color-bg-default;
     -color-hover: -color-bg-subtle;
@@ -65,7 +67,7 @@
     -text-muted: #9c6070;
     -stat-card-normal-bg: rgba(228, 163, 179, 0.12);
     -stat-card-red-bg: rgba(192, 80, 112, 0.15);
-    -stat-card-secundary-bg: rgba(255, 255, 255, 0.5);
+    -stat-card-secundary-bg: rgba(239, 224, 227, 0.5);
 
     -heatmap-empty: rgba(228, 163, 179, 0.1);
     -heatmap-very-low: rgba(228, 163, 179, 0.2);

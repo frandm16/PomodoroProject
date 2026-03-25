@@ -34,7 +34,7 @@ public class LogsView extends StackPane {
 
         historyTab = new HistoryTab(logsController);
         focusTab = new FocusTab(logsController);
-        calendarTab = new CalendarTab(logsController, this);
+        calendarTab = new CalendarTab(logsController);
 
         this.logsController.setViews(historyTab, focusTab, calendarTab);
 

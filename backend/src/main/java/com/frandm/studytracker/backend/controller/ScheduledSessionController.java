@@ -20,6 +20,11 @@ public class ScheduledSessionController {
         this.scheduledSessionService = scheduledSessionService;
     }
 
+    @GetMapping("/all")
+    public List<ScheduledSession> getAll() {
+        return scheduledSessionService.getAll();
+    }
+
     @GetMapping
     public List<ScheduledSession> getByRange(
             @RequestParam String start,
@@ -50,6 +55,7 @@ public class ScheduledSessionController {
                 id,
                 (String) body.get("tagName"),
                 (String) body.get("taskName"),
+                (String) body.get("title"),
                 LocalDateTime.parse((String) body.get("startTime"), fmt),
                 LocalDateTime.parse((String) body.get("endTime"), fmt)
         );

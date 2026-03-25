@@ -19,6 +19,10 @@ public class ScheduledSessionService {
         this.taskService = taskService;
     }
 
+    public List<ScheduledSession> getAll() {
+        return scheduledSessionRepository.findAll();
+    }
+
     public List<ScheduledSession> getByDateRange(LocalDateTime start, LocalDateTime end) {
         return scheduledSessionRepository.findByDateRange(start, end);
     }
@@ -34,14 +38,18 @@ public class ScheduledSessionService {
         return scheduledSessionRepository.save(session);
     }
 
-    public ScheduledSession update(Long id, String tagName, String taskName,
+    public ScheduledSession update(Long id, String tagName, String taskName, String title,
                                    LocalDateTime start, LocalDateTime end) {
         ScheduledSession session = scheduledSessionRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("ScheduledSession not found"));
+
         Task task = taskService.getOrCreate(tagName, "#94a3b8", taskName);
+
         session.setTask(task);
+        session.setTitle(title);
         session.setStartTime(start);
         session.setEndTime(end);
+
         return scheduledSessionRepository.save(session);
     }
 
