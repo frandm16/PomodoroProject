@@ -51,7 +51,6 @@ public class ScheduledSessionController {
     @PutMapping("/{id}")
     public ScheduledSession update(@PathVariable Long id, @RequestBody Map<String, Object> body) {
         DateTimeFormatter fmt = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
-        System.out.println(body.get("title") + "Controller");
         return scheduledSessionService.update(
                 id,
                 (String) body.get("tagName"),

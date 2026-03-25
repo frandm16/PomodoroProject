@@ -136,7 +136,6 @@ public class ApiClient {
                 "tagName", tagName, "taskName", taskName,
                 "title", title, "startTime", start, "endTime", end
         ));
-        System.out.println(title);
     }
 
     public static void deleteScheduledSession(long id) throws Exception {

@@ -47,7 +47,6 @@ public class ScheduledSessionService {
 
         session.setTask(task);
         session.setTitle(title);
-        System.out.println(title);
         session.setStartTime(start);
         session.setEndTime(end);
 
