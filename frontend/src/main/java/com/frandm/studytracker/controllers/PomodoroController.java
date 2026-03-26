@@ -437,6 +437,7 @@ public class PomodoroController {
         clickedBtn.getStyleClass().add("active");
 
         if (clickedBtn == menuBtn) {
+            refreshSideMenu();
             uiManager.switchPanels(getActivePanel(), mainContainer);
         } else if (clickedBtn == plannerBtn) {
             plannerController.refresh();
@@ -752,16 +753,34 @@ public class PomodoroController {
 
         VBox list = new VBox(5);
         List<Map<String, Object>> upcomingDeadlines;
+        LocalDate todayDate = LocalDate.now();
+        LocalDateTime nowDateTime = LocalDateTime.now();
         try {
-            String now = ApiClient.formatApiTimestamp(LocalDateTime.now());
-            String futureLimit = ApiClient.formatApiTimestamp(LocalDate.now().plusYears(1).atTime(23, 59, 59));
-            upcomingDeadlines = ApiClient.getDeadlines(now, futureLimit);
+            String startOfToday = ApiClient.formatApiTimestamp(todayDate.atStartOfDay());
+            String futureLimit = ApiClient.formatApiTimestamp(todayDate.plusYears(1).atTime(23, 59, 59));
+            upcomingDeadlines = ApiClient.getDeadlines(startOfToday, futureLimit);
         } catch (Exception e) {
             System.err.println("Error loading upcoming deadlines: " + e.getMessage());
             upcomingDeadlines = new ArrayList<>();
         }
 
         upcomingDeadlines = upcomingDeadlines.stream()
+                .filter(deadline -> {
+                    Object raw = deadline.containsKey("isCompleted") ? deadline.get("isCompleted") : deadline.get("completed");
+                    if (raw instanceof Boolean completed) return !completed;
+                    return raw == null || !Boolean.parseBoolean(raw.toString());
+                })
+                .filter(deadline -> {
+                    Object raw = deadline.getOrDefault("dueDate", deadline.get("deadline"));
+                    if (raw == null) return false;
+                    String value = raw.toString();
+                    LocalDateTime dueDate = value.contains("T")
+                            ? LocalDateTime.parse(value)
+                            : LocalDateTime.parse(value, ApiClient.API_TIMESTAMP_FORMAT);
+                    boolean allDay = Boolean.TRUE.equals(deadline.get("allDay"));
+                    return allDay ? dueDate.toLocalDate().isEqual(todayDate) || dueDate.isAfter(nowDateTime)
+                            : !dueDate.isBefore(nowDateTime);
+                })
                 .sorted(Comparator.comparing(d -> {
                     Object raw = d.getOrDefault("dueDate", d.get("deadline"));
                     if (raw == null) return LocalDateTime.MAX;

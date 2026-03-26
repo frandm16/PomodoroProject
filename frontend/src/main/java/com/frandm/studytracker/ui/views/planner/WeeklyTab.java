@@ -702,7 +702,7 @@ public class WeeklyTab extends VBox {
             } catch (Exception ignored) {}
 
             popup.hide();
-            refreshAction.run();
+            refreshPlannerAndMenu();
         });
 
         root.getChildren().addAll(
@@ -727,7 +727,7 @@ public class WeeklyTab extends VBox {
                 } catch (Exception ignored) {}
 
                 popup.hide();
-                refreshAction.run();
+                refreshPlannerAndMenu();
             });
 
             root.getChildren().add(btnD);
@@ -836,7 +836,7 @@ public class WeeklyTab extends VBox {
                     );
                 }
                 popup.hide();
-                refreshAction.run();
+                refreshPlannerAndMenu();
             } catch (Exception error) {
                 error.printStackTrace();
             }
@@ -864,7 +864,7 @@ public class WeeklyTab extends VBox {
                 } catch (Exception ignored) {}
 
                 popup.hide();
-                refreshAction.run();
+                refreshPlannerAndMenu();
             });
             root.getChildren().add(deleteButton);
         }
@@ -1012,10 +1012,15 @@ public class WeeklyTab extends VBox {
                     ApiClient.formatApiTimestamp(newStart),
                     ApiClient.formatApiTimestamp(newEnd)
             );
-            refreshAction.run();
+            refreshPlannerAndMenu();
         } catch (Exception e) {
-            refreshAction.run();
+            refreshPlannerAndMenu();
         }
+    }
+
+    private void refreshPlannerAndMenu() {
+        refreshAction.run();
+        controller.refreshSideMenu();
     }
 
     private String getStartTime(Map<String, Object> s) { return s.get("startTime") != null ? s.get("startTime").toString() : null; }

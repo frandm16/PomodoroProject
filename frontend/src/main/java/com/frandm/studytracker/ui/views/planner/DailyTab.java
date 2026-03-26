@@ -192,7 +192,7 @@ public class DailyTab extends VBox {
             new Thread(() -> {
                 try {
                     ApiClient.toggleDeadlineCompleted(((Number) data.get("id")).longValue());
-                    Platform.runLater(refreshAction);
+                    Platform.runLater(this::refreshPlannerAndMenu);
                 } catch (Exception ignored) {
                     completedState[0] = previousState;
                     data.put("isCompleted", previousState);
@@ -340,7 +340,7 @@ public class DailyTab extends VBox {
                 }
             } catch (Exception ignored) {}
             popup.hide();
-            refreshAction.run();
+            refreshPlannerAndMenu();
         });
 
         root.getChildren().addAll(
@@ -362,7 +362,7 @@ public class DailyTab extends VBox {
                     ApiClient.deleteScheduledSession(((Number) data.get("id")).longValue());
                 } catch (Exception ignored) {}
                 popup.hide();
-                refreshAction.run();
+                refreshPlannerAndMenu();
             });
             root.getChildren().add(delete);
         }
@@ -455,7 +455,7 @@ public class DailyTab extends VBox {
                     );
                 }
                 popup.hide();
-                refreshAction.run();
+                refreshPlannerAndMenu();
             } catch (Exception error) {
                 error.printStackTrace();
             }
@@ -482,7 +482,7 @@ public class DailyTab extends VBox {
                     ApiClient.deleteDeadline(((Number) data.get("id")).longValue());
                 } catch (Exception ignored) {}
                 popup.hide();
-                refreshAction.run();
+                refreshPlannerAndMenu();
             });
             root.getChildren().add(delete);
         }
@@ -618,6 +618,11 @@ public class DailyTab extends VBox {
         Object raw = data.containsKey("isCompleted") ? data.get("isCompleted") : data.get("completed");
         if (raw instanceof Boolean completed) return completed;
         return raw != null && Boolean.parseBoolean(raw.toString());
+    }
+
+    private void refreshPlannerAndMenu() {
+        refreshAction.run();
+        pomodoroController.refreshSideMenu();
     }
 
     private String buildDeadlineStatus(long diff, boolean allDay) {

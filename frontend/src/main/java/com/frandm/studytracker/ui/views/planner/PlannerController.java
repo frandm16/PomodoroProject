@@ -14,10 +14,12 @@ public class PlannerController {
     private final DailyTab dailyTab;
     private final WeeklyTab weeklyTab;
     private final PlannerView view;
+    private final PomodoroController pomodoroController;
     private LocalDate selectedDate = LocalDate.now();
     private final DateTimeFormatter apiFmt = ApiClient.API_TIMESTAMP_FORMAT;
 
     public PlannerController(PomodoroController controller) {
+        this.pomodoroController = controller;
         this.dailyTab = new DailyTab(controller);
         this.weeklyTab = new WeeklyTab(controller);
         this.dailyTab.setRefreshAction(this::refresh);
@@ -42,6 +44,7 @@ public class PlannerController {
                     weeklyTab.refreshData(weekStart, weekSessions, weekDeadlines);
 
                     view.updateTitle();
+                    pomodoroController.refreshSideMenu();
                 });
             } catch (Exception e) {
                 e.printStackTrace();
