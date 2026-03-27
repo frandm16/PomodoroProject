@@ -1497,8 +1497,7 @@
 
 .section-header {
     -fx-text-fill: -text-muted;
-    -fx-font-size: 11px;
-    -fx-font-weight: bold;
+    -fx-font-size: 13px;
 }
 
 .empty-state-label {

@@ -37,15 +37,17 @@ import java.util.function.Function;
 import java.util.stream.Collectors;
 
 public class DailyTab extends VBox {
-
     private final VBox deadlinesContainer = new VBox(10);
     private final VBox dayEventsContainer = new VBox(10);
     private final PomodoroController pomodoroController;
+    private final Label lblDeadlinesHeader = new Label("Deadlines");
     private LocalDate currentDate = LocalDate.now();
-    private Runnable refreshAction = () -> {};
+    private Runnable refreshAction = () -> {
+    };
     private Popup activePopup;
 
     private static final DateTimeFormatter TIME_FMT = DateTimeFormatter.ofPattern("HH:mm");
+
     public DailyTab(PomodoroController pomodoroController) {
         this.pomodoroController = pomodoroController;
         this.getStyleClass().add("daily-tab");
@@ -54,7 +56,8 @@ public class DailyTab extends VBox {
     }
 
     public void setRefreshAction(Runnable refreshAction) {
-        this.refreshAction = refreshAction != null ? refreshAction : () -> {};
+        this.refreshAction = refreshAction != null ? refreshAction : () -> {
+        };
     }
 
     public void openCreateScheduledSession(double screenX, double screenY) {
@@ -69,12 +72,14 @@ public class DailyTab extends VBox {
         deadlinesContainer.getStyleClass().add("daily-container");
         dayEventsContainer.getStyleClass().add("daily-container");
 
+        lblDeadlinesHeader.getStyleClass().add("section-header");
+
         VBox content = new VBox(20);
         content.getStyleClass().add("daily-content-wrapper");
         content.setPadding(new Insets(15, 0, 0, 0));
         content.getChildren().addAll(
-                createHeader("Deadlines"), deadlinesContainer,
-                createHeader("Scheduled Events"), dayEventsContainer
+                lblDeadlinesHeader, deadlinesContainer,
+                createHeader("Scheduled Sessions"), dayEventsContainer
         );
 
         ScrollPane scroll = new ScrollPane(content);
@@ -108,6 +113,8 @@ public class DailyTab extends VBox {
 
         fill(deadlinesContainer, sortedDeadlines, "No deadlines for this day.", this::createDeadlineRow);
         fill(dayEventsContainer, sortedScheduled, "No events scheduled.", this::createEventRow);
+
+        updateDeadlineHeaderCount();
     }
 
     public String getHeaderTitle() {
@@ -134,6 +141,7 @@ public class DailyTab extends VBox {
 
     private HBox createDeadlineRow(Map<String, Object> data) {
         HBox row = baseRow();
+        row.getProperties().put("data", data);
         row.getStyleClass().add("deadline-row");
 
         LocalDateTime due = extractDeadlineDate(data);
@@ -174,7 +182,7 @@ public class DailyTab extends VBox {
         completedIcon.setIconSize(18);
         completedButton.setGraphic(completedIcon);
         final boolean[] completedState = {isCompleted};
-        applyDeadlineCompletedState(row, title, completedIcon, completedState[0]);
+        applyDeadlineCompletedState(row, completedIcon, info, badges, completedState[0]);
         completedButton.setOnAction(e -> {
             completedButton.setDisable(true);
             e.consume();
@@ -182,7 +190,9 @@ public class DailyTab extends VBox {
             boolean nextState = !previousState;
             completedState[0] = nextState;
             data.put("isCompleted", nextState);
-            applyDeadlineCompletedState(row, title, completedIcon, nextState);
+            applyDeadlineCompletedState(row, completedIcon, info, badges, nextState);
+            updateDeadlineHeaderCount();
+
             new Thread(() -> {
                 try {
                     ApiClient.toggleDeadlineCompleted(((Number) data.get("id")).longValue());
@@ -191,7 +201,7 @@ public class DailyTab extends VBox {
                     error.printStackTrace();
                     completedState[0] = previousState;
                     data.put("isCompleted", previousState);
-                    Platform.runLater(() -> applyDeadlineCompletedState(row, title, completedIcon, previousState));
+                    Platform.runLater(() -> applyDeadlineCompletedState(row, completedIcon, info, badges, previousState));
                 } finally {
                     Platform.runLater(() -> completedButton.setDisable(false));
                 }
@@ -208,10 +218,11 @@ public class DailyTab extends VBox {
         return row;
     }
 
-    private void applyDeadlineCompletedState(HBox row, Label title, FontIcon completedIcon, boolean isCompleted) {
+    private void applyDeadlineCompletedState(HBox row, FontIcon completedIcon, VBox info, HBox badges, boolean isCompleted) {
         completedIcon.setIconLiteral(isCompleted ? "mdi2c-check-circle" : "mdi2c-checkbox-blank-circle-outline");
-        title.setOpacity(isCompleted ? 0.65 : 1.0);
-        row.setOpacity(isCompleted ? 0.72 : 1.0);
+        row.setOpacity(isCompleted ? 0.75 : 1.0);
+        info.setOpacity(isCompleted ? 0.5 : 1.0);
+        badges.setOpacity(isCompleted ? 0.5 : 1.0);
     }
 
     private HBox createEventRow(Map<String, Object> data) {
@@ -260,7 +271,7 @@ public class DailyTab extends VBox {
     }
 
     private Label createHeader(String title) {
-        Label header = new Label(title.toUpperCase());
+        Label header = new Label(title);
         header.getStyleClass().add("section-header");
         return header;
     }
@@ -591,4 +602,21 @@ public class DailyTab extends VBox {
         return ApiClient.parseApiTimestamp(val);
     }
 
+    private void updateDeadlineHeaderCount() {
+        List<Map<String, Object>> currentDeadlines = deadlinesContainer.getChildren().stream()
+                .filter(node -> node.getProperties().containsKey("data"))
+                .map(node -> (Map<String, Object>) node.getProperties().get("data"))
+                .collect(Collectors.toList());
+
+        long total = currentDeadlines.size();
+        long completed = currentDeadlines.stream()
+                .filter(this::isDeadlineCompleted)
+                .count();
+
+        if (total > 0) {
+            lblDeadlinesHeader.setText("Deadlines • " + completed + "/" + total + " completed");
+        } else {
+            lblDeadlinesHeader.setText("Deadlines");
+        }
+    }
 }
