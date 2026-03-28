@@ -1650,13 +1650,13 @@
     -fx-background-color: transparent;
     -fx-background-radius: 20;
     -fx-padding: 12 14 12 14;
+    -fx-cursor: hand;
 
 }
 
 .dock-icon {
     -fx-icon-color: -icon-subtle;
     -fx-icon-size: 24;
-    -fx-cursor: hand;
 }
 
 .dock-copy {
@@ -1679,11 +1679,12 @@
 }
 
 .dock-button:hover {
+    -fx-background-color: -color-hover;
+    -fx-translate-y: -1;
 }
 
-.dock-icon:hover {
+.dock-button:hover .dock-icon {
     -fx-icon-color: -color-accent;
-    -fx-translate-y: -1;
 }
 
 .dock-button:selected {

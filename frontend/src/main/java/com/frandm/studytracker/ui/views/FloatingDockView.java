@@ -115,12 +115,14 @@ public class FloatingDockView {
         textBox.getStyleClass().add("dock-copy");
         textBox.setAlignment(Pos.CENTER_LEFT);
         textBox.setManaged(true);
-        textBox.setVisible(false);
+        textBox.setVisible(true);
+        textBox.setOpacity(0.0);
         textBox.setMinWidth(0);
         textBox.setPrefWidth(0);
         textBox.setMaxWidth(0);
+        textBox.setPadding(new javafx.geometry.Insets(0, 0, 0, 0));
 
-        HBox content = new HBox(12, icon, textBox);
+        HBox content = new HBox(0, icon, textBox);
         content.setAlignment(Pos.CENTER_LEFT);
 
         ToggleButton button = new ToggleButton();
@@ -176,15 +178,12 @@ public class FloatingDockView {
         if (open) {
             button.getStyleClass().add("active");
             button.setSelected(true);
-            textBox.setVisible(true);
         } else {
             button.getStyleClass().remove("active");
         }
 
         double targetWidth = open ? DOCK_SECTION_WIDTH : 0;
         double targetOpacity = open ? 1 : 0;
-
-
 
         Timeline timeline = new Timeline();
         KeyFrame kf = new KeyFrame(
@@ -193,10 +192,13 @@ public class FloatingDockView {
                 new KeyValue(textBox.prefWidthProperty(), targetWidth, Interpolator.EASE_BOTH),
                 new KeyValue(textBox.opacityProperty(), targetOpacity, Interpolator.EASE_BOTH)
         );
+
         timeline.getKeyFrames().add(kf);
 
-        timeline.setOnFinished(_ -> {
-            textBox.setVisible(open);
+        timeline.currentTimeProperty().addListener((_, _, _) -> {
+            double progress = timeline.getCurrentTime().toMillis() / TRANSITION_TIME;
+            if (!open) progress = 1 - progress;
+            HBox.setMargin(textBox, new javafx.geometry.Insets(0, 0, 0, 12 * progress));
         });
 
         timeline.play();

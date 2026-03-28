@@ -194,7 +194,7 @@
 
                             <HBox maxWidth="Infinity" maxHeight="-Infinity">
                                 <HBox styleClass="timer-hbox" onMousePressed="#toggleSettings" >
-                                    <FontIcon iconLiteral="mdi2t-timer-outline" styleClass="timer-icon" />
+                                    <FontIcon fx:id="timerIcon" iconLiteral="mdi2t-timer-outline" styleClass="timer-icon" />
                                     <VBox styleClass="timer-vbox">
                                         <Label fx:id="ModeNameLabel" text="Pomodoro" styleClass="timer-name" />
                                         <Label fx:id="ModeSubnameLabel" text="Menu" styleClass="timer-description" />

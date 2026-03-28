@@ -72,6 +72,7 @@ public class PomodoroController {
     private final UIManager uiManager = new UIManager();
     public Label ModeSubnameLabel;
     public Label ModeNameLabel;
+    public FontIcon timerIcon;
 
 
     private StatsDashboard statsDashboard;
@@ -542,9 +543,18 @@ public class PomodoroController {
         finishBtn.setManaged(!isMenu);
 
         switch (mode) {
-            case POMODORO -> updatePomodoroUI(logical);
-            case TIMER -> updateTimerUI(logical);
-            case COUNTDOWN -> updateCountdownUI(logical);
+            case POMODORO -> {
+                timerIcon.setIconLiteral("mdi2t-timer-sand");
+                updatePomodoroUI(logical);
+            }
+            case TIMER -> {
+                timerIcon.setIconLiteral("mdi2t-timer-outline");
+                updateTimerUI(logical);
+            }
+            case COUNTDOWN -> {
+                timerIcon.setIconLiteral("mdi2a-alarm");
+                updateCountdownUI(logical);
+            }
         }
 
         refreshDynamicDock();
