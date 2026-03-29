@@ -769,6 +769,12 @@
         </StackPane>
     </GridPane>
 
+    <StackPane fx:id="plannerOverlayLayer"
+               visible="false"
+               managed="false"
+               pickOnBounds="true"
+               StackPane.alignment="CENTER" />
+
     <VBox fx:id="notificationContainer"
           mouseTransparent="true"
           visible="false"

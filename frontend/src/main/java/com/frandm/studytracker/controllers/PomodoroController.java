@@ -22,6 +22,7 @@ import javafx.geometry.Pos;
 import javafx.scene.chart.AreaChart;
 import javafx.scene.chart.CategoryAxis;
 import javafx.scene.chart.PieChart;
+import javafx.scene.Node;
 import javafx.scene.control.*;
 import javafx.scene.input.KeyCode;
 import javafx.scene.layout.*;
@@ -41,7 +42,7 @@ public class PomodoroController {
     //region FXML - Componentes de Interfaz
     @FXML public GridPane mainContainer, setupPane, settingsPane, editSessionPane, summaryPane;
     @FXML public StackPane rootPane, setupBox, editSessionBox, summaryBox, stackpaneCircle, confirmOverlay,
-            confirmTagOverlay;
+            confirmTagOverlay, plannerOverlayLayer;
     @FXML public VBox timerTextContainer, notificationContainer, scheduleListContainer,
             plannerContainer, historyContainer, statsPlaceholder, streakVBox, streakImage,
             fuzzyResultsContainer, tagsListContainer, pomoSettingsPane,
@@ -513,6 +514,20 @@ public class PomodoroController {
                     setupManager.updateFuzzyResults(fuzzySearchInput.getText(), fuzzyResultsContainer, tagsWithTasksMap, tagColors, this::onTaskSelected)
             );
         }
+    }
+
+    public void showPlannerOverlay(Node content) {
+        if (plannerOverlayLayer == null) return;
+        plannerOverlayLayer.getChildren().setAll(content);
+        plannerOverlayLayer.setVisible(true);
+        plannerOverlayLayer.setManaged(true);
+    }
+
+    public void hidePlannerOverlay() {
+        if (plannerOverlayLayer == null) return;
+        plannerOverlayLayer.getChildren().clear();
+        plannerOverlayLayer.setVisible(false);
+        plannerOverlayLayer.setManaged(false);
     }
 
     private Region getActivePanel() {

@@ -1522,6 +1522,68 @@
     -fx-spacing: 30;
 }
 
+.planner-side-panel {
+    -fx-background-color: -bg-panels;
+    -fx-background-radius: 16;
+    -fx-border-color: -color-border-subtle-light;
+    -fx-border-radius: 16;
+    -fx-padding: 18;
+    -fx-effect: dropshadow(three-pass-box, -shadow-default, 14, 0, 0, 4);
+}
+
+.planner-side-panel-title {
+    -fx-font-size: 16px;
+    -fx-font-weight: bold;
+    -fx-text-fill: -text-main;
+}
+
+.planner-overlay {
+    -fx-background-color: rgba(0, 0, 0, 0.68);
+    -fx-padding: 32;
+    -fx-alignment: center;
+}
+
+.planner-overlay-card {
+    -fx-background-color: -bg-panels;
+    -fx-background-radius: 20;
+    -fx-border-color: -color-border-subtle-light;
+    -fx-border-radius: 20;
+    -fx-padding: 24;
+    -fx-effect: dropshadow(three-pass-box, rgba(0, 0, 0, 0.35), 28, 0, 0, 10);
+}
+
+.planner-overlay-title {
+    -fx-font-size: 18px;
+    -fx-font-weight: bold;
+    -fx-text-fill: -text-main;
+}
+
+.daily-note-preview {
+    -fx-background-color: -color-bg-subtle;
+    -fx-background-radius: 14;
+    -fx-border-color: -color-border-subtle-light;
+    -fx-border-radius: 14;
+    -fx-padding: 16 18;
+    -fx-text-fill: -text-main;
+    -fx-font-size: 14px;
+    -fx-cursor: hand;
+    -fx-content-display: left;
+    -fx-graphic-text-gap: 12;
+}
+
+.daily-note-preview:hover {
+    -fx-border-color: -color-accent;
+    -fx-background-color: -color-hover;
+}
+
+.daily-note-preview .ikonli-font-icon {
+    -fx-icon-color: -icon-subtle;
+}
+
+.daily-note-preview-empty {
+    -fx-text-fill: -text-muted;
+}
+
 .daily-container {
     -fx-spacing: 10;
 }
@@ -1796,4 +1858,69 @@
 .window-btn:ht-min {
     -fx-background-color: -stage-hover-bg;
 }
+
+
+/* --- daily tab --- */
+
+
+.todo-list-container {
+    -fx-spacing: 8;
+    -fx-padding: 5 0 10 0;
+}
+
+.todo-row {
+    -fx-padding: 8 12;
+    -fx-background-color: -color-bg-subtle;
+    -fx-background-radius: 8;
+    -fx-border-color: -color-border-muted;
+    -fx-border-width: 1;
+    -fx-transition: all 0.2s ease-in-out;
+}
+
+
+.todo-checkbox {
+    -fx-font-size: 14px;
+    -fx-text-fill: -color-fg-default;
+    -fx-cursor: hand;
+}
+
+.todo-completed {
+    -fx-text-fill: -color-fg-muted;
+    -fx-strikethrough: true;
+    -fx-opacity: 0.6;
+}
+
+.todo-add-field {
+    -fx-background-radius: 8;
+    -fx-padding: 8;
+}
+
+.todo-add-button {
+    -fx-background-radius: 8;
+    -fx-cursor: hand;
+}
+
+.todo-add-button:hover {
+    -fx-background-color: -color-accent-fg;
+}
+
+.todo-delete-btn {
+    -fx-background-color: transparent;
+    -fx-text-fill: -color-danger-emphasis;
+    -fx-padding: 4;
+    -fx-cursor: hand;
+    -fx-opacity: 0;
+}
+
+.todo-row:hover .todo-delete-btn {
+    -fx-opacity: 1;
+}
+
+.todo-delete-btn:hover {
+    -fx-background-color: -color-danger-subtle;
+    -fx-background-radius: 4;
+}
+
+
+
 
