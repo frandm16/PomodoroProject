@@ -28,6 +28,8 @@ import javafx.scene.layout.*;
 import javafx.scene.paint.Color;
 import javafx.util.Duration;
 import org.kordamp.ikonli.javafx.FontIcon;
+import xss.it.nfx.NfxStage;
+
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
@@ -73,6 +75,10 @@ public class PomodoroController {
     public Label ModeSubnameLabel;
     public Label ModeNameLabel;
     public FontIcon timerIcon;
+    public Button minBtn;
+    public Button maxBtn;
+    public Button closeBtn;
+    public HBox titleBar;
 
 
     private StatsDashboard statsDashboard;

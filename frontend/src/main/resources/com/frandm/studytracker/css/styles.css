@@ -1711,7 +1711,8 @@
 }
 
 #scheduleListContainer {
-    -fx-padding: 50 30 0 0;
+    -fx-padding: 20 20 0 0;
+    -fx-spacing: 20;
 }
 
 .timer-description {
@@ -1746,3 +1747,53 @@
     -fx-icon-size:14;
     -fx-icon-color: -color-accent;
 }
+
+/* --- custom stage --- */
+/* Contenedor de la barra de título */
+.custom-title-bar {
+    -fx-background-color: transparent;
+}
+
+/* Estilo base para los botones de la ventana */
+.window-btn {
+    -fx-background-color: transparent;
+    -fx-background-radius: 0;
+    -fx-border-radius: 0;
+    -fx-min-width: 46;
+    -fx-min-height: 40;
+    -fx-padding: 0;
+    -fx-cursor: default;
+}
+
+.window-icon-minimize {
+    -fx-icon-color: -stage-icon;
+    -fx-icon-size:18;
+    -fx-transition: background-color 0.1s ease-in-out;
+}
+.window-icon-maximize {
+    -fx-icon-color: -stage-icon;
+    -fx-icon-size:12;
+    -fx-transition: background-color 0.1s ease-in-out;
+}
+.window-icon-close {
+    -fx-icon-color: -stage-icon;
+    -fx-icon-size:18;
+    -fx-transition: background-color 0.1s ease-in-out;
+}
+
+.close-btn:ht-close {
+    -fx-background-color: #e81123;
+}
+
+.close-btn:ht-close .window-icon {
+    -fx-icon-color: white;
+}
+
+.window-btn:ht-max {
+    -fx-background-color: -stage-hover-bg;
+}
+
+.window-btn:ht-min {
+    -fx-background-color: -stage-hover-bg;
+}
+

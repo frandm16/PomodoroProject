@@ -4,7 +4,6 @@
 <?import javafx.scene.control.*?>
 <?import javafx.scene.layout.*?>
 <?import javafx.scene.shape.Circle?>
-<?import javafx.scene.shape.Arc?>
 <?import javafx.scene.chart.PieChart?>
 <?import javafx.scene.chart.CategoryAxis?>
 <?import javafx.scene.chart.NumberAxis?>
@@ -21,6 +20,27 @@
            fx:controller="com.frandm.studytracker.controllers.PomodoroController">
 
     <VBox >
+        <HBox fx:id="titleBar" alignment="CENTER_RIGHT" minHeight="40.0" prefHeight="40.0" styleClass="custom-title-bar">
+            <Region HBox.hgrow="ALWAYS" />
+
+            <Button fx:id="minBtn" styleClass="window-btn" focusTraversable="false">
+                <graphic>
+                    <FontIcon iconLiteral="fltfmz-minimize-16" iconSize="16" styleClass="window-icon-minimize"/>
+                </graphic>
+            </Button>
+
+            <Button fx:id="maxBtn" styleClass="window-btn" focusTraversable="false">
+                <graphic>
+                    <FontIcon iconLiteral="ri-window-maximize" iconSize="16" styleClass="window-icon-maximize"/>
+                </graphic>
+            </Button>
+
+            <Button fx:id="closeBtn" styleClass="window-btn, close-btn" focusTraversable="false">
+                <graphic>
+                    <FontIcon iconLiteral="mdi2w-window-close" iconSize="16" styleClass="window-icon-close"/>
+                </graphic>
+            </Button>
+        </HBox>
         <StackPane VBox.vgrow="ALWAYS" maxWidth="Infinity" >
             <GridPane StackPane.alignment="TOP_CENTER"  maxHeight="-Infinity" maxWidth="Infinity">
                 <columnConstraints>

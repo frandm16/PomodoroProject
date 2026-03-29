@@ -76,6 +76,11 @@
             <version>1.3.1</version>
         </dependency>
         <dependency>
+            <groupId>com.github.xdsswar</groupId>
+            <artifactId>nfx-lib</artifactId>
+            <version>1.0.5</version>
+        </dependency>
+        <dependency>
             <groupId>com.fasterxml.jackson.core</groupId>
             <artifactId>jackson-databind</artifactId>
             <version>2.15.4</version>
@@ -84,6 +89,21 @@
             <groupId>com.fasterxml.jackson.datatype</groupId>
             <artifactId>jackson-datatype-jsr310</artifactId>
             <version>2.15.4</version>
+        </dependency>
+        <dependency>
+            <groupId>org.kordamp.ikonli</groupId>
+            <artifactId>ikonli-fluentui-pack</artifactId>
+            <version>12.4.0</version>
+        </dependency>
+        <dependency>
+            <groupId>org.kordamp.ikonli</groupId>
+            <artifactId>ikonli-runestroicons-pack</artifactId>
+            <version>12.4.0</version>
+        </dependency>
+        <dependency>
+            <groupId>com.dustinredmond.fxtrayicon</groupId>
+            <artifactId>FXTrayIcon</artifactId>
+            <version>4.2.3</version>
         </dependency>
     </dependencies>
 
