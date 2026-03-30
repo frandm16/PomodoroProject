@@ -18,6 +18,14 @@ public class TagService {
         return tagRepository.findAllByOrderByNameAsc();
     }
 
+    public List<Tag> getActive() {
+        return tagRepository.findByIsArchivedFalseOrderByNameAsc();
+    }
+
+    public List<Tag> getFavorites() {
+        return tagRepository.findByIsArchivedFalseAndIsFavoriteTrueOrderByNameAsc();
+    }
+
     public Tag getById(Long id) {
         return tagRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Tag not found: " + id));
@@ -40,11 +48,13 @@ public class TagService {
         return tagRepository.save(tag);
     }
 
-    public Tag partialUpdate(Long id, String name, String color) {
+    public Tag partialUpdate(Long id, String name, String color, Boolean isArchived, Boolean isFavorite) {
         Tag tag = tagRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Tag not found: " + id));
         if (name != null) tag.setName(name);
         if (color != null) tag.setColor(color);
+        if (isArchived != null) tag.setArchived(isArchived);
+        if (isFavorite != null) tag.setFavorite(isFavorite);
         return tagRepository.save(tag);
     }
 

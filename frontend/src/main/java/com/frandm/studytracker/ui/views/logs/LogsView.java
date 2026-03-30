@@ -1,8 +1,11 @@
 package com.frandm.studytracker.ui.views.logs;
 
 import com.frandm.studytracker.controllers.PomodoroController;
+import javafx.animation.FadeTransition;
+import javafx.animation.TranslateTransition;
 import javafx.scene.control.*;
 import javafx.scene.layout.*;
+import javafx.util.Duration;
 
 public class LogsView extends StackPane {
 
@@ -57,6 +60,11 @@ public class LogsView extends StackPane {
         btnFocusAreas.getStyleClass().remove("active");
         btnCalendarHistory.getStyleClass().remove("active");
 
+        StackPane oldContent = new StackPane();
+        if (!contentArea.getChildren().isEmpty()) {
+            oldContent.getChildren().addAll(contentArea.getChildren());
+        }
+
         contentArea.getChildren().clear();
 
         switch (tabIndex) {
@@ -73,8 +81,31 @@ public class LogsView extends StackPane {
             case 3 -> {
                 btnCalendarHistory.getStyleClass().add("active");
                 contentArea.getChildren().add(calendarTab);
+                calendarTab.loadWeekSessions();
                 calendarTab.refresh();
             }
+        }
+
+        if (!oldContent.getChildren().isEmpty()) {
+            FadeTransition fadeOut = new FadeTransition(Duration.millis(150), oldContent);
+            fadeOut.setFromValue(1.0);
+            fadeOut.setToValue(0.0);
+            fadeOut.setOnFinished(_ -> contentArea.getChildren().remove(oldContent));
+            fadeOut.play();
+        }
+
+        if (!contentArea.getChildren().isEmpty()) {
+            var newContent = contentArea.getChildren().getFirst();
+            newContent.setOpacity(0);
+            newContent.setTranslateY(10);
+            FadeTransition fadeIn = new FadeTransition(Duration.millis(200), newContent);
+            fadeIn.setFromValue(0.0);
+            fadeIn.setToValue(1.0);
+            TranslateTransition slideIn = new TranslateTransition(Duration.millis(200), newContent);
+            slideIn.setFromY(10);
+            slideIn.setToY(0);
+            fadeIn.play();
+            slideIn.play();
         }
     }
 

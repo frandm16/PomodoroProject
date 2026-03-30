@@ -20,10 +20,20 @@ public class TagController {
 
     @GetMapping
     public List<Tag> list() {
+        return tagService.getActive();
+    }
+
+    @GetMapping("/all")
+    public List<Tag> listAll() {
         return tagService.getAll();
     }
 
-    @GetMapping("/{id}")
+    @GetMapping("/favorites")
+    public List<Tag> listFavorites() {
+        return tagService.getFavorites();
+    }
+
+    @GetMapping("/{id:\\d+}")
     public Tag get(@PathVariable Long id) {
         return tagService.getById(id);
     }
@@ -33,17 +43,21 @@ public class TagController {
         return tagService.getOrCreate(body.get("name"), body.get("color"));
     }
 
-    @PutMapping("/{id}")
+    @PutMapping("/{id:\\d+}")
     public Tag update(@PathVariable Long id, @RequestBody Map<String, String> body) {
         return tagService.fullUpdate(id, body.get("name"), body.get("color"));
     }
 
-    @PatchMapping("/{id}")
-    public Tag patch(@PathVariable Long id, @RequestBody Map<String, String> body) {
-        return tagService.partialUpdate(id, body.get("name"), body.get("color"));
+    @PatchMapping("/{id:\\d+}")
+    public Tag patch(@PathVariable Long id, @RequestBody Map<String, Object> body) {
+        String name = body.containsKey("name") ? (String) body.get("name") : null;
+        String color = body.containsKey("color") ? (String) body.get("color") : null;
+        Boolean isArchived = body.containsKey("isArchived") ? (Boolean) body.get("isArchived") : null;
+        Boolean isFavorite = body.containsKey("isFavorite") ? (Boolean) body.get("isFavorite") : null;
+        return tagService.partialUpdate(id, name, color, isArchived, isFavorite);
     }
 
-    @DeleteMapping("/{id}")
+    @DeleteMapping("/{id:\\d+}")
     public ResponseEntity<Void> delete(@PathVariable Long id) {
         tagService.delete(id);
         return ResponseEntity.ok().build();

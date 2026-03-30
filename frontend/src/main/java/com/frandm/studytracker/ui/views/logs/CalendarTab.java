@@ -5,37 +5,16 @@ import com.frandm.studytracker.models.Session;
 import javafx.application.Platform;
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;
-import javafx.scene.control.Button;
-import javafx.scene.control.ContextMenu;
-import javafx.scene.control.Label;
-import javafx.scene.control.MenuItem;
-import javafx.scene.control.ScrollPane;
-import javafx.scene.control.Tooltip;
-import javafx.scene.layout.ColumnConstraints;
-import javafx.scene.layout.GridPane;
-import javafx.scene.layout.HBox;
-import javafx.scene.layout.Pane;
-import javafx.scene.layout.Priority;
-import javafx.scene.layout.Region;
-import javafx.scene.layout.StackPane;
-import javafx.scene.layout.VBox;
+import javafx.scene.control.*;
+import javafx.scene.layout.*;
 import javafx.scene.shape.Circle;
 import org.kordamp.ikonli.javafx.FontIcon;
 
-import java.time.DayOfWeek;
-import java.time.Duration;
-import java.time.LocalDate;
-import java.time.LocalDateTime;
-import java.time.LocalTime;
+import java.time.*;
 import java.time.format.DateTimeFormatter;
 import java.time.format.TextStyle;
 import java.time.temporal.ChronoUnit;
-import java.util.ArrayList;
-import java.util.Comparator;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Locale;
-import java.util.Map;
+import java.util.*;
 
 public class CalendarTab extends VBox {
 
@@ -48,6 +27,7 @@ public class CalendarTab extends VBox {
     private static final double MIN_BLOCK_HEIGHT = 30.0;
     private final Pane[] dayColumns = new Pane[7];
     private final DateTimeFormatter timeFormatter = DateTimeFormatter.ofPattern("HH:mm");
+    private List<Map<String, Object>> weekSessions = new ArrayList<>();
 
     public CalendarTab(LogsController logsController) {
         this.currentWeekStart = LocalDate.now().with(DayOfWeek.MONDAY);
@@ -57,70 +37,26 @@ public class CalendarTab extends VBox {
         initializeUI();
     }
 
-    private void initializeUI() {
-        HBox header = new HBox(15);
-        header.setAlignment(Pos.CENTER_LEFT);
-        header.setPadding(new Insets(10));
-
-        Button btnPrev = new Button();
-        Button btnNext = new Button();
-        Button btnToday = new Button("Today");
-
-        logsController.updateIcon(btnPrev, "calendar-icon", "mdi2c-chevron-left", "Previous week");
-        logsController.updateIcon(btnNext, "calendar-icon", "mdi2c-chevron-right", "Next week");
-
-        btnPrev.getStyleClass().add("calendar-button-icon");
-        btnNext.getStyleClass().add("calendar-button-icon");
-        btnToday.getStyleClass().add("calendar-button-today");
-
-        Label lblMonth = new Label();
-        lblMonth.getStyleClass().add("calendar-month-label");
-        updateMonthLabel(lblMonth);
-
-        Region spacer = new Region();
-        HBox.setHgrow(spacer, Priority.ALWAYS);
-
-        btnPrev.setOnAction(_ -> {
-            currentWeekStart = currentWeekStart.minusWeeks(1);
-            updateMonthLabel(lblMonth);
-            refresh();
-        });
-        btnNext.setOnAction(_ -> {
-            currentWeekStart = currentWeekStart.plusWeeks(1);
-            updateMonthLabel(lblMonth);
-            refresh();
-        });
-        btnToday.setOnAction(_ -> {
-            currentWeekStart = LocalDate.now().with(DayOfWeek.MONDAY);
-            updateMonthLabel(lblMonth);
-            refresh();
-            scrollToCurrentTime();
-        });
-
-        header.getChildren().addAll(btnToday, btnPrev, btnNext, lblMonth, spacer);
-
-        headerGrid = new GridPane();
-        headerGrid.getStyleClass().add("calendar-header-grid");
-
-        calendarGrid = new GridPane();
-        calendarGrid.getStyleClass().add("calendar-grid");
-
-        scrollPane = new ScrollPane(calendarGrid);
-        scrollPane.getStyleClass().add("main-scroll");
-        scrollPane.setFitToWidth(true);
-        VBox.setVgrow(scrollPane, Priority.ALWAYS);
-
-        getChildren().addAll(header, headerGrid, scrollPane);
-        refresh();
-        Platform.runLater(this::scrollToCurrentTime);
-    }
-
     public void refresh() {
         calendarGrid.getChildren().clear();
         setupGridConstraints();
         renderBaseGrid();
-        drawContent();
+        drawContent(weekSessions);
         drawTimeIndicator();
+    }
+
+    private void initializeUI() {
+        headerGrid = new GridPane();
+        headerGrid.getStyleClass().add("calendar-header-grid");
+        calendarGrid = new GridPane();
+        calendarGrid.getStyleClass().add("calendar-grid");
+        scrollPane = new ScrollPane(calendarGrid);
+        scrollPane.getStyleClass().add("main-scroll");
+        scrollPane.setFitToWidth(true);
+        VBox.setVgrow(scrollPane, Priority.ALWAYS);
+        this.getChildren().addAll(headerGrid, scrollPane);
+        refresh();
+        Platform.runLater(this::scrollToCurrentTime);
     }
 
     private void setupGridConstraints() {
@@ -148,19 +84,22 @@ public class CalendarTab extends VBox {
         headerGrid.getChildren().clear();
         calendarGrid.getChildren().clear();
 
-        Pane timeColumn = new Pane();
+        VBox timeColumn = new VBox();
         timeColumn.getStyleClass().add("calendar-time-column");
-        timeColumn.setPrefHeight(ROW_HEIGHT * 24);
-        timeColumn.setMinHeight(ROW_HEIGHT * 24);
+
+        Pane timeGrid = new Pane();
+        timeGrid.setPrefHeight(ROW_HEIGHT * 24);
+        timeGrid.setMinHeight(ROW_HEIGHT * 24);
 
         for (int h = 0; h < 24; h++) {
             Label lblHour = new Label(String.format("%02d:00", h));
             lblHour.getStyleClass().add("calendar-hour-label");
             lblHour.setLayoutY(h * ROW_HEIGHT - 7);
             lblHour.setLayoutX(10);
-            timeColumn.getChildren().add(lblHour);
+            timeGrid.getChildren().add(lblHour);
         }
 
+        timeColumn.getChildren().add(timeGrid);
         calendarGrid.add(timeColumn, 0, 0);
 
         for (int i = 0; i < 7; i++) {
@@ -179,17 +118,15 @@ public class CalendarTab extends VBox {
             dayColumns[i] = columnCanvas;
 
             for (int h = 0; h < 24; h++) {
-                if (h > 0) {
-                    Region hourLine = new Region();
-                    hourLine.getStyleClass().add("calendar-hour-line");
-                    hourLine.setPrefHeight(1);
-                    hourLine.setMinHeight(1);
-                    hourLine.prefWidthProperty().bind(columnCanvas.widthProperty());
-                    hourLine.setLayoutY(h * ROW_HEIGHT);
-                    hourLine.setMouseTransparent(true);
-                    hourLine.setStyle("-fx-background-color: -color-border-default; -fx-opacity: 0.3;");
-                    columnCanvas.getChildren().add(hourLine);
-                }
+                Region hourLine = new Region();
+                hourLine.getStyleClass().add("calendar-hour-line");
+                hourLine.setPrefHeight(1);
+                hourLine.setMinHeight(1);
+                hourLine.prefWidthProperty().bind(columnCanvas.widthProperty());
+                hourLine.setLayoutY(h * ROW_HEIGHT);
+                hourLine.setMouseTransparent(true);
+                hourLine.setStyle("-fx-background-color: -color-border-default; -fx-opacity: 0.3;");
+                columnCanvas.getChildren().add(hourLine);
             }
 
             dayColumnWrapper.getChildren().add(columnCanvas);
@@ -197,48 +134,43 @@ public class CalendarTab extends VBox {
         }
     }
 
-    private void drawContent() {
-        List<Map<String, Object>> sessions = loadWeekSessions();
+    private void drawContent(List<Map<String, Object>> sessions) {
         Map<Integer, List<Map<String, Object>>> dayMap = new HashMap<>();
 
-        for (Map<String, Object> session : sessions) {
-            String startStr = getStartTime(session);
+        for (Map<String, Object> s : sessions) {
+            String startStr = getStartTime(s);
             if (startStr == null) continue;
-
-            LocalDateTime start = parseDateTime(startStr);
+            LocalDateTime start = parseDateValue(startStr);
+            String endStr = getEndTime(s);
+            LocalDateTime end = endStr != null ? parseDateValue(endStr) : start.plusHours(1);
             if (start == null) continue;
+            if (end == null) end = start.plusHours(1);
 
-            String endStr = getEndTime(session);
-            LocalDateTime end = endStr != null ? parseDateTime(endStr) : start.plusMinutes(25);
-            if (end == null) end = start.plusMinutes(25);
-
-            Map<String, Object> sessionData = new HashMap<>(session);
-            sessionData.put("task_name", getTaskName(session));
-            sessionData.put("tag_name", getTagName(session));
-            sessionData.put("tag_color", getTagColor(session));
+            Map<String, Object> sessionData = new HashMap<>(s);
+            sessionData.put("task_name", getTaskName(s));
+            sessionData.put("tag_name", getTagName(s));
+            sessionData.put("tag_color", getTagColor(s));
             sessionData.put("full_start", start);
             sessionData.put("full_end", end);
 
             long daysBetween = ChronoUnit.DAYS.between(start.toLocalDate(), end.toLocalDate());
             if (daysBetween > 0) {
                 for (int d = 0; d <= daysBetween; d++) {
-                    Map<String, Object> fragment = new HashMap<>(sessionData);
+                    Map<String, Object> frag = new HashMap<>(sessionData);
                     LocalDate currentDay = start.toLocalDate().plusDays(d);
-
                     if (d == 0) {
-                        fragment.put("draw_start", start);
-                        fragment.put("draw_end", currentDay.atTime(23, 59, 59));
+                        frag.put("draw_start", start);
+                        frag.put("draw_end", currentDay.atTime(23, 59, 59));
                     } else if (d == daysBetween) {
-                        fragment.put("draw_start", currentDay.atStartOfDay());
-                        fragment.put("draw_end", end);
-                        fragment.put("is_fragment", true);
+                        frag.put("draw_start", currentDay.atStartOfDay());
+                        frag.put("draw_end", end);
+                        frag.put("is_fragment", true);
                     } else {
-                        fragment.put("draw_start", currentDay.atStartOfDay());
-                        fragment.put("draw_end", currentDay.atTime(23, 59, 59));
-                        fragment.put("is_fragment", true);
+                        frag.put("draw_start", currentDay.atStartOfDay());
+                        frag.put("draw_end", currentDay.atTime(23, 59, 59));
+                        frag.put("is_fragment", true);
                     }
-
-                    addSessionToMap(dayMap, fragment);
+                    addSessionToMap(dayMap, frag);
                 }
             } else {
                 sessionData.put("draw_start", start);
@@ -250,28 +182,25 @@ public class CalendarTab extends VBox {
         for (Map.Entry<Integer, List<Map<String, Object>>> entry : dayMap.entrySet()) {
             int dayIdx = entry.getKey();
             if (dayIdx < 0 || dayIdx > 6) continue;
-
-            List<Map<String, Object>> daySessions = entry.getValue();
-            daySessions.sort(Comparator.comparing(s -> (LocalDateTime) s.get("draw_start")));
+            List<Map<String, Object>> dayItems = entry.getValue();
+            dayItems.sort(Comparator.comparing(s -> (LocalDateTime) s.get("draw_start")));
 
             List<List<Map<String, Object>>> groups = new ArrayList<>();
-            for (Map<String, Object> session : daySessions) {
+            for (Map<String, Object> s : dayItems) {
                 boolean placed = false;
                 for (List<Map<String, Object>> group : groups) {
-                    if (overlapsWithGroup(session, group)) {
-                        group.add(session);
+                    if (overlapsWithGroup(s, group)) {
+                        group.add(s);
                         placed = true;
                         break;
                     }
                 }
-
                 if (!placed) {
                     List<Map<String, Object>> newGroup = new ArrayList<>();
-                    newGroup.add(session);
+                    newGroup.add(s);
                     groups.add(newGroup);
                 }
             }
-
             for (List<Map<String, Object>> group : groups) {
                 int size = group.size();
                 for (int i = 0; i < size; i++) {
@@ -281,51 +210,34 @@ public class CalendarTab extends VBox {
         }
     }
 
-    private List<Map<String, Object>> loadWeekSessions() {
-        try {
-            return ApiClient.getSessionsByRange(
-                    currentWeekStart.atStartOfDay().toString(),
-                    currentWeekStart.plusDays(6).atTime(23, 59, 59).toString()
-            );
-        } catch (Exception e) {
-            System.err.println("Error loading calendar sessions: " + e.getMessage());
-            return new ArrayList<>();
-        }
-    }
-
-    private void addSessionToMap(Map<Integer, List<Map<String, Object>>> dayMap, Map<String, Object> session) {
-        LocalDateTime drawStart = (LocalDateTime) session.get("draw_start");
+    private void addSessionToMap(Map<Integer, List<Map<String, Object>>> dayMap, Map<String, Object> s) {
+        LocalDateTime drawStart = (LocalDateTime) s.get("draw_start");
         int dayIdx = (int) ChronoUnit.DAYS.between(currentWeekStart, drawStart.toLocalDate());
         if (dayIdx >= 0 && dayIdx < 7) {
-            dayMap.computeIfAbsent(dayIdx, _ -> new ArrayList<>()).add(session);
+            dayMap.computeIfAbsent(dayIdx, _ -> new ArrayList<>()).add(s);
         }
     }
 
-    private void renderSession(Map<String, Object> session, int dayIdx, int pos, int total) {
-        String taskName = (String) session.get("task_name");
-        String tagName = (String) session.get("tag_name");
-        String title = (String) session.get("title");
+    private void renderSession(Map<String, Object> s, int dayIdx, int pos, int total) {
+        String taskName = (String) s.get("task_name");
+        String tagName = (String) s.get("tag_name");
+        String title = (String) s.get("title");
 
-        LocalDateTime drawStart = (LocalDateTime) session.get("draw_start");
-        LocalDateTime drawEnd = (LocalDateTime) session.get("draw_end");
-        LocalDateTime fullStart = (LocalDateTime) session.get("full_start");
-        LocalDateTime fullEnd = (LocalDateTime) session.get("full_end");
+        LocalDateTime drawStart = (LocalDateTime) s.get("draw_start");
+        LocalDateTime drawEnd = (LocalDateTime) s.get("draw_end");
+        LocalDateTime fullStart = (LocalDateTime) s.get("full_start");
+        LocalDateTime fullEnd = (LocalDateTime) s.get("full_end");
 
-        boolean isFragment = session.containsKey("is_fragment") && Boolean.TRUE.equals(session.get("is_fragment"));
-        String color = String.valueOf(session.getOrDefault("tag_color", "#94a3b8"));
+        boolean isFragment = s.containsKey("is_fragment") && (boolean) s.get("is_fragment");
+        String color = s.getOrDefault("tag_color", "#94a3b8").toString();
         double height = Math.max(MIN_BLOCK_HEIGHT, Duration.between(drawStart, drawEnd).toMinutes() * (ROW_HEIGHT / 60.0));
 
         HBox block = createSessionBlock(
                 isFragment ? "" : (title != null && !title.isEmpty() ? title : taskName),
                 isFragment ? "" : tagName,
-                color,
-                fullStart,
-                fullEnd,
-                height,
-                isFragment
-        );
+                color, fullStart, fullEnd, height, isFragment);
 
-        Session sessionObj = buildSession(session, fullStart, fullEnd);
+        Session sessionObj = buildSession(s, fullStart, fullEnd);
         block.setOnMouseClicked(e -> {
             if (e.getClickCount() == 1) {
                 showContextMenu(block, sessionObj, e.getScreenX(), e.getScreenY());
@@ -342,7 +254,7 @@ public class CalendarTab extends VBox {
         dayColumns[dayIdx].getChildren().add(block);
     }
 
-    private HBox createSessionBlock(String title, String tag, String color, LocalDateTime start, LocalDateTime end, double blockHeight, boolean fragment) {
+    private HBox createSessionBlock(String title, String tag, String color, LocalDateTime start, LocalDateTime end, double bh, boolean frag) {
         HBox sessionBlock = new HBox(2);
         sessionBlock.getStyleClass().add("calendar-session-block");
         sessionBlock.setStyle("-session-bg-color: " + color + "50; -session-color: " + color + ";");
@@ -350,10 +262,10 @@ public class CalendarTab extends VBox {
         Region colorBar = new Region();
         colorBar.getStyleClass().add("session-color-bar");
 
-        VBox content = new VBox();
-        content.getStyleClass().add("session-content-container");
+        VBox contenido = new VBox();
+        contenido.getStyleClass().add("session-content-container");
 
-        if (!fragment) {
+        if (!frag) {
             Label titleLabel = new Label(title);
             titleLabel.getStyleClass().add("session-title");
 
@@ -368,22 +280,21 @@ public class CalendarTab extends VBox {
             Label tagLabel = new Label(tag);
             tagLabel.getStyleClass().add("session-tag-badge");
 
-            tagLabel.setVisible(blockHeight > 65);
-            tagLabel.setManaged(blockHeight > 65);
-            timeContainer.setVisible(blockHeight > 45);
-            timeContainer.setManaged(blockHeight > 45);
+            tagLabel.setVisible(bh > 65);
+            tagLabel.setManaged(bh > 65);
+            timeContainer.setVisible(bh > 45);
+            timeContainer.setManaged(bh > 45);
 
-            content.getChildren().addAll(titleLabel, timeContainer, tagLabel);
+            contenido.getChildren().addAll(titleLabel, timeContainer, tagLabel);
         }
-
-        sessionBlock.getChildren().addAll(colorBar, content);
+        sessionBlock.getChildren().addAll(colorBar, contenido);
         Tooltip.install(sessionBlock, new Tooltip(title + "\n" + start.format(timeFormatter) + " - " + end.format(timeFormatter)));
         return sessionBlock;
     }
 
     private void showContextMenu(HBox block, Session session, double screenX, double screenY) {
         ContextMenu menu = new ContextMenu();
-        menu.getStyleClass().add("session-context-menu");
+        menu.getStyleClass().add(logsController.getTheme());
 
         MenuItem editItem = new MenuItem("Edit");
         editItem.setGraphic(new FontIcon("mdi2p-pencil"));
@@ -407,30 +318,25 @@ public class CalendarTab extends VBox {
                 String.valueOf(session.getOrDefault("title", "")),
                 String.valueOf(session.getOrDefault("description", "")),
                 (int) Duration.between(start, end).toMinutes(),
-                    ApiClient.formatApiTimestamp(start),
-                    ApiClient.formatApiTimestamp(end)
+                ApiClient.formatApiTimestamp(start),
+                ApiClient.formatApiTimestamp(end)
         );
-
         Object ratingObj = session.get("rating");
         sessionObj.setRating(ratingObj != null ? ((Number) ratingObj).intValue() : 0);
         return sessionObj;
     }
 
-    private boolean overlapsWithGroup(Map<String, Object> session, List<Map<String, Object>> group) {
-        LocalDateTime start = (LocalDateTime) session.get("draw_start");
-        LocalDateTime end = (LocalDateTime) session.get("draw_end");
-
-        double top = (start.getHour() * ROW_HEIGHT) + (start.getMinute() * (ROW_HEIGHT / 60.0));
-        double bottom = Math.max(top + MIN_BLOCK_HEIGHT, (end.getHour() * ROW_HEIGHT) + (end.getMinute() * (ROW_HEIGHT / 60.0)));
-
+    private boolean overlapsWithGroup(Map<String, Object> s, List<Map<String, Object>> group) {
+        LocalDateTime sStart = (LocalDateTime) s.get("draw_start");
+        LocalDateTime sEnd = (LocalDateTime) s.get("draw_end");
+        double sTop = (sStart.getHour() * ROW_HEIGHT) + (sStart.getMinute() * (ROW_HEIGHT / 60.0));
+        double sBottom = Math.max(sTop + MIN_BLOCK_HEIGHT, (sEnd.getHour() * ROW_HEIGHT) + (sEnd.getMinute() * (ROW_HEIGHT / 60.0)));
         for (Map<String, Object> other : group) {
-            LocalDateTime otherStart = (LocalDateTime) other.get("draw_start");
-            LocalDateTime otherEnd = (LocalDateTime) other.get("draw_end");
-
-            double otherTop = (otherStart.getHour() * ROW_HEIGHT) + (otherStart.getMinute() * (ROW_HEIGHT / 60.0));
-            double otherBottom = Math.max(otherTop + MIN_BLOCK_HEIGHT, (otherEnd.getHour() * ROW_HEIGHT) + (otherEnd.getMinute() * (ROW_HEIGHT / 60.0)));
-
-            if (top < otherBottom && bottom > otherTop) {
+            LocalDateTime oStart = (LocalDateTime) other.get("draw_start");
+            LocalDateTime oEnd = (LocalDateTime) other.get("draw_end");
+            double oTop = (oStart.getHour() * ROW_HEIGHT) + (oStart.getMinute() * (ROW_HEIGHT / 60.0));
+            double oBottom = Math.max(oTop + MIN_BLOCK_HEIGHT, (oEnd.getHour() * ROW_HEIGHT) + (oEnd.getMinute() * (ROW_HEIGHT / 60.0)));
+            if (sTop < oBottom && sBottom > oTop) {
                 return true;
             }
         }
@@ -440,19 +346,16 @@ public class CalendarTab extends VBox {
     private VBox createDayHeader(LocalDate date, boolean isToday) {
         Label lblName = new Label(date.getDayOfWeek().getDisplayName(TextStyle.SHORT, Locale.getDefault()).toUpperCase());
         lblName.getStyleClass().add(isToday ? "calendar-day-name-today" : "calendar-day-name");
-
         Label lblNum = new Label(String.valueOf(date.getDayOfMonth()));
         lblNum.getStyleClass().add(isToday ? "calendar-day-num-today" : "calendar-day-num");
-
         StackPane numStack = new StackPane();
-        Circle circle = new Circle(14);
-        circle.getStyleClass().add(isToday ? "calendar-today-circle" : "calendar-nottoday-circle");
-        numStack.getChildren().addAll(circle, lblNum);
-
-        VBox box = new VBox(2, lblName, numStack);
-        box.setAlignment(Pos.TOP_CENTER);
-        box.setPadding(new Insets(10, 0, 10, 0));
-        return box;
+        Circle c = new Circle(14);
+        c.getStyleClass().add(isToday ? "calendar-today-circle" : "calendar-nottoday-circle");
+        numStack.getChildren().addAll(c, lblNum);
+        VBox v = new VBox(2, lblName, numStack);
+        v.setAlignment(Pos.TOP_CENTER);
+        v.setPadding(new Insets(10, 0, 10, 0));
+        return v;
     }
 
     private void drawTimeIndicator() {
@@ -464,63 +367,75 @@ public class CalendarTab extends VBox {
             timeIndicator.setAlignment(Pos.CENTER_LEFT);
             timeIndicator.setMouseTransparent(true);
             timeIndicator.setLayoutY(yPos - 4);
-
             Circle dot = new Circle(4);
             dot.setStyle("-fx-fill: #e74c3c;");
-
             Region line = new Region();
             line.setStyle("-fx-background-color: #e74c3c; -fx-min-height: 2px; -fx-max-height: 2px;");
             HBox.setHgrow(line, Priority.ALWAYS);
-
             timeIndicator.getChildren().addAll(dot, line);
             timeIndicator.prefWidthProperty().bind(dayColumns[dayIdx].widthProperty());
-
             dayColumns[dayIdx].getChildren().add(timeIndicator);
         }
     }
 
-    private void updateMonthLabel(Label lblMonth) {
-        String month = currentWeekStart.getMonth().getDisplayName(TextStyle.FULL, Locale.getDefault());
-        lblMonth.setText(month.substring(0, 1).toUpperCase() + month.substring(1) + " " + currentWeekStart.getYear());
-    }
-
-    private void scrollToCurrentTime() {
+    public void scrollToCurrentTime() {
         double currentHour = LocalTime.now().getHour();
         scrollPane.setVvalue((currentHour > 3) ? (currentHour - 3) / 24.0 : 0);
     }
 
-    private LocalDateTime parseDateTime(String value) {
+    public void loadWeekSessions() {
+        try {
+            weekSessions = ApiClient.getSessionsByRange(
+                    currentWeekStart.atStartOfDay().toString(),
+                    currentWeekStart.plusDays(6).atTime(23, 59, 59).toString()
+            );
+        } catch (Exception e) {
+            System.err.println("Error loading calendar sessions: " + e.getMessage());
+            weekSessions = new ArrayList<>();
+        }
+    }
+
+    public void setCurrentWeekStart(LocalDate date) {
+        this.currentWeekStart = date.with(DayOfWeek.MONDAY);
+    }
+
+    public String getHeaderTitle() {
+        String m = currentWeekStart.getMonth().getDisplayName(TextStyle.FULL, Locale.getDefault());
+        return m.substring(0, 1).toUpperCase() + m.substring(1) + " " + currentWeekStart.getYear();
+    }
+
+    private LocalDateTime parseDateValue(Object value) {
         return ApiClient.parseApiTimestamp(value);
     }
 
-    private String getStartTime(Map<String, Object> session) {
-        Object value = session.get("startDate");
-        if (value == null) value = session.get("startTime");
+    private String getStartTime(Map<String, Object> s) {
+        Object value = s.get("startDate");
+        if (value == null) value = s.get("startTime");
         return value != null ? value.toString() : null;
     }
 
-    private String getEndTime(Map<String, Object> session) {
-        Object value = session.get("endDate");
-        if (value == null) value = session.get("endTime");
+    private String getEndTime(Map<String, Object> s) {
+        Object value = s.get("endDate");
+        if (value == null) value = s.get("endTime");
         return value != null ? value.toString() : null;
     }
 
-    private String getTaskName(Map<String, Object> session) {
-        Map<?, ?> task = (Map<?, ?>) session.get("task");
-        return task != null ? (String) task.get("name") : "";
+    private String getTaskName(Map<String, Object> s) {
+        Map<?, ?> t = (Map<?, ?>) s.get("task");
+        return t != null ? (String) t.get("name") : "";
     }
 
-    private String getTagName(Map<String, Object> session) {
-        Map<?, ?> task = (Map<?, ?>) session.get("task");
-        if (task == null) return "";
-        Map<?, ?> tag = (Map<?, ?>) task.get("tag");
-        return tag != null ? (String) tag.get("name") : "";
+    private String getTagName(Map<String, Object> s) {
+        Map<?, ?> t = (Map<?, ?>) s.get("task");
+        if (t == null) return "";
+        Map<?, ?> tg = (Map<?, ?>) t.get("tag");
+        return tg != null ? (String) tg.get("name") : "";
     }
 
-    private String getTagColor(Map<String, Object> session) {
-        Map<?, ?> task = (Map<?, ?>) session.get("task");
-        if (task == null) return "#94a3b8";
-        Map<?, ?> tag = (Map<?, ?>) task.get("tag");
-        return tag != null ? (String) tag.get("color") : "#94a3b8";
+    private String getTagColor(Map<String, Object> s) {
+        Map<?, ?> t = (Map<?, ?>) s.get("task");
+        if (t == null) return "#94a3b8";
+        Map<?, ?> tg = (Map<?, ?>) t.get("tag");
+        return tg != null ? (String) tg.get("color") : "#94a3b8";
     }
 }

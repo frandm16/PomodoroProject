@@ -144,7 +144,10 @@ public class LogsController {
 
     public void refreshAll() {
         if (historyTab != null) historyTab.resetAndReload();
-        if (calendarTab != null) calendarTab.refresh();
+        if (calendarTab != null) {
+            calendarTab.loadWeekSessions();
+            calendarTab.refresh();
+        }
         if (focusTab != null) focusTab.refreshFocusAreasGrid();
     }
 

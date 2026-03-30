@@ -89,6 +89,14 @@ public class ApiClient {
         return mapper.readValue(get("/tags"), new TypeReference<>() {});
     }
 
+    public static List<Map<String, Object>> getAllTags() throws Exception {
+        return mapper.readValue(get("/tags/all"), new TypeReference<>() {});
+    }
+
+    public static List<Map<String, Object>> getFavoriteTags() throws Exception {
+        return mapper.readValue(get("/tags/favorites"), new TypeReference<>() {});
+    }
+
     public static Map<String, Object> getTag(long id) throws Exception {
         return mapper.readValue(get("/tags/" + id), new TypeReference<>() {});
     }
@@ -105,6 +113,10 @@ public class ApiClient {
         Map<String, Object> body = new LinkedHashMap<>();
         if (name != null) body.put("name", name);
         if (color != null) body.put("color", color);
+        return mapper.readValue(patch("/tags/" + id, body), new TypeReference<>() {});
+    }
+
+    public static Map<String, Object> patchTag(long id, Map<String, Object> body) throws Exception {
         return mapper.readValue(patch("/tags/" + id, body), new TypeReference<>() {});
     }
 
