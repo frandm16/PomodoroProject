@@ -29,12 +29,15 @@ public class ScheduledSessionService {
 
     public ScheduledSession save(String tagName, String taskName,
                                  String title, LocalDateTime start, LocalDateTime end) {
+        if (start == null || end == null) {
+            throw new RuntimeException("Scheduled session startDate and endDate are required");
+        }
         Task task = taskService.getOrCreate(tagName, "#94a3b8", taskName);
         ScheduledSession session = new ScheduledSession();
         session.setTask(task);
         session.setTitle(title);
-        session.setStartTime(start);
-        session.setEndTime(end);
+        session.setStartDate(start);
+        session.setEndDate(end);
         return scheduledSessionRepository.save(session);
     }
 
@@ -47,20 +50,13 @@ public class ScheduledSessionService {
 
         session.setTask(task);
         session.setTitle(title);
-        session.setStartTime(start);
-        session.setEndTime(end);
+        session.setStartDate(start);
+        session.setEndDate(end);
 
         return scheduledSessionRepository.save(session);
     }
 
     public void delete(Long id) {
         scheduledSessionRepository.deleteById(id);
-    }
-
-    public void markCompleted(Long id) {
-        scheduledSessionRepository.findById(id).ifPresent(s -> {
-            s.setIsCompleted(true);
-            scheduledSessionRepository.save(s);
-        });
     }
 }

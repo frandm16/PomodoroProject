@@ -11,27 +11,28 @@ public class TodoItem {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
+    @ManyToOne
+    @JoinColumn(name = "task_id", nullable = false)
+    private Task task;
+
     @Column(nullable = false)
     private LocalDate date;
 
-    @Column(nullable = false, length = 500)
+    @Column(length = 255)
     private String text;
 
-    @Column(nullable = false)
+    @Column(name = "is_completed", nullable = false)
     private boolean completed = false;
 
-    @Column(nullable = false)
-    private int position = 0;
-
     public Long getId() { return id; }
+    public Task getTask() { return task; }
     public LocalDate getDate() { return date; }
     public String getText() { return text; }
     public boolean isCompleted() { return completed; }
-    public int getPosition() { return position; }
 
     public void setId(Long id) { this.id = id; }
+    public void setTask(Task task) { this.task = task; }
     public void setDate(LocalDate date) { this.date = date; }
     public void setText(String text) { this.text = text; }
     public void setCompleted(boolean c) { this.completed = c; }
-    public void setPosition(int position) { this.position = position; }
 }

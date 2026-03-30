@@ -12,11 +12,7 @@ public class Deadline {
     private Long id;
 
     @ManyToOne
-    @JoinColumn(name = "tag_id")
-    private Tag tag;
-
-    @ManyToOne
-    @JoinColumn(name = "task_id")
+    @JoinColumn(name = "task_id", nullable = false)
     private Task task;
 
     private String title;
@@ -35,8 +31,6 @@ public class Deadline {
 
     public Long getId() { return id; }
     public void setId(Long id) { this.id = id; }
-    public Tag getTag() { return tag; }
-    public void setTag(Tag tag) { this.tag = tag; }
     public Task getTask() { return task; }
     public void setTask(Task task) { this.task = task; }
     public String getTitle() { return title; }

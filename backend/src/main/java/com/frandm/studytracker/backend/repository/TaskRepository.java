@@ -10,4 +10,5 @@ import java.util.Optional;
 public interface TaskRepository extends JpaRepository<Task, Long> {
     List<Task> findByTag_NameOrderByNameAsc(String tagName);
     Optional<Task> findByTag_IdAndName(Long tagId, String name);
+    Optional<Task> findByIdAndTag_Name(Long id, String tagName);
 }

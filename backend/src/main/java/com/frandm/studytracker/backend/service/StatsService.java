@@ -59,7 +59,6 @@ public class StatsService {
             map.put("startDate", DateTimeUtils.formatApiTimestamp(s.getStartDate()));
             map.put("endDate", s.getEndDate() != null ? DateTimeUtils.formatApiTimestamp(s.getEndDate()) : null);
             map.put("rating", s.getRating());
-            map.put("isFavorite", s.getIsFavorite());
             return map;
         }).collect(Collectors.toList());
     }

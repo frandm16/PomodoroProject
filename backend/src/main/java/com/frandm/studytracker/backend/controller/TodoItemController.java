@@ -20,13 +20,20 @@ public class TodoItemController {
     }
 
     @GetMapping
-    public List<TodoItem> getTodos(@RequestParam String date) {
-        return todoItemService.getByDate(LocalDate.parse(date));
+    public List<TodoItem> getTodos(@RequestParam(required = false) Long taskId,
+                                   @RequestParam(required = false) String date) {
+        return todoItemService.getFiltered(
+                taskId,
+                date != null && !date.isBlank() ? LocalDate.parse(date) : null
+        );
     }
 
     @PostMapping
     public TodoItem createTodo(@RequestBody Map<String, Object> body) {
         return todoItemService.create(
+                body.get("taskId") instanceof Number number ? number.longValue() : null,
+                (String) body.get("tagName"),
+                (String) body.get("taskName"),
                 LocalDate.parse((String) body.get("date")),
                 (String) body.get("text")
         );
@@ -35,7 +42,11 @@ public class TodoItemController {
     @PutMapping("/{id}")
     public ResponseEntity<Void> updateTodo(@PathVariable Long id,
                                            @RequestBody Map<String, Object> body) {
-        todoItemService.updateCompleted(id, (Boolean) body.get("completed"));
+        todoItemService.update(
+                id,
+                (String) body.get("text"),
+                (Boolean) body.get("completed")
+        );
         return ResponseEntity.ok().build();
     }
 

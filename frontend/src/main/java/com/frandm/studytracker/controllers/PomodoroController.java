@@ -882,7 +882,7 @@ public class PomodoroController {
         lblTitle.getStyleClass().add("menu-item-title");
 
         LocalDateTime start = extractSessionStartTime(session);
-        LocalDateTime end = ApiClient.parseApiTimestamp(session.get("endTime"));
+        LocalDateTime end = ApiClient.parseApiTimestamp(session.get("endDate"));
 
         String timeText = (start != null && end != null) ?
                 start.format(MENU_TIME_FORMAT) + " - " + end.format(MENU_TIME_FORMAT) : "";
@@ -999,7 +999,15 @@ public class PomodoroController {
     }
 
     private LocalDateTime extractSessionStartTime(Map<String, Object> session) {
-        return ApiClient.parseApiTimestamp(session.get("startTime"));
+        return ApiClient.parseApiTimestamp(session.get("startDate"));
+    }
+
+    public String getSelectedTag() {
+        return setupManager.getSelectedTag();
+    }
+
+    public String getSelectedTask() {
+        return setupManager.getSelectedTask();
     }
 
     private LocalDateTime extractDeadlineDueDate(Map<String, Object> deadline) {

@@ -40,6 +40,9 @@ public class SessionService {
                         String title, String description,
                         Integer totalMinutes, LocalDateTime startDate,
                         LocalDateTime endDate, Integer rating) {
+        if (startDate == null || endDate == null) {
+            throw new RuntimeException("Session startDate and endDate are required");
+        }
         Task task = taskService.getOrCreate(tagName, tagColor, taskName);
         Session session = new Session();
         session.setTask(task);
@@ -55,9 +58,9 @@ public class SessionService {
     public Session update(Long id, String title, String description, Integer rating) {
         Session session = sessionRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Session not found"));
-        session.setTitle(title);
-        session.setDescription(description);
-        session.setRating(rating);
+        if (title != null) session.setTitle(title);
+        if (description != null) session.setDescription(description);
+        if (rating != null) session.setRating(rating);
         return sessionRepository.save(session);
     }
 

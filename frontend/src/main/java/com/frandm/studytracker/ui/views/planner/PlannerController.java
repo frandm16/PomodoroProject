@@ -85,7 +85,7 @@ public class PlannerController {
                 format(startDate, LocalTime.MIN),
                 format(endDate, LocalTime.MAX)
         );
-        process(sessions, "startTime", "endTime");
+        process(sessions, "startDate", "endDate");
         return sessions;
     }
 
@@ -140,12 +140,12 @@ public class PlannerController {
         LocalDateTime deadline = ApiClient.parseApiTimestamp(item.get("deadline"));
         if (deadline != null) return deadline;
 
-        return ApiClient.parseApiTimestamp(item.get("startTime"));
+        return ApiClient.parseApiTimestamp(item.get("startDate"));
     }
 
     private LocalDateTime resolveEndDate(Map<String, Object> item, String primaryKey) {
         LocalDateTime primary = ApiClient.parseApiTimestamp(item.get(primaryKey));
-        return primary != null ? primary : ApiClient.parseApiTimestamp(item.get("endTime"));
+        return primary != null ? primary : ApiClient.parseApiTimestamp(item.get("endDate"));
     }
 
     public void nextDay() { move(selectedDate.plusDays(1)); }

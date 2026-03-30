@@ -930,8 +930,17 @@ public class WeeklyTab extends VBox {
         controller.refreshSideMenu();
     }
 
-    private String getStartTime(Map<String, Object> s) { return s.get("startTime") != null ? s.get("startTime").toString() : null; }
-    private String getEndTime(Map<String, Object> s) { return s.get("endTime") != null ? s.get("endTime").toString() : null; }
+    private String getStartTime(Map<String, Object> s) {
+        Object value = s.get("startDate");
+        if (value == null) value = s.get("startTime");
+        return value != null ? value.toString() : null;
+    }
+
+    private String getEndTime(Map<String, Object> s) {
+        Object value = s.get("endDate");
+        if (value == null) value = s.get("endTime");
+        return value != null ? value.toString() : null;
+    }
     private String getTaskName(Map<String, Object> s) { Map<?, ?> t = (Map<?, ?>) s.get("task"); return t != null ? (String) t.get("name") : ""; }
     private String getTagName(Map<String, Object> s) { Map<?, ?> t = (Map<?, ?>) s.get("task"); if (t == null) return ""; Map<?, ?> tg = (Map<?, ?>) t.get("tag"); return tg != null ? (String) tg.get("name") : ""; }
     private String getTagColor(Map<String, Object> s) { Map<?, ?> t = (Map<?, ?>) s.get("task"); if (t == null) return "#94a3b8"; Map<?, ?> tg = (Map<?, ?>) t.get("tag"); return tg != null ? (String) tg.get("color") : "#94a3b8"; }

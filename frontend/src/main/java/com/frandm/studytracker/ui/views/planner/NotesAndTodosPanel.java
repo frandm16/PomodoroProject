@@ -1,6 +1,7 @@
 package com.frandm.studytracker.ui.views.planner;
 
 import com.frandm.studytracker.client.ApiClient;
+import com.frandm.studytracker.core.NotificationManager;
 import com.frandm.studytracker.controllers.PomodoroController;
 import javafx.application.Platform;
 import javafx.geometry.Insets;
@@ -105,11 +106,17 @@ public class NotesAndTodosPanel extends VBox {
     private void handleAddTodo() {
         String text = addField.getText().trim();
         if (text.isEmpty()) return;
+        String tagName = pomodoroController.getSelectedTag();
+        String taskName = pomodoroController.getSelectedTask();
+        if (tagName == null || tagName.isBlank() || taskName == null || taskName.isBlank()) {
+            NotificationManager.show("Select task", "Choose an active task before creating a to-do", NotificationManager.NotificationType.INFO);
+            return;
+        }
         addField.clear();
 
         new Thread(() -> {
             try {
-                Map<String, Object> created = ApiClient.createTodo(currentDate, text);
+                Map<String, Object> created = ApiClient.createTodo(currentDate, text, tagName, taskName);
                 Platform.runLater(() -> todoList.getChildren().add(buildTodoRow(created)));
             } catch (Exception e) {
                 System.err.println("[NotesAndTodosPanel] createTodo error: " + e.getMessage());

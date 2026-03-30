@@ -12,8 +12,7 @@ import java.util.List;
 public interface ScheduledSessionRepository extends JpaRepository<ScheduledSession, Long> {
 
     @Query("SELECT s FROM ScheduledSession s WHERE " +
-            "s.startTime BETWEEN :start AND :end AND " +
-            "s.isCompleted = false")
+            "s.startDate BETWEEN :start AND :end")
     List<ScheduledSession> findByDateRange(
             @Param("start") LocalDateTime start,
             @Param("end") LocalDateTime end

@@ -18,26 +18,21 @@ public class ScheduledSession {
     @Column(name = "title")
     private String title;
 
-    @Column(name = "start_time", nullable = false)
-    private LocalDateTime startTime;
+    @Column(name = "start_date", nullable = false)
+    private LocalDateTime startDate;
 
-    @Column(name = "end_time", nullable = false)
-    private LocalDateTime endTime;
-
-    @Column(name = "is_completed")
-    private Boolean isCompleted = false;
+    @Column(name = "end_date", nullable = false)
+    private LocalDateTime endDate;
 
     public Long getId() { return id; }
     public Task getTask() { return task; }
     public String getTitle() { return title; }
-    public LocalDateTime getStartTime() { return startTime; }
-    public LocalDateTime getEndTime() { return endTime; }
-    public Boolean getIsCompleted() { return isCompleted; }
+    public LocalDateTime getStartDate() { return startDate; }
+    public LocalDateTime getEndDate() { return endDate; }
 
     public void setId(Long id) { this.id = id; }
     public void setTask(Task task) { this.task = task; }
     public void setTitle(String title) { this.title = title; }
-    public void setStartTime(LocalDateTime startTime) { this.startTime = startTime; }
-    public void setEndTime(LocalDateTime endTime) { this.endTime = endTime; }
-    public void setIsCompleted(Boolean isCompleted) { this.isCompleted = isCompleted; }
+    public void setStartDate(LocalDateTime startDate) { this.startDate = startDate; }
+    public void setEndDate(LocalDateTime endDate) { this.endDate = endDate; }
 }

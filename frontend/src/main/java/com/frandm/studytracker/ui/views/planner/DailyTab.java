@@ -2,6 +2,7 @@ package com.frandm.studytracker.ui.views.planner;
 
 import atlantafx.base.theme.Styles;
 import com.frandm.studytracker.client.ApiClient;
+import com.frandm.studytracker.core.NotificationManager;
 import com.frandm.studytracker.controllers.PomodoroController;
 import javafx.application.Platform;
 import javafx.geometry.Insets;
@@ -252,7 +253,7 @@ public class DailyTab extends VBox {
 
     private void showTodoEditPanel(Map<String, Object> data, HBox row) {
         long id = ((Number) data.get("id")).longValue();
-        boolean completed = ApiClient.parseBooleanFlag(data.get("completed"));
+        boolean completed = ApiClient.extractCompletedFlag(data);
 
         Label subtitle = new Label("Edit this to-do.");
         subtitle.getStyleClass().add(Styles.TEXT_MUTED);
@@ -274,6 +275,7 @@ public class DailyTab extends VBox {
                     data.put("text", text);
                     Platform.runLater(() -> {
                         replaceTodoRow(row, data);
+                        pomodoroController.refreshSideMenu();
                         closeOverlay();
                     });
                 } catch (Exception e) {
@@ -289,6 +291,7 @@ public class DailyTab extends VBox {
             todoListContainer.getChildren().remove(row);
             ensureTodoPlaceholder();
             updateTodoHeaderCount();
+            pomodoroController.refreshSideMenu();
             closeOverlay();
 
             new Thread(() -> {
@@ -358,15 +361,22 @@ public class DailyTab extends VBox {
     private void handleAddTodo(TextField todoField) {
         String text = todoField.getText().trim();
         if (text.isEmpty()) return;
+        String tagName = pomodoroController.getSelectedTag();
+        String taskName = pomodoroController.getSelectedTask();
+        if (tagName == null || tagName.isBlank() || taskName == null || taskName.isBlank()) {
+            NotificationManager.show("Select task", "Choose an active task before creating a to-do", NotificationManager.NotificationType.INFO);
+            return;
+        }
         todoField.clear();
 
         new Thread(() -> {
             try {
-                Map<String, Object> created = ApiClient.createTodo(currentDate, text);
+                Map<String, Object> created = ApiClient.createTodo(currentDate, text, tagName, taskName);
                 Platform.runLater(() -> {
                     todoListContainer.getChildren().removeIf(node -> node instanceof Label && node.getStyleClass().contains("empty-state-label"));
                     todoListContainer.getChildren().add(createTodoRow(created));
                     updateTodoHeaderCount();
+                    pomodoroController.refreshSideMenu();
                     closeOverlay();
                 });
             } catch (Exception e) { e.printStackTrace(); }
@@ -376,7 +386,7 @@ public class DailyTab extends VBox {
     private HBox createTodoRow(Map<String, Object> data) {
         long id = ((Number) data.get("id")).longValue();
         String text = (String) data.get("text");
-        boolean completed = ApiClient.parseBooleanFlag(data.get("completed"));
+        boolean completed = ApiClient.extractCompletedFlag(data);
         HBox row = new HBox(12);
         row.setAlignment(Pos.CENTER_LEFT);
         row.getStyleClass().add("todo-row");
@@ -413,9 +423,11 @@ public class DailyTab extends VBox {
 
             row.getProperties().put("todoCompleted", nextState);
             data.put("completed", nextState);
+            data.put("isCompleted", nextState);
             status.setText(nextState ? "Completed" : "Pending");
             applyTodoCompletedState(row, completedIcon, todoIcon, info, nextState);
             updateTodoHeaderCount();
+            pomodoroController.refreshSideMenu();
 
             new Thread(() -> {
                 try {
@@ -425,9 +437,11 @@ public class DailyTab extends VBox {
                     Platform.runLater(() -> {
                         row.getProperties().put("todoCompleted", previousState);
                         data.put("completed", previousState);
+                        data.put("isCompleted", previousState);
                         status.setText(previousState ? "Completed" : "Pending");
                         applyTodoCompletedState(row, completedIcon, todoIcon, info, previousState);
                         updateTodoHeaderCount();
+                        pomodoroController.refreshSideMenu();
                     });
                 } finally {
                     Platform.runLater(() -> completedButton.setDisable(false));
@@ -999,15 +1013,15 @@ public class DailyTab extends VBox {
     }
 
     private LocalDateTime extractScheduledStart(Map<String, Object> data) {
-        return parsePreferredDate(data, "start_time", "startTime", "full_start");
+        return parsePreferredDate(data, "start_time", "startDate", "full_start");
     }
 
     private LocalDateTime extractScheduledPopupStart(Map<String, Object> data) {
-        return parsePreferredDate(data, "full_start", "start_time", "startTime");
+        return parsePreferredDate(data, "full_start", "start_time", "startDate");
     }
 
     private LocalDateTime extractScheduledPopupEnd(Map<String, Object> data) {
-        return parsePreferredDate(data, "full_end", "end_time", "endTime");
+        return parsePreferredDate(data, "full_end", "end_time", "endDate");
     }
 
     private LocalDateTime parsePreferredDate(Map<String, Object> data, String... keys) {

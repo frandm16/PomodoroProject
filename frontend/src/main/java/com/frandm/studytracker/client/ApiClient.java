@@ -151,7 +151,7 @@ public class ApiClient {
                                             String title, String start, String end) throws Exception {
         post("/scheduled", Map.of(
                 "tagName", tagName, "taskName", taskName,
-                "title", title, "startTime", start, "endTime", end
+                "title", title, "startDate", start, "endDate", end
         ));
     }
 
@@ -159,7 +159,7 @@ public class ApiClient {
                                               String title, String start, String end) throws Exception {
         put("/scheduled/" + id, Map.of(
                 "tagName", tagName, "taskName", taskName,
-                "title", title, "startTime", start, "endTime", end
+                "title", title, "startDate", start, "endDate", end
         ));
     }
 
@@ -461,15 +461,25 @@ public class ApiClient {
     // --- Todos ---
 
     public static List<Map<String, Object>> getTodosByDate(LocalDate date) throws Exception {
-        return mapper.readValue(
-                get("/todos?date=" + date),
-                new TypeReference<>() {}
-        );
+        return getTodos(date, null);
     }
 
-    public static Map<String, Object> createTodo(LocalDate date, String text) throws Exception {
+    public static List<Map<String, Object>> getTodos(LocalDate date, Long taskId) throws Exception {
+        String path = "/todos?date=" + date;
+        if (taskId != null) {
+            path += "&taskId=" + taskId;
+        }
+        return mapper.readValue(get(path), new TypeReference<>() {});
+    }
+
+    public static Map<String, Object> createTodo(LocalDate date, String text, String tagName, String taskName) throws Exception {
+        Map<String, Object> body = new LinkedHashMap<>();
+        body.put("date", date.toString());
+        body.put("text", text);
+        body.put("tagName", tagName);
+        body.put("taskName", taskName);
         return mapper.readValue(
-                post("/todos", Map.of("date", date.toString(), "text", text)),
+                post("/todos", body),
                 new TypeReference<>() {}
         );
     }

@@ -21,16 +21,13 @@ public class Session {
     @Column(name = "total_minutes", nullable = false)
     private Integer totalMinutes;
 
-    @Column(name = "start_date")
+    @Column(name = "start_date", nullable = false)
     private LocalDateTime startDate;
 
-    @Column(name = "end_date")
+    @Column(name = "end_date", nullable = false)
     private LocalDateTime endDate;
 
-    private Integer rating = 0;
-
-    @Column(name = "is_favorite")
-    private Boolean isFavorite = false;
+    private Integer rating;
 
     public Long getId() { return id; }
     public Task getTask() { return task; }
@@ -40,7 +37,6 @@ public class Session {
     public LocalDateTime getStartDate() { return startDate; }
     public LocalDateTime getEndDate() { return endDate; }
     public Integer getRating() { return rating; }
-    public Boolean getIsFavorite() { return isFavorite; }
 
     public void setId(Long id) { this.id = id; }
     public void setTask(Task task) { this.task = task; }
@@ -50,5 +46,4 @@ public class Session {
     public void setStartDate(LocalDateTime startDate) { this.startDate = startDate; }
     public void setEndDate(LocalDateTime endDate) { this.endDate = endDate; }
     public void setRating(Integer rating) { this.rating = rating; }
-    public void setIsFavorite(Boolean isFavorite) { this.isFavorite = isFavorite; }
 }

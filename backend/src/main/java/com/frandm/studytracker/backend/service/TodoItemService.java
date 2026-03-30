@@ -5,37 +5,55 @@ import com.frandm.studytracker.backend.repository.TodoItemRepository;
 import org.springframework.stereotype.Service;
 import java.time.LocalDate;
 import java.util.List;
+import com.frandm.studytracker.backend.model.Task;
 
 @Service
 public class TodoItemService {
 
     private final TodoItemRepository todoItemRepository;
+    private final TaskService taskService;
 
-    public TodoItemService(TodoItemRepository todoItemRepository) {
+    public TodoItemService(TodoItemRepository todoItemRepository, TaskService taskService) {
         this.todoItemRepository = todoItemRepository;
+        this.taskService = taskService;
     }
 
-    public List<TodoItem> getByDate(LocalDate date) {
-        return todoItemRepository.findByDateOrderByPositionAsc(date);
+    public List<TodoItem> getFiltered(Long taskId, LocalDate date) {
+        return todoItemRepository.findFiltered(taskId, date);
     }
 
-    public TodoItem create(LocalDate date, String text) {
-        int nextPos = todoItemRepository.findByDateOrderByPositionAsc(date).size();
+    public TodoItem create(Long taskId, String tagName, String taskName, LocalDate date, String text) {
+        Task task = resolveTask(taskId, tagName, taskName);
         TodoItem item = new TodoItem();
+        item.setTask(task);
         item.setDate(date);
         item.setText(text);
-        item.setPosition(nextPos);
         return todoItemRepository.save(item);
     }
 
-    public TodoItem updateCompleted(Long id, boolean completed) {
+    public TodoItem update(Long id, String text, Boolean completed) {
         TodoItem item = todoItemRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("TodoItem not found: " + id));
-        item.setCompleted(completed);
+        if (text != null) {
+            item.setText(text);
+        }
+        if (completed != null) {
+            item.setCompleted(completed);
+        }
         return todoItemRepository.save(item);
     }
 
     public void delete(Long id) {
         todoItemRepository.deleteById(id);
+    }
+
+    private Task resolveTask(Long taskId, String tagName, String taskName) {
+        if (taskId != null) {
+            return taskService.getById(taskId);
+        }
+        if (taskName == null || taskName.isEmpty()) {
+            throw new RuntimeException("TodoItem requires taskId or taskName");
+        }
+        return taskService.getOrCreate(tagName, "#94a3b8", taskName);
     }
 }

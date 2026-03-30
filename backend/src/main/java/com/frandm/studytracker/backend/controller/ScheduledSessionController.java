@@ -40,8 +40,8 @@ public class ScheduledSessionController {
                 (String) body.get("tagName"),
                 (String) body.get("taskName"),
                 (String) body.get("title"),
-                DateTimeUtils.parseApiTimestamp((String) body.get("startTime")),
-                DateTimeUtils.parseApiTimestamp((String) body.get("endTime"))
+                DateTimeUtils.parseApiTimestamp((String) body.get("startDate")),
+                DateTimeUtils.parseApiTimestamp((String) body.get("endDate"))
         );
     }
 
@@ -52,20 +52,14 @@ public class ScheduledSessionController {
                 (String) body.get("tagName"),
                 (String) body.get("taskName"),
                 (String) body.get("title"),
-                DateTimeUtils.parseApiTimestamp((String) body.get("startTime")),
-                DateTimeUtils.parseApiTimestamp((String) body.get("endTime"))
+                DateTimeUtils.parseApiTimestamp((String) body.get("startDate")),
+                DateTimeUtils.parseApiTimestamp((String) body.get("endDate"))
         );
     }
 
     @DeleteMapping("/{id}")
     public ResponseEntity<Void> delete(@PathVariable Long id) {
         scheduledSessionService.delete(id);
-        return ResponseEntity.ok().build();
-    }
-
-    @PatchMapping("/{id}/complete")
-    public ResponseEntity<Void> markCompleted(@PathVariable Long id) {
-        scheduledSessionService.markCompleted(id);
         return ResponseEntity.ok().build();
     }
 }

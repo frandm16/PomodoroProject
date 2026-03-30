@@ -1,10 +1,8 @@
 package com.frandm.studytracker.backend.service;
 
 import com.frandm.studytracker.backend.model.Deadline;
-import com.frandm.studytracker.backend.model.Tag;
 import com.frandm.studytracker.backend.model.Task;
 import com.frandm.studytracker.backend.repository.DeadlineRepository;
-import com.frandm.studytracker.backend.repository.TagRepository;
 import org.springframework.stereotype.Service;
 import java.time.LocalDateTime;
 import java.util.List;
@@ -14,12 +12,10 @@ public class DeadlineService {
 
     private final DeadlineRepository deadlineRepository;
     private final TaskService taskService;
-    private final TagRepository tagRepository;
 
-    public DeadlineService(DeadlineRepository deadlineRepository, TaskService taskService, TagRepository tagRepository) {
+    public DeadlineService(DeadlineRepository deadlineRepository, TaskService taskService) {
         this.deadlineRepository = deadlineRepository;
         this.taskService = taskService;
-        this.tagRepository = tagRepository;
     }
 
     public List<Deadline> getByDateRange(LocalDateTime start, LocalDateTime end) {
@@ -37,7 +33,7 @@ public class DeadlineService {
                            String title, String description, String urgency,
                            LocalDateTime dueDate, Boolean allDay) {
         Deadline deadline = deadlineRepository.findById(id).orElseThrow();
-        updateTaskAndTag(deadline, tagName, tagColor, taskName);
+        deadline.setTask(resolveTask(tagName, tagColor, taskName));
         deadline.setTitle(title);
         deadline.setDescription(description);
         deadline.setUrgency(urgency);
@@ -51,7 +47,7 @@ public class DeadlineService {
                                      LocalDateTime dueDate, Boolean allDay, Boolean isCompleted) {
         boolean isNewDeadline = deadline.getId() == null;
 
-        updateTaskAndTag(deadline, tagName, tagColor, taskName);
+        deadline.setTask(resolveTask(tagName, tagColor, taskName));
 
         deadline.setTitle(title);
         deadline.setDescription(description);
@@ -67,16 +63,11 @@ public class DeadlineService {
         return deadlineRepository.save(deadline);
     }
 
-    private void updateTaskAndTag(Deadline deadline, String tagName, String tagColor, String taskName) {
-
-        if (taskName != null && !taskName.isEmpty()) {
-            Task task = taskService.getOrCreate(tagName, tagColor, taskName);
-            deadline.setTask(task);
-            deadline.setTag(task.getTag());
-        } else if (tagName != null && !tagName.isEmpty()) {
-            Tag tag = tagRepository.findByName(tagName).orElse(null);
-            deadline.setTag(tag);
+    private Task resolveTask(String tagName, String tagColor, String taskName) {
+        if (taskName == null || taskName.isEmpty()) {
+            throw new RuntimeException("Deadline taskName is required");
         }
+        return taskService.getOrCreate(tagName, tagColor, taskName);
     }
 
     public List<Deadline> getAll() {
