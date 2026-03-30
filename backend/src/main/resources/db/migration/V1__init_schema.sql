@@ -1,18 +1,13 @@
 CREATE TABLE tags (
     id BIGSERIAL PRIMARY KEY,
-    name VARCHAR(100) NOT NULL UNIQUE,
-    color VARCHAR(20) DEFAULT '#ffffff',
-    is_archived BOOLEAN DEFAULT false,
-    weekly_goal_min INTEGER DEFAULT 0
+    name VARCHAR(255) NOT NULL UNIQUE,
+    color VARCHAR(255)
 );
 
 CREATE TABLE tasks (
     id BIGSERIAL PRIMARY KEY,
     tag_id BIGINT NOT NULL REFERENCES tags(id) ON DELETE CASCADE,
-    name VARCHAR(200) NOT NULL,
-    is_favorite BOOLEAN DEFAULT false,
-    weekly_goal_min INTEGER DEFAULT 0,
-    UNIQUE(tag_id, name)
+    name VARCHAR(255) NOT NULL
 );
 
 CREATE TABLE sessions (
@@ -21,29 +16,40 @@ CREATE TABLE sessions (
     title TEXT,
     description TEXT,
     total_minutes INTEGER NOT NULL,
-    start_date TIMESTAMP,
-    end_date TIMESTAMP,
-    rating INTEGER DEFAULT 0,
-    is_favorite BOOLEAN DEFAULT false
+    rating INTEGER,
+    start_date TIMESTAMP NOT NULL,
+    end_date TIMESTAMP NOT NULL
 );
 
 CREATE TABLE scheduled_sessions (
     id BIGSERIAL PRIMARY KEY,
     task_id BIGINT NOT NULL REFERENCES tasks(id) ON DELETE CASCADE,
     title TEXT,
-    start_time TIMESTAMP NOT NULL,
-    end_time TIMESTAMP NOT NULL,
-    is_completed BOOLEAN DEFAULT false
+    start_date TIMESTAMP NOT NULL,
+    end_date TIMESTAMP NOT NULL
 );
 
 CREATE TABLE deadlines (
     id BIGSERIAL PRIMARY KEY,
-    title VARCHAR(255) NOT NULL,
-    tag_id BIGINT REFERENCES tags(id) ON DELETE SET NULL,
-    task_id BIGINT REFERENCES tasks(id) ON DELETE SET NULL,
-    urgency VARCHAR(10) DEFAULT 'MEDIUM',
-    due_date TIMESTAMP NOT NULL,
-    all_day BOOLEAN DEFAULT FALSE,
+    task_id BIGINT NOT NULL REFERENCES tasks(id) ON DELETE CASCADE,
+    title VARCHAR(255),
     description TEXT,
-    is_completed BOOLEAN DEFAULT FALSE
+    urgency VARCHAR(255),
+    is_completed BOOLEAN NOT NULL DEFAULT FALSE,
+    all_day BOOLEAN NOT NULL DEFAULT FALSE,
+    due_date TIMESTAMP NOT NULL
+);
+
+CREATE TABLE day_note (
+    id BIGSERIAL PRIMARY KEY,
+    date DATE NOT NULL UNIQUE,
+    content TEXT NOT NULL DEFAULT ''
+);
+
+CREATE TABLE todo_item (
+    id BIGSERIAL PRIMARY KEY,
+    task_id BIGINT NOT NULL REFERENCES tasks(id) ON DELETE CASCADE,
+    date DATE NOT NULL,
+    text VARCHAR(255),
+    is_completed BOOLEAN NOT NULL DEFAULT FALSE
 );
