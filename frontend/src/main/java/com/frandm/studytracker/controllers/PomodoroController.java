@@ -55,15 +55,14 @@ public class PomodoroController {
 
     //region FXML - Componentes de Interfaz
     @FXML public GridPane mainContainer, setupPane, settingsPane, editSessionPane, summaryPane;
-    @FXML public StackPane rootPane, setupBox, editSessionBox, summaryBox, stackpaneCircle, confirmOverlay,
-            confirmTagOverlay, plannerOverlayLayer;
+    @FXML public StackPane rootPane, setupBox, editSessionBox, summaryBox, stackpaneCircle,
+            confirmOverlay, confirmTagOverlay, plannerOverlayLayer;
     @FXML public VBox timerTextContainer, notificationContainer, scheduleListContainer,
-            plannerContainer, historyContainer,
-            fuzzyResultsContainer, tagsListContainer, pomoSettingsPane,
-            countdownSettingsPane, settingsBox, confirmTagBox, confirmBox, themeButtonsContainer,
-            mainVbox;
+            plannerContainer, historyContainer, fuzzyResultsContainer, tagsListContainer,
+            pomoSettingsPane, countdownSettingsPane, settingsBox, confirmTagBox,
+            confirmBox, themeButtonsContainer, mainVbox;
     @FXML public HBox starsContainer, editStarsContainer, buttonsHbox, floatingDock, activeTaskContainer;
-    @FXML public Label timerLabel, stateLabel, workValLabel, shortValLabel, longValLabel, intervalValLabel,
+    @FXML public Label timerLabel, workValLabel, shortValLabel, longValLabel, intervalValLabel,
             alarmVolumeValLabel, widthSliderValLabel, countdownValLabel, circleSizeValLabel,
             selectedNameLabel, notificationVolumeLabel, masterVolumeLabel, backgroundMusicVolumeLabel;
     @FXML public TextField summaryTitle, editTitleField, tagNameInput, fuzzySearchInput;
@@ -263,7 +262,7 @@ public class PomodoroController {
 
         // dashboard
         statsDashboard = new StatsDashboardView(statsContainer);
-        statsDashboard.refresh();
+        //statsDashboard.refresh();
     }
 
     private void setupInitialUIState() {
@@ -321,7 +320,7 @@ public class PomodoroController {
                     return;
                 }
                 if (statsDashboard != null) {
-                    statsDashboard.refresh();
+                    //statsDashboard.refresh();
                 }
                 uiManager.switchPanels(activePanel, statsContainer, direction);
             }

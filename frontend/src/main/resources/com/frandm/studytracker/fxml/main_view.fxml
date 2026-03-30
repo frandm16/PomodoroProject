@@ -22,6 +22,10 @@
                smooth="true"
                StackPane.alignment="CENTER" />
 
+    <Region maxHeight="Infinity" maxWidth="Infinity" styleClass="background-video">
+
+    </Region>
+
     <VBox >
         <HBox fx:id="titleBar" alignment="CENTER_RIGHT" minHeight="40.0" prefHeight="40.0" styleClass="custom-title-bar">
             <Region HBox.hgrow="ALWAYS" />
@@ -58,14 +62,15 @@
             </GridPane >
             <GridPane  StackPane.alignment="TOP_CENTER" fx:id="mainContainer" maxHeight="Infinity" maxWidth="Infinity" >
                 <columnConstraints>
-                    <ColumnConstraints percentWidth="15" />
-                    <ColumnConstraints  percentWidth="70" />
-                    <ColumnConstraints percentWidth="15" />
+                    <ColumnConstraints percentWidth="25" />
+                    <ColumnConstraints  percentWidth="50" />
+                    <ColumnConstraints percentWidth="25" />
                 </columnConstraints>
                 <rowConstraints>
                     <RowConstraints vgrow="ALWAYS" />
                 </rowConstraints>
-                <VBox fx:id="scheduleListContainer" spacing="10" alignment="TOP_RIGHT" GridPane.columnIndex="2" />
+                <VBox fx:id="scheduleListContainer" GridPane.columnIndex="2" alignment="CENTER"
+                      GridPane.valignment="TOP" GridPane.halignment="RIGHT" maxWidth="-Infinity" maxHeight="-Infinity"/>
                 <VBox GridPane.columnIndex="1" spacing="20" alignment="CENTER" >
                     <StackPane fx:id="stackpaneCircle"  VBox.vgrow="ALWAYS" >
                         <VBox fx:id="mainVbox" maxWidth="-Infinity" maxHeight="-Infinity" styleClass="main-vbox" alignment="CENTER" >
@@ -132,7 +137,7 @@
                 <rowConstraints>
                     <RowConstraints vgrow="ALWAYS" />
                 </rowConstraints>
-                <VBox fx:id="plannerContainer" visible="false" managed="false" alignment="TOP_CENTER" GridPane.columnIndex="1"  >
+                <VBox fx:id="plannerContainer" visible="false" managed="false" alignment="TOP_CENTER" GridPane.columnIndex="1" >
                     <padding><Insets top="40" bottom="40" left="50" right="50"/></padding>
                 </VBox>
             </GridPane>

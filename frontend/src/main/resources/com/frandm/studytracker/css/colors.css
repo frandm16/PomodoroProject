@@ -154,7 +154,7 @@
 
     -color-menu: #1e1e2e;
     -color-hover: #313244;
-    -bg-panels: #181825;
+    -bg-panels: rgb(24, 24, 37);
     -text-main: #cdd6f4;
     -text-dark: #cdd6f4;
     -text-muted: #6c7086;
@@ -185,6 +185,9 @@
 
     -stage-icon: #ffffff;
     -stage-hover-bg: rgba(255, 255, 255, 0.1);
+
+    -bg-dashboard: rgb(24, 24, 37, 0.85);
+    -fg-dashboard: rgba(49, 50, 68, 0.7);
 }
 
 .primer-sunset {

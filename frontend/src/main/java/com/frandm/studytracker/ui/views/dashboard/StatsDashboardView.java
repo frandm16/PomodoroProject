@@ -276,6 +276,7 @@ public class StatsDashboardView {
         root.getStyleClass().add("dashboard-workspace");
         root.setPadding(new Insets(18, 0, 60, 0));
         HBox.setHgrow(content, Priority.ALWAYS);
+        refresh();
 
         host.setContent(root);
         host.setFitToWidth(true);
