@@ -41,6 +41,7 @@ public class FloatingDockView {
     private final Supplier<PomodoroEngine> engineSupplier;
     private final BiConsumer<Section, Integer> onNavigate;
     private final Runnable onSettingsRequested;
+    private final Runnable onBackgroundsRequested;
     private final ToggleGroup dockGroup = new ToggleGroup();
     private final Map<Section, ToggleButton> sectionButtons = new EnumMap<>(Section.class);
     private final Map<Section, VBox> textGroups = new EnumMap<>(Section.class);
@@ -54,12 +55,14 @@ public class FloatingDockView {
             HBox container,
             Supplier<PomodoroEngine> engineSupplier,
             BiConsumer<Section, Integer> onNavigate,
-            Runnable onSettingsRequested
+            Runnable onSettingsRequested,
+            Runnable onBackgroundsRequested
     ) {
         this.container = container;
         this.engineSupplier = engineSupplier;
         this.onNavigate = onNavigate;
         this.onSettingsRequested = onSettingsRequested;
+        this.onBackgroundsRequested = onBackgroundsRequested;
         build();
     }
 
@@ -86,13 +89,23 @@ public class FloatingDockView {
         settingsIcon.getStyleClass().add("dock-icon");
         settingsButton.setGraphic(settingsIcon);
 
+        Button backgroundsButton = new Button();
+        backgroundsButton.getStyleClass().addAll("dock-button", "dock-button-utility");
+        backgroundsButton.setTooltip(new Tooltip("Backgrounds"));
+        backgroundsButton.setOnAction(_ -> onBackgroundsRequested.run());
+
+        FontIcon backgroundsIcon = new FontIcon("mdi2i-image-multiple-outline");
+        backgroundsIcon.getStyleClass().add("dock-icon");
+        backgroundsButton.setGraphic(backgroundsIcon);
+
         container.getChildren().addAll(
                 sectionButtons.get(Section.TIMER),
                 sectionButtons.get(Section.PLANNER),
                 sectionButtons.get(Section.STATS),
                 sectionButtons.get(Section.HISTORY),
                 separator,
-                settingsButton
+                settingsButton,
+                backgroundsButton
         );
 
         sectionButtons.get(Section.TIMER).setSelected(true);

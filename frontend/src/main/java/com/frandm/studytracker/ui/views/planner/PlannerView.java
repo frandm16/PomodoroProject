@@ -1,6 +1,7 @@
 package com.frandm.studytracker.ui.views.planner;
 
 import com.frandm.studytracker.controllers.PomodoroController;
+import javafx.application.Platform;
 import javafx.geometry.Bounds;
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;
@@ -86,7 +87,9 @@ public class PlannerView extends VBox {
         addScheduled.setGraphic(new FontIcon("mdi2c-clock-outline"));
         MenuItem addDeadline = new MenuItem("Deadline");
         addDeadline.setGraphic(new FontIcon("mdi2a-alarm"));
-        btnCreate.getItems().addAll(addScheduled, addDeadline);
+        MenuItem addTodo = new MenuItem("To-Do");
+        addTodo.setGraphic(new FontIcon("mdi2f-format-list-checks"));
+        btnCreate.getItems().addAll(addScheduled, addDeadline, addTodo);
 
         header.getChildren().addAll(btnToday, btnPrev, btnNext, lblTitle, spacer, btnCreate);
 
@@ -127,7 +130,19 @@ public class PlannerView extends VBox {
             }
         });
 
+        addTodo.setOnAction(_ -> {
+            showDailyTab();
+            Platform.runLater(() -> plannerController.getDailyTab().openCreateTodo());
+        });
+
         return header;
+    }
+
+    private void showDailyTab() {
+        if (!btnDaily.isSelected()) {
+            btnDaily.setSelected(true);
+        }
+        updateTitle();
     }
 
     private boolean isDaily() {

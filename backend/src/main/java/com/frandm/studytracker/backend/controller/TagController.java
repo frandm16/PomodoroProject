@@ -31,8 +31,7 @@ public class TagController {
     @PutMapping("/{id}")
     public Tag update(@PathVariable Long id, @RequestBody Map<String, Object> body) {
         String color = (String) body.get("color");
-        Integer weeklyGoalMin = (Integer) body.get("weeklyGoalMin");
-        return tagService.update(id, color, weeklyGoalMin);
+        return tagService.update(id, color);
     }
 
     @DeleteMapping("/{name}")

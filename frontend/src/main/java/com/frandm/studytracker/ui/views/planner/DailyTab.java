@@ -2,22 +2,17 @@ package com.frandm.studytracker.ui.views.planner;
 
 import atlantafx.base.theme.Styles;
 import com.frandm.studytracker.client.ApiClient;
+import com.frandm.studytracker.core.NotificationManager;
 import com.frandm.studytracker.controllers.PomodoroController;
 import javafx.application.Platform;
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;
 import javafx.scene.Node;
-import javafx.scene.control.Button;
-import javafx.scene.control.CheckBox;
-import javafx.scene.control.ComboBox;
-import javafx.scene.control.DatePicker;
-import javafx.scene.control.Label;
-import javafx.scene.control.ScrollPane;
-import javafx.scene.control.TextArea;
-import javafx.scene.control.TextField;
+import javafx.scene.control.*;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.Priority;
 import javafx.scene.layout.Region;
+import javafx.scene.layout.StackPane;
 import javafx.scene.layout.VBox;
 import javafx.stage.Popup;
 import org.kordamp.ikonli.javafx.FontIcon;
@@ -28,23 +23,27 @@ import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.time.format.TextStyle;
 import java.time.temporal.ChronoUnit;
-import java.util.Comparator;
-import java.util.LinkedHashMap;
-import java.util.List;
-import java.util.Locale;
-import java.util.Map;
+import java.util.*;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
 public class DailyTab extends VBox {
     private final VBox deadlinesContainer = new VBox(10);
     private final VBox dayEventsContainer = new VBox(10);
-    private final PomodoroController pomodoroController;
+    private final VBox todoListContainer = new VBox(6);
+    private final VBox content = new VBox(20);
+    private final Label notesPreviewText = new Label();
+
+    private final TextArea noteArea = new TextArea();
     private final Label lblDeadlinesHeader = new Label("Deadlines");
+    private final Label lblTodoHeader = new Label("To-Do List");
+    private final Label overlayTitle = new Label();
+
+    private final PomodoroController pomodoroController;
     private LocalDate currentDate = LocalDate.now();
-    private Runnable refreshAction = () -> {
-    };
+    private Runnable refreshAction = () -> {};
     private Popup activePopup;
+    private boolean savingNote = false;
 
     private static final DateTimeFormatter TIME_FMT = DateTimeFormatter.ofPattern("HH:mm");
 
@@ -56,8 +55,7 @@ public class DailyTab extends VBox {
     }
 
     public void setRefreshAction(Runnable refreshAction) {
-        this.refreshAction = refreshAction != null ? refreshAction : () -> {
-        };
+        this.refreshAction = refreshAction != null ? refreshAction : () -> {};
     }
 
     public void openCreateScheduledSession(double screenX, double screenY) {
@@ -68,33 +66,474 @@ public class DailyTab extends VBox {
         showDeadlinePopup(new LinkedHashMap<>(), screenX, screenY);
     }
 
+    public void openCreateTodo() {
+        showTodoCreatePanel();
+    }
+
     private void initLayout() {
         deadlinesContainer.getStyleClass().add("daily-container");
         dayEventsContainer.getStyleClass().add("daily-container");
+        todoListContainer.getStyleClass().add("todo-list-container");
 
-        lblDeadlinesHeader.getStyleClass().add("section-header");
-
-        VBox content = new VBox(20);
         content.getStyleClass().add("daily-content-wrapper");
-        content.setPadding(new Insets(15, 0, 0, 0));
-        content.getChildren().addAll(
-                lblDeadlinesHeader, deadlinesContainer,
-                createHeader("Scheduled Sessions"), dayEventsContainer
-        );
+        content.setPadding(new Insets(15, 0, 15, 0));
 
         ScrollPane scroll = new ScrollPane(content);
         scroll.setFitToWidth(true);
         scroll.getStyleClass().addAll(Styles.FLAT, "planner-scroll-pane");
         VBox.setVgrow(scroll, Priority.ALWAYS);
-
         getChildren().add(scroll);
+        rebuildUI();
+    }
+
+    private void rebuildUI() {
+        content.getChildren().clear();
+        ensureIndependentEmptyStates();
+
+        content.getChildren().addAll(
+                createHeader("Notes"), createNotesPreviewNode(),
+                createReadOnlySectionHeader(lblDeadlinesHeader), deadlinesContainer,
+                createReadOnlySectionHeader(lblTodoHeader), todoListContainer,
+                createReadOnlySectionHeader(new Label("Scheduled Sessions")), dayEventsContainer
+        );
+    }
+
+    private HBox createSectionHeader(Label titleLabel, javafx.event.EventHandler<javafx.event.ActionEvent> onAdd) {
+        titleLabel.getStyleClass().add("section-header");
+        Button btnAdd = new Button();
+        btnAdd.setGraphic(new FontIcon("mdi2p-plus"));
+        btnAdd.getStyleClass().addAll(Styles.BUTTON_CIRCLE, Styles.FLAT);
+        btnAdd.setOnAction(onAdd);
+        Region spacer = new Region();
+        HBox.setHgrow(spacer, Priority.ALWAYS);
+        HBox header = new HBox(10, titleLabel, spacer, btnAdd);
+        header.setAlignment(Pos.CENTER_LEFT);
+        return header;
+    }
+
+    private HBox createReadOnlySectionHeader(Label titleLabel) {
+        titleLabel.getStyleClass().add("section-header");
+        Region spacer = new Region();
+        HBox.setHgrow(spacer, Priority.ALWAYS);
+        HBox header = new HBox(10, titleLabel, spacer);
+        header.setAlignment(Pos.CENTER_LEFT);
+        return header;
+    }
+
+    private void ensureIndependentEmptyStates() {
+        ensureContainerPlaceholder(deadlinesContainer, "No deadlines", "mdi2a-alarm");
+        ensureContainerPlaceholder(dayEventsContainer, "No scheduled sessions", "mdi2c-clock-outline");
+        ensureTodoPlaceholder();
+        updateTodoHeaderCount();
+    }
+
+    private void ensureContainerPlaceholder(VBox container, String emptyMessage, String iconLiteral) {
+        if (container.getChildren().isEmpty()) {
+            container.getChildren().setAll(createEmptyStateLabel(emptyMessage, iconLiteral));
+        }
+    }
+
+    private void ensureTodoPlaceholder() {
+        List<Node> todoRows = todoListContainer.getChildren().stream()
+                .filter(node -> !(node instanceof Label && node.getStyleClass().contains("empty-state-label")))
+                .collect(Collectors.toList());
+
+        if (todoRows.isEmpty()) {
+            todoListContainer.getChildren().setAll(createEmptyStateLabel("No todo list", "mdi2f-format-list-checks"));
+        } else {
+            todoListContainer.getChildren().setAll(todoRows);
+        }
+    }
+
+    private Label createEmptyStateLabel(String text, String iconLiteral) {
+        Label empty = new Label(text);
+        empty.getStyleClass().add("empty-state-label");
+        empty.setMaxWidth(Double.MAX_VALUE);
+        empty.setAlignment(Pos.CENTER);
+        empty.setContentDisplay(ContentDisplay.TOP);
+        empty.setGraphic(new FontIcon(iconLiteral));
+        return empty;
+    }
+
+    private Node createEmptyContent(String text) {
+        return switch (text) {
+            case "No deadlines" -> createEmptyStateLabel(text, "mdi2a-alarm");
+            case "No scheduled sessions" -> createEmptyStateLabel(text, "mdi2c-clock-outline");
+            case "No todo list" -> createEmptyStateLabel(text, "mdi2f-format-list-checks");
+            default -> createEmptyStateLabel(text, "mdi2i-information-outline");
+        };
+    }
+
+    private Node createNotesPreviewNode() {
+        if (notesPreviewText.getGraphic() == null) {
+            notesPreviewText.setWrapText(true);
+            notesPreviewText.setMaxWidth(Double.MAX_VALUE);
+            notesPreviewText.setGraphic(new FontIcon("mdi2n-notebook-edit-outline"));
+            notesPreviewText.getStyleClass().add("daily-note-text");
+            notesPreviewText.setOnMouseClicked(_ -> showNotesPanel());
+            notesPreviewText.setCursor(javafx.scene.Cursor.HAND);
+        }
+        updateNotesPreview();
+        return notesPreviewText;
+    }
+
+    private void updateNotesPreview() {
+        String noteText = noteArea.getText() == null ? "" : noteArea.getText().trim();
+        String preview = noteText.isEmpty() ? "No plan for this day yet." : noteText;
+        notesPreviewText.setText(preview);
+        notesPreviewText.getStyleClass().remove("daily-note-preview-empty");
+        notesPreviewText.getStyleClass().remove("daily-note-text-empty");
+        if (noteText.isEmpty()) {
+            notesPreviewText.getStyleClass().add("daily-note-preview-empty");
+            notesPreviewText.getStyleClass().add("daily-note-text-empty");
+            notesPreviewText.setContentDisplay(ContentDisplay.TOP);
+            notesPreviewText.setAlignment(Pos.CENTER);
+            notesPreviewText.setTextAlignment(javafx.scene.text.TextAlignment.CENTER);
+        } else {
+            notesPreviewText.setContentDisplay(ContentDisplay.LEFT);
+            notesPreviewText.setAlignment(Pos.TOP_LEFT);
+            notesPreviewText.setTextAlignment(javafx.scene.text.TextAlignment.LEFT);
+        }
+    }
+
+    private void updateTodoHeaderCount() {
+        List<HBox> todoRows = todoListContainer.getChildren().stream()
+                .filter(HBox.class::isInstance)
+                .map(HBox.class::cast)
+                .toList();
+
+        long total = todoRows.size();
+        long completed = todoRows.stream()
+                .filter(row -> Boolean.TRUE.equals(row.getProperties().get("todoCompleted")))
+                .count();
+
+        lblTodoHeader.setText(total == 0 ? "To-Do List" : "To-Do List  " + completed + "/" + total + " completed");
+    }
+
+    private void showNotesPanel() {
+        Label subtitle = new Label("Notes for " + currentDate + ".");
+        subtitle.getStyleClass().add(Styles.TEXT_MUTED);
+
+        TextArea editArea = new TextArea(noteArea.getText());
+        editArea.setWrapText(true);
+        editArea.setPrefRowCount(14);
+        editArea.setPromptText("Type ...");
+
+        Button btnSave = new Button("Save Notes");
+        btnSave.getStyleClass().addAll(Styles.ACCENT, Styles.BUTTON_OUTLINED);
+        btnSave.setMaxWidth(Double.MAX_VALUE);
+        btnSave.setOnAction(_ -> {
+            noteArea.setText(editArea.getText());
+            updateNotesPreview();
+            saveCurrentNote();
+            closeOverlay();
+        });
+
+        setOverlayContent("Daily Notes", subtitle, editArea, btnSave);
+    }
+
+    private void showTodoCreatePanel() {
+        Label subtitle = new Label("Add a new to-do for " + currentDate + ".");
+        subtitle.getStyleClass().add(Styles.TEXT_MUTED);
+
+        TextField todoField = new TextField();
+        todoField.setPromptText("Write your task here...");
+        todoField.getStyleClass().add("todo-add-field");
+
+        Button btnCreate = new Button("Add To-Do");
+        btnCreate.setGraphic(new FontIcon("mdi2p-plus"));
+        btnCreate.getStyleClass().add("todo-add-button");
+        btnCreate.setDefaultButton(true);
+        btnCreate.setOnAction(_ -> handleAddTodo(todoField));
+        todoField.setOnAction(_ -> handleAddTodo(todoField));
+
+        setOverlayContent("New To-Do", subtitle, todoField, btnCreate);
+        Platform.runLater(todoField::requestFocus);
+    }
+
+    private void showTodoEditPanel(Map<String, Object> data, HBox row) {
+        long id = ((Number) data.get("id")).longValue();
+        boolean completed = ApiClient.extractCompletedFlag(data);
+
+        Label subtitle = new Label("Edit this to-do.");
+        subtitle.getStyleClass().add(Styles.TEXT_MUTED);
+
+        TextField todoField = new TextField(String.valueOf(data.getOrDefault("text", "")));
+        todoField.setPromptText("Write your task here...");
+        todoField.getStyleClass().add("todo-add-field");
+
+        Button btnSave = new Button("Save");
+        btnSave.getStyleClass().add("todo-add-button");
+        btnSave.setMaxWidth(Double.MAX_VALUE);
+        btnSave.setOnAction(_ -> {
+            String text = todoField.getText().trim();
+            if (text.isEmpty()) return;
+
+            new Thread(() -> {
+                try {
+                    ApiClient.updateTodo(id, text, completed);
+                    data.put("text", text);
+                    Platform.runLater(() -> {
+                        replaceTodoRow(row, data);
+                        pomodoroController.refreshSideMenu();
+                        closeOverlay();
+                    });
+                } catch (Exception e) {
+                    e.printStackTrace();
+                }
+            }, "todo-save-thread").start();
+        });
+
+        Button btnDelete = new Button("Delete");
+        btnDelete.getStyleClass().add("todo-delete-action");
+        btnDelete.setMaxWidth(Double.MAX_VALUE);
+        btnDelete.setOnAction(_ -> {
+            todoListContainer.getChildren().remove(row);
+            ensureTodoPlaceholder();
+            updateTodoHeaderCount();
+            pomodoroController.refreshSideMenu();
+            closeOverlay();
+
+            new Thread(() -> {
+                try {
+                    ApiClient.deleteTodo(id);
+                } catch (Exception e) {
+                    e.printStackTrace();
+                }
+            }, "todo-delete-thread").start();
+        });
+
+        setOverlayContent("Edit To-Do", subtitle, todoField, btnSave, btnDelete);
+        Platform.runLater(todoField::requestFocus);
+    }
+
+    private void setOverlayContent(String title, Node... nodes) {
+        overlayTitle.setText(title);
+        overlayTitle.getStyleClass().setAll("section-header", "planner-overlay-title");
+
+        VBox overlayCard = new VBox(16);
+        overlayCard.getStyleClass().add("planner-overlay-card");
+        overlayCard.setPrefWidth(900);
+        overlayCard.setMaxWidth(960);
+        overlayCard.setMaxHeight(Region.USE_PREF_SIZE);
+        overlayCard.setOnMouseClicked(e -> e.consume());
+
+        Button closeButton = new Button();
+        closeButton.setGraphic(new FontIcon("mdi2c-close"));
+        closeButton.getStyleClass().addAll(Styles.BUTTON_CIRCLE, Styles.FLAT);
+        closeButton.setOnAction(_ -> closeOverlay());
+
+        Region spacer = new Region();
+        HBox.setHgrow(spacer, Priority.ALWAYS);
+
+        HBox header = new HBox(10, overlayTitle, spacer, closeButton);
+        header.setAlignment(Pos.CENTER_LEFT);
+
+        VBox body = new VBox(12);
+        body.getChildren().addAll(nodes);
+
+        overlayCard.getChildren().setAll(header, body);
+
+        StackPane overlayRoot = new StackPane(overlayCard);
+        overlayRoot.getStyleClass().add("planner-overlay");
+        overlayRoot.setPickOnBounds(true);
+        overlayRoot.setOnMouseClicked(_ -> closeOverlay());
+
+        pomodoroController.showPlannerOverlay(overlayRoot);
+    }
+
+    private void closeOverlay() {
+        pomodoroController.hidePlannerOverlay();
+    }
+
+    private void saveCurrentNote() {
+        if (savingNote) return;
+        savingNote = true;
+        String content = noteArea.getText();
+        LocalDate dateToSave = currentDate;
+        new Thread(() -> {
+            try { ApiClient.saveNote(dateToSave, content); }
+            catch (Exception e) { e.printStackTrace(); }
+            finally { savingNote = false; }
+        }, "note-save-thread").start();
+    }
+
+    private void handleAddTodo(TextField todoField) {
+        String text = todoField.getText().trim();
+        if (text.isEmpty()) return;
+        String tagName = pomodoroController.getSelectedTag();
+        String taskName = pomodoroController.getSelectedTask();
+        if (tagName == null || tagName.isBlank() || taskName == null || taskName.isBlank()) {
+            NotificationManager.show("Select task", "Choose an active task before creating a to-do", NotificationManager.NotificationType.INFO);
+            return;
+        }
+        todoField.clear();
+
+        new Thread(() -> {
+            try {
+                Map<String, Object> created = ApiClient.createTodo(currentDate, text, tagName, taskName);
+                Platform.runLater(() -> {
+                    todoListContainer.getChildren().removeIf(node -> node instanceof Label && node.getStyleClass().contains("empty-state-label"));
+                    todoListContainer.getChildren().add(createTodoRow(created));
+                    updateTodoHeaderCount();
+                    pomodoroController.refreshSideMenu();
+                    closeOverlay();
+                });
+            } catch (Exception e) { e.printStackTrace(); }
+        }, "todo-create-thread").start();
+    }
+
+    private HBox createTodoRow(Map<String, Object> data) {
+        long id = ((Number) data.get("id")).longValue();
+        String text = (String) data.get("text");
+        boolean completed = ApiClient.extractCompletedFlag(data);
+        HBox row = new HBox(12);
+        row.setAlignment(Pos.CENTER_LEFT);
+        row.getStyleClass().add("todo-row");
+        row.getProperties().put("todoCompleted", completed);
+
+        VBox info = new VBox(2);
+        info.getStyleClass().add("row-info-container");
+
+        Label title = new Label(text);
+        title.getStyleClass().add("row-title");
+
+        Label status = new Label(completed ? "Completed" : "Pending");
+        status.getStyleClass().addAll(Styles.TEXT_MUTED, Styles.TEXT_SMALL);
+        info.getChildren().addAll(title, status);
+
+        Region spacer = new Region();
+        HBox.setHgrow(spacer, Priority.ALWAYS);
+
+        Button completedButton = new Button();
+        completedButton.getStyleClass().add("calendar-button-icon");
+        FontIcon completedIcon = new FontIcon();
+        completedIcon.getStyleClass().add("planner-complete-icon");
+        completedButton.setGraphic(completedIcon);
+        FontIcon todoIcon = new FontIcon("mdi2f-format-list-checks");
+        todoIcon.getStyleClass().add("todo-row-icon");
+
+        applyTodoCompletedState(row, completedIcon, todoIcon, info, completed);
+
+        completedButton.setOnAction(e -> {
+            completedButton.setDisable(true);
+            e.consume();
+            boolean previousState = Boolean.TRUE.equals(row.getProperties().get("todoCompleted"));
+            boolean nextState = !previousState;
+
+            row.getProperties().put("todoCompleted", nextState);
+            data.put("completed", nextState);
+            data.put("isCompleted", nextState);
+            status.setText(nextState ? "Completed" : "Pending");
+            applyTodoCompletedState(row, completedIcon, todoIcon, info, nextState);
+            updateTodoHeaderCount();
+            pomodoroController.refreshSideMenu();
+
+            new Thread(() -> {
+                try {
+                    ApiClient.updateTodoCompleted(id, nextState);
+                } catch (Exception e1) {
+                    e1.printStackTrace();
+                    Platform.runLater(() -> {
+                        row.getProperties().put("todoCompleted", previousState);
+                        data.put("completed", previousState);
+                        data.put("isCompleted", previousState);
+                        status.setText(previousState ? "Completed" : "Pending");
+                        applyTodoCompletedState(row, completedIcon, todoIcon, info, previousState);
+                        updateTodoHeaderCount();
+                        pomodoroController.refreshSideMenu();
+                    });
+                } finally {
+                    Platform.runLater(() -> completedButton.setDisable(false));
+                }
+            }, "todo-update-thread").start();
+        });
+
+        row.getChildren().addAll(completedButton, todoIcon, info, spacer);
+        row.setOnMouseClicked(e -> {
+            showTodoEditPanel(data, row);
+            e.consume();
+        });
+        row.setCursor(javafx.scene.Cursor.HAND);
+
+        return row;
+    }
+
+    private void checkEmptyDay(VBox content) {
+        boolean hasData = !deadlinesContainer.getChildren().isEmpty() ||
+                !dayEventsContainer.getChildren().isEmpty() ||
+                !todoListContainer.getChildren().isEmpty();
+
+        if (!hasData) {
+            content.getChildren().clear();
+            Label lblEmpty = new Label("No plan for this day yet.");
+            lblEmpty.getStyleClass().addAll(Styles.TEXT_MUTED, "daily-empty-day-label");
+            content.getChildren().add(lblEmpty);
+        }
+    }
+
+    private void applyTodoCompletedState(HBox row, FontIcon completedIcon, FontIcon todoIcon, VBox info, boolean completed) {
+        completedIcon.setIconLiteral(completed ? "mdi2c-check-circle" : "mdi2c-checkbox-blank-circle-outline");
+        row.setOpacity(completed ? 0.75 : 1.0);
+        info.setOpacity(completed ? 0.5 : 1.0);
+        todoIcon.setOpacity(completed ? 0.5 : 1.0);
+    }
+
+    private void replaceTodoRow(HBox oldRow, Map<String, Object> data) {
+        int index = todoListContainer.getChildren().indexOf(oldRow);
+        HBox newRow = createTodoRow(data);
+        if (index >= 0) {
+            todoListContainer.getChildren().set(index, newRow);
+        } else {
+            todoListContainer.getChildren().add(newRow);
+        }
+        updateTodoHeaderCount();
     }
 
     public void updateHeaderDate(LocalDate date) {
         this.currentDate = date;
+        noteArea.setText("");
+        updateNotesPreview();
+        deadlinesContainer.getChildren().clear();
+        dayEventsContainer.getChildren().clear();
+        todoListContainer.getChildren().clear();
+        closeOverlay();
+        rebuildUI();
+
+        new Thread(() -> {
+            try {
+                String note = ApiClient.getNoteByDate(date);
+                List<Map<String, Object>> todos = ApiClient.getTodosByDate(date);
+                Platform.runLater(() -> {
+                    noteArea.setText(note);
+                    updateNotesPreview();
+                    if (todos != null) {
+                        todos.forEach(t -> todoListContainer.getChildren().add(createTodoRow(t)));
+                    }
+                    ensureTodoPlaceholder();
+                    updateTodoHeaderCount();
+                });
+            } catch (Exception e) { e.printStackTrace(); }
+        }, "daily-data-loader").start();
     }
 
-    public void refreshData(List<Map<String, Object>> scheduled, List<Map<String, Object>> deadlines) {
+    public void updateDayContent(LocalDate date,
+                                 String note,
+                                 List<Map<String, Object>> todos,
+                                 List<Map<String, Object>> scheduled,
+                                 List<Map<String, Object>> deadlines) {
+        this.currentDate = date;
+        noteArea.setText(note != null ? note : "");
+        updateNotesPreview();
+        closeOverlay();
+
+        todoListContainer.getChildren().clear();
+        if (todos != null) {
+            todos.forEach(t -> todoListContainer.getChildren().add(createTodoRow(t)));
+        }
+        ensureTodoPlaceholder();
+        updateTodoHeaderCount();
+
         List<Map<String, Object>> sortedDeadlines = deadlines == null ? List.of() : deadlines.stream()
                 .sorted(Comparator
                         .comparing((Map<String, Object> item) -> !Boolean.TRUE.equals(item.get("allDay")))
@@ -111,8 +550,30 @@ public class DailyTab extends VBox {
                 }))
                 .collect(Collectors.toList());
 
-        fill(deadlinesContainer, sortedDeadlines, "No deadlines for this day.", this::createDeadlineRow);
-        fill(dayEventsContainer, sortedScheduled, "No events scheduled.", this::createEventRow);
+        fill(deadlinesContainer, sortedDeadlines, "No deadlines", this::createDeadlineRow);
+        fill(dayEventsContainer, sortedScheduled, "No scheduled sessions", this::createEventRow);
+        updateDeadlineHeaderCount();
+    }
+
+    public void refreshData(List<Map<String, Object>> scheduled, List<Map<String, Object>> deadlines) {
+        List<Map<String, Object>> sortedDeadlines = deadlines == null ? List.of() : deadlines.stream()
+            .sorted(Comparator
+                    .comparing((Map<String, Object> item) -> !Boolean.TRUE.equals(item.get("allDay")))
+                    .thenComparing(item -> {
+                        LocalDateTime due = extractDeadlineDate(item);
+                        return due != null ? due : LocalDateTime.MAX;
+                    }))
+            .collect(Collectors.toList());
+
+        List<Map<String, Object>> sortedScheduled = scheduled == null ? List.of() : scheduled.stream()
+            .sorted(Comparator.comparing(item -> {
+                LocalDateTime start = extractScheduledStart(item);
+                return start != null ? start : LocalDateTime.MAX;
+            }))
+            .collect(Collectors.toList());
+
+        fill(deadlinesContainer, sortedDeadlines, "No deadlines", this::createDeadlineRow);
+        fill(dayEventsContainer, sortedScheduled, "No scheduled sessions", this::createEventRow);
 
         updateDeadlineHeaderCount();
     }
@@ -126,14 +587,9 @@ public class DailyTab extends VBox {
     private void fill(VBox container, List<Map<String, Object>> data, String msg, Function<Map<String, Object>, Node> mapper) {
         container.getChildren().clear();
         if (data == null || data.isEmpty()) {
-            Label empty = new Label(msg);
-            empty.getStyleClass().add("empty-state-label");
-            empty.setMaxWidth(Double.MAX_VALUE);
-            empty.setAlignment(Pos.CENTER);
-            container.getChildren().add(empty);
+            container.getChildren().add(createEmptyContent(msg));
             return;
         }
-
         for (Map<String, Object> item : data) {
             container.getChildren().add(mapper.apply(item));
         }
@@ -179,7 +635,7 @@ public class DailyTab extends VBox {
         Button completedButton = new Button();
         completedButton.getStyleClass().add("calendar-button-icon");
         FontIcon completedIcon = new FontIcon();
-        completedIcon.setIconSize(18);
+        completedIcon.getStyleClass().add("planner-complete-icon");
         completedButton.setGraphic(completedIcon);
         final boolean[] completedState = {isCompleted};
         applyDeadlineCompletedState(row, completedIcon, info, badges, completedState[0]);
@@ -229,8 +685,10 @@ public class DailyTab extends VBox {
         HBox row = baseRow();
         row.getStyleClass().add("event-row");
 
-        String tagColor = String.valueOf(data.getOrDefault("tagColor", "#3b82f6"));
-        row.setStyle("-fx-border-color: transparent transparent transparent " + tagColor + "; -fx-border-width: 0 0 0 4;");
+        Object rawTagColor = data.get("tagColor");
+        if (rawTagColor instanceof String tagColor && !tagColor.isBlank()) {
+            row.setStyle("-event-tag-color: " + tagColor + ";");
+        }
 
         LocalDateTime start = parse(data.get("start_time"));
         LocalDateTime end = parse(data.get("end_time"));
@@ -532,7 +990,15 @@ public class DailyTab extends VBox {
 
     private void showPopup(Popup popup, VBox root, double screenX, double screenY) {
         popup.getContent().add(root);
-        popup.show(getScene().getWindow(), screenX, screenY);
+        root.applyCss();
+        root.layout();
+
+        double popupWidth = root.prefWidth(-1);
+        double popupHeight = root.prefHeight(popupWidth);
+        double centeredX = getScene().getWindow().getX() + Math.max(0, (getScene().getWindow().getWidth() - popupWidth) / 2);
+        double centeredY = getScene().getWindow().getY() + Math.max(0, (getScene().getWindow().getHeight() - popupHeight) / 2);
+
+        popup.show(getScene().getWindow(), centeredX, centeredY);
     }
 
     private void closeActivePopup() {
@@ -547,15 +1013,15 @@ public class DailyTab extends VBox {
     }
 
     private LocalDateTime extractScheduledStart(Map<String, Object> data) {
-        return parsePreferredDate(data, "start_time", "startTime", "full_start");
+        return parsePreferredDate(data, "start_time", "startDate", "full_start");
     }
 
     private LocalDateTime extractScheduledPopupStart(Map<String, Object> data) {
-        return parsePreferredDate(data, "full_start", "start_time", "startTime");
+        return parsePreferredDate(data, "full_start", "start_time", "startDate");
     }
 
     private LocalDateTime extractScheduledPopupEnd(Map<String, Object> data) {
-        return parsePreferredDate(data, "full_end", "end_time", "endTime");
+        return parsePreferredDate(data, "full_end", "end_time", "endDate");
     }
 
     private LocalDateTime parsePreferredDate(Map<String, Object> data, String... keys) {

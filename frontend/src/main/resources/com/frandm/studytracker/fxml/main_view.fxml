@@ -3,8 +3,8 @@
 <?import javafx.geometry.Insets?>
 <?import javafx.scene.control.*?>
 <?import javafx.scene.layout.*?>
+<?import javafx.scene.media.MediaView?>
 <?import javafx.scene.shape.Circle?>
-<?import javafx.scene.shape.Arc?>
 <?import javafx.scene.chart.PieChart?>
 <?import javafx.scene.chart.CategoryAxis?>
 <?import javafx.scene.chart.NumberAxis?>
@@ -20,7 +20,34 @@
            xmlns="http://javafx.com/javafx/23" xmlns:fx="http://javafx.com/fxml/1"
            fx:controller="com.frandm.studytracker.controllers.PomodoroController">
 
+    <MediaView fx:id="backgroundVideoView"
+               mouseTransparent="true"
+               preserveRatio="false"
+               smooth="true"
+               StackPane.alignment="CENTER" />
+
     <VBox >
+        <HBox fx:id="titleBar" alignment="CENTER_RIGHT" minHeight="40.0" prefHeight="40.0" styleClass="custom-title-bar">
+            <Region HBox.hgrow="ALWAYS" />
+
+            <Button fx:id="minBtn" styleClass="window-btn" focusTraversable="false">
+                <graphic>
+                    <FontIcon iconLiteral="fltfmz-minimize-16" iconSize="16" styleClass="window-icon-minimize"/>
+                </graphic>
+            </Button>
+
+            <Button fx:id="maxBtn" styleClass="window-btn" focusTraversable="false">
+                <graphic>
+                    <FontIcon iconLiteral="ri-window-maximize" iconSize="16" styleClass="window-icon-maximize"/>
+                </graphic>
+            </Button>
+
+            <Button fx:id="closeBtn" styleClass="window-btn, close-btn" focusTraversable="false">
+                <graphic>
+                    <FontIcon iconLiteral="mdi2w-window-close" iconSize="16" styleClass="window-icon-close"/>
+                </graphic>
+            </Button>
+        </HBox>
         <StackPane VBox.vgrow="ALWAYS" maxWidth="Infinity" >
             <GridPane StackPane.alignment="TOP_CENTER"  maxHeight="-Infinity" maxWidth="Infinity">
                 <columnConstraints>
@@ -748,6 +775,12 @@
             </VBox>
         </StackPane>
     </GridPane>
+
+    <StackPane fx:id="plannerOverlayLayer"
+               visible="false"
+               managed="false"
+               pickOnBounds="true"
+               StackPane.alignment="CENTER" />
 
     <VBox fx:id="notificationContainer"
           mouseTransparent="true"

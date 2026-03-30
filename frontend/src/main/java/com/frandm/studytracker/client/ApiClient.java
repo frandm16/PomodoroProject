@@ -29,7 +29,12 @@ public class ApiClient {
                 .uri(URI.create(BASE_URL + path))
                 .GET()
                 .build();
-        return http.send(req, HttpResponse.BodyHandlers.ofString()).body();
+        HttpResponse<String> response = http.send(req, HttpResponse.BodyHandlers.ofString());
+
+        if (response.statusCode() >= 400) {
+            throw new RuntimeException("GET " + path + " failed: HTTP " + response.statusCode() + " - " + response.body());
+        }
+        return response.body();
     }
 
     private static String post(String path, Object body) throws Exception {
@@ -146,7 +151,7 @@ public class ApiClient {
                                             String title, String start, String end) throws Exception {
         post("/scheduled", Map.of(
                 "tagName", tagName, "taskName", taskName,
-                "title", title, "startTime", start, "endTime", end
+                "title", title, "startDate", start, "endDate", end
         ));
     }
 
@@ -154,7 +159,7 @@ public class ApiClient {
                                               String title, String start, String end) throws Exception {
         put("/scheduled/" + id, Map.of(
                 "tagName", tagName, "taskName", taskName,
-                "title", title, "startTime", start, "endTime", end
+                "title", title, "startDate", start, "endDate", end
         ));
     }
 
@@ -334,6 +339,119 @@ public class ApiClient {
         }
     }
 
+    public static void generateRandomNotes() {
+        System.out.println("[generateRandomNotes] Starting...");
+        Random random = new Random();
+        LocalDate today = LocalDate.now();
+        String[] openings = {
+                "Main focus today:",
+                "Plan for the day:",
+                "Priority list:",
+                "Study direction:",
+                "What matters today:"
+        };
+        String[] goals = {
+                "finish the pending module review",
+                "push the backend refactor a bit further",
+                "clean up planner interactions",
+                "review notes and consolidate concepts",
+                "close the open task list"
+        };
+        String[] blockers = {
+                "Need to avoid context switching.",
+                "Keep sessions shorter and more intentional.",
+                "Watch out for distractions in the afternoon.",
+                "Leave time for review at the end.",
+                "Focus on one task at a time."
+        };
+        String[] wrapUps = {
+                "If time remains, prepare tomorrow.",
+                "A short recap at night would help.",
+                "Remember to check deadlines before stopping.",
+                "Try to end the day with a clean board.",
+                "Leave the next step obvious."
+        };
+
+        try {
+            int total = 120;
+            for (int i = 0; i < total; i++) {
+                LocalDate date = today.minusDays(i);
+                if (random.nextDouble() < 0.72) {
+                    String content = String.join("\n",
+                            openings[random.nextInt(openings.length)],
+                            "- " + goals[random.nextInt(goals.length)],
+                            "- " + goals[random.nextInt(goals.length)],
+                            blockers[random.nextInt(blockers.length)],
+                            wrapUps[random.nextInt(wrapUps.length)]
+                    );
+                    saveNote(date, content);
+                }
+            }
+            System.out.println("[generateRandomNotes] Done ✓");
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
+
+    public static void generateRandomTodos() {
+        System.out.println("[generateRandomTodos] Starting...");
+        Random random = new Random();
+        LocalDate today = LocalDate.now();
+        String[] prefixes = {
+                "Review",
+                "Draft",
+                "Refactor",
+                "Check",
+                "Prepare",
+                "Finish",
+                "Organize"
+        };
+        String[] subjects = {
+                "planner UI",
+                "session notes",
+                "database schema",
+                "weekly plan",
+                "deadline details",
+                "statistics screen",
+                "study backlog"
+        };
+
+        try {
+            String tasksJson = get("/tasks/all");
+            List<Map<String, Object>> taskList = mapper.readValue(tasksJson, new TypeReference<>() {});
+            if (taskList.isEmpty()) {
+                System.out.println("[generateRandomTodos] Skipped: no tasks available");
+                return;
+            }
+
+            int total = 45;
+            for (int offset = -20; offset <= 24; offset++) {
+                LocalDate date = today.plusDays(offset);
+                int todosToday = random.nextInt(4);
+                for (int i = 0; i < todosToday; i++) {
+                    Map<String, Object> task = taskList.get(random.nextInt(taskList.size()));
+                    @SuppressWarnings("unchecked")
+                    Map<String, Object> tagMap = (Map<String, Object>) task.get("tag");
+
+                    Map<String, Object> created = createTodo(
+                            date,
+                            prefixes[random.nextInt(prefixes.length)] + " " + subjects[random.nextInt(subjects.length)],
+                            (String) tagMap.get("name"),
+                            (String) task.get("name")
+                    );
+
+                    boolean shouldComplete = offset < 0 && random.nextDouble() < 0.55;
+                    if (shouldComplete && created.get("id") instanceof Number number) {
+                        updateTodoCompleted(number.longValue(), true);
+                    }
+                }
+            }
+            System.out.println("[generateRandomTodos] Done ✓");
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
+
     // --- Deadlines ---
     public static List<Map<String, Object>> getDeadlines(String start, String end) throws Exception {
         return mapper.readValue(get("/deadlines?start=" + encodeQueryValue(start) + "&end=" + encodeQueryValue(end)), new TypeReference<>() {});
@@ -433,6 +551,62 @@ public class ApiClient {
 
     private static String encodeQueryValue(String value) {
         return value.replace(" ", "%20");
+    }
+
+    // --- Notes ---
+
+    public static String getNoteByDate(LocalDate date) throws Exception {
+        try {
+            String json = get("/notes?date=" + date);
+            Map<String, Object> result = mapper.readValue(json, new TypeReference<>() {});
+            return (result != null && result.get("content") != null) ? result.get("content").toString() : "";
+        } catch (Exception e) {
+            System.err.println("Error fetching note: " + e.getMessage());
+            return "";
+        }
+    }
+
+    public static void saveNote(LocalDate date, String content) throws Exception {
+        put("/notes?date=" + date, Map.of("content", content));
+    }
+
+
+    // --- Todos ---
+
+    public static List<Map<String, Object>> getTodosByDate(LocalDate date) throws Exception {
+        return getTodos(date, null);
+    }
+
+    public static List<Map<String, Object>> getTodos(LocalDate date, Long taskId) throws Exception {
+        String path = "/todos?date=" + date;
+        if (taskId != null) {
+            path += "&taskId=" + taskId;
+        }
+        return mapper.readValue(get(path), new TypeReference<>() {});
+    }
+
+    public static Map<String, Object> createTodo(LocalDate date, String text, String tagName, String taskName) throws Exception {
+        Map<String, Object> body = new LinkedHashMap<>();
+        body.put("date", date.toString());
+        body.put("text", text);
+        body.put("tagName", tagName);
+        body.put("taskName", taskName);
+        return mapper.readValue(
+                post("/todos", body),
+                new TypeReference<>() {}
+        );
+    }
+
+    public static void updateTodoCompleted(long id, boolean completed) throws Exception {
+        put("/todos/" + id, Map.of("completed", completed));
+    }
+
+    public static void updateTodo(long id, String text, boolean completed) throws Exception {
+        put("/todos/" + id, Map.of("text", text, "completed", completed));
+    }
+
+    public static void deleteTodo(long id) throws Exception {
+        delete("/todos/" + id);
     }
 
 }

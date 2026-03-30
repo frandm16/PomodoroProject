@@ -22,24 +22,44 @@ import javafx.geometry.Pos;
 import javafx.scene.chart.AreaChart;
 import javafx.scene.chart.CategoryAxis;
 import javafx.scene.chart.PieChart;
+import javafx.scene.Node;
 import javafx.scene.control.*;
 import javafx.scene.input.KeyCode;
 import javafx.scene.layout.*;
+import javafx.scene.media.Media;
+import javafx.scene.media.MediaPlayer;
+import javafx.scene.media.MediaView;
 import javafx.scene.paint.Color;
+import javafx.stage.FileChooser;
+import javafx.stage.Window;
 import javafx.util.Duration;
 import org.kordamp.ikonli.javafx.FontIcon;
+import xss.it.nfx.NfxStage;
+
+import java.io.File;
+import java.net.URL;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.*;
 
 public class PomodoroController {
+    private static final String BACKGROUND_NONE = "none";
+    private static final String DEFAULT_BACKGROUND = "classpath:/com/frandm/studytracker/videos/raindrops2.mp4";
+    private static final List<BackgroundOption> BACKGROUND_PRESETS = List.of(
+            new BackgroundOption("No background", BACKGROUND_NONE),
+            new BackgroundOption("Raindrops Soft", "classpath:/com/frandm/studytracker/videos/raindrops2.mp4"),
+            new BackgroundOption("Raindrops Classic", "classpath:/com/frandm/studytracker/videos/raindrops.mp4"),
+            new BackgroundOption("Loop 01", "classpath:/com/frandm/studytracker/videos/bg-video-1.mp4"),
+            new BackgroundOption("Loop 02", "classpath:/com/frandm/studytracker/videos/bg-video-2.mp4"),
+            new BackgroundOption("Dashboard", "classpath:/com/frandm/studytracker/videos/dashboard-12.mp4")
+    );
 
 
     //region FXML - Componentes de Interfaz
     @FXML public GridPane mainContainer, setupPane, settingsPane, editSessionPane, summaryPane;
     @FXML public StackPane rootPane, setupBox, editSessionBox, summaryBox, stackpaneCircle, confirmOverlay,
-            confirmTagOverlay;
+            confirmTagOverlay, plannerOverlayLayer;
     @FXML public VBox timerTextContainer, notificationContainer, scheduleListContainer,
             plannerContainer, historyContainer, statsPlaceholder, streakVBox, streakImage,
             fuzzyResultsContainer, tagsListContainer, pomoSettingsPane,
@@ -65,6 +85,8 @@ public class PomodoroController {
     @FXML public PieChart tagPieChart;
     @FXML public ColumnConstraints colRightStats, colCenterStats, colLeftStats;
     @FXML public ScrollPane statsContainer;
+    @FXML public MediaView backgroundVideoView;
+    @FXML public Region backgroundVideoOverlay;
     //endregion
 
     private final PomodoroEngine engine = new PomodoroEngine();
@@ -73,12 +95,17 @@ public class PomodoroController {
     public Label ModeSubnameLabel;
     public Label ModeNameLabel;
     public FontIcon timerIcon;
+    public Button minBtn;
+    public Button maxBtn;
+    public Button closeBtn;
+    public HBox titleBar;
 
 
     private StatsDashboard statsDashboard;
     private PlannerController plannerController;
     private LogsView logsView;
     private FloatingDockView floatingDockView;
+    private MediaPlayer backgroundVideoPlayer;
 
     private double SIZE_FACTOR = 0.05;
     private int currentRating = 0;
@@ -99,6 +126,7 @@ public class PomodoroController {
     @FXML
     public void initialize() {
         initializeCoreSystems();
+        setupBackgroundVideo();
         setupViews();
         setupDynamicDock();
         setupInitialUIState();
@@ -114,14 +142,118 @@ public class PomodoroController {
     //region initialize
     private void initializeCoreSystems() {
         // ---------------- TEST ---------------------
-        // ApiClient.generateRandomPomodoros();
-        // ApiClient.generateRandomSchedule();
-        // ApiClient.generateRandomDeadlines();
+        // setupGeneratorsDEVELOP();
         // -------------------------------------------
         ConfigManager.load(engine);
         refreshDatabaseData();
         applyTheme();
         NotificationManager.init(notificationContainer);
+    }
+
+    private void setupBackgroundVideo() {
+        if (backgroundVideoView == null) {
+            return;
+        }
+
+        backgroundVideoView.fitWidthProperty().bind(rootPane.widthProperty());
+        backgroundVideoView.fitHeightProperty().bind(rootPane.heightProperty());
+        applyBackgroundVideo(engine.getBackgroundVideoSource(), false);
+
+        rootPane.sceneProperty().addListener((_, oldScene, newScene) -> {
+            if (oldScene != null && newScene == null && backgroundVideoPlayer != null) {
+                backgroundVideoPlayer.stop();
+                backgroundVideoPlayer.dispose();
+                backgroundVideoPlayer = null;
+            }
+        });
+    }
+
+    private void applyBackgroundVideo(String source, boolean persist) {
+        String normalizedSource = normalizeBackgroundSource(source);
+
+        if (backgroundVideoPlayer != null) {
+            backgroundVideoPlayer.stop();
+            backgroundVideoPlayer.dispose();
+            backgroundVideoPlayer = null;
+        }
+
+        if (BACKGROUND_NONE.equals(normalizedSource)) {
+            backgroundVideoView.setMediaPlayer(null);
+            backgroundVideoView.setVisible(false);
+            if (backgroundVideoOverlay != null) {
+                backgroundVideoOverlay.setVisible(false);
+            }
+            engine.setBackgroundVideoSource(normalizedSource);
+            if (persist) {
+                ConfigManager.save(engine);
+            }
+            return;
+        }
+
+        URL videoResource = resolveBackgroundResource(normalizedSource);
+        if (videoResource == null) {
+            if (!Objects.equals(normalizedSource, DEFAULT_BACKGROUND)) {
+                applyBackgroundVideo(DEFAULT_BACKGROUND, persist);
+            }
+            NotificationManager.show("Background unavailable", "Could not load the selected video", NotificationManager.NotificationType.WARNING);
+            return;
+        }
+
+        try {
+            backgroundVideoPlayer = new MediaPlayer(new Media(videoResource.toExternalForm()));
+            backgroundVideoPlayer.setCycleCount(MediaPlayer.INDEFINITE);
+            backgroundVideoPlayer.setMute(true);
+            backgroundVideoPlayer.setAutoPlay(true);
+
+            backgroundVideoView.setMediaPlayer(backgroundVideoPlayer);
+            backgroundVideoView.setVisible(true);
+            if (backgroundVideoOverlay != null) {
+                backgroundVideoOverlay.setVisible(true);
+            }
+            engine.setBackgroundVideoSource(normalizedSource);
+            if (persist) {
+                ConfigManager.save(engine);
+            }
+        } catch (RuntimeException ex) {
+            System.err.println("Error loading background video: " + ex.getMessage());
+            NotificationManager.show("Background error", "The selected file could not be played", NotificationManager.NotificationType.ERROR);
+        }
+    }
+
+    private String normalizeBackgroundSource(String source) {
+        if (source == null || source.isBlank()) {
+            return DEFAULT_BACKGROUND;
+        }
+        return source;
+    }
+
+    private URL resolveBackgroundResource(String source) {
+        if (source == null || source.isBlank() || BACKGROUND_NONE.equals(source)) {
+            return null;
+        }
+
+        if (source.startsWith("classpath:")) {
+            return getClass().getResource(source.substring("classpath:".length()));
+        }
+
+        File file = new File(source);
+        if (!file.exists()) {
+            return null;
+        }
+
+        try {
+            return file.toURI().toURL();
+        } catch (Exception ex) {
+            return null;
+        }
+    }
+
+    private void setupGeneratorsDEVELOP() {
+        ApiClient.generateRandomPomodoros();
+        ApiClient.generateRandomSchedule();
+        ApiClient.generateRandomDeadlines();
+        ApiClient.generateRandomNotes();
+        ApiClient.generateRandomTodos();
     }
 
     private void setupViews() {
@@ -163,7 +295,8 @@ public class PomodoroController {
                 floatingDock,
                 () -> engine,
                 this::handleDockNavigation,
-                this::toggleSettings
+                this::toggleSettings,
+                this::openBackgroundSelector
         );
     }
 
@@ -211,6 +344,13 @@ public class PomodoroController {
             }
         }
         refreshDynamicDock();
+    }
+
+    public void openPlannerPanel() {
+        if (getActivePanel() == plannerContainer) return;
+        if (floatingDockView != null) {
+            floatingDockView.triggerSection(FloatingDockView.Section.PLANNER);
+        }
     }
 
     private void setupSettingsPanel() {
@@ -509,6 +649,139 @@ public class PomodoroController {
         }
     }
 
+    public void showPlannerOverlay(Node content) {
+        if (plannerOverlayLayer == null) return;
+        plannerOverlayLayer.getChildren().setAll(content);
+        plannerOverlayLayer.setVisible(true);
+        plannerOverlayLayer.setManaged(true);
+    }
+
+    public void hidePlannerOverlay() {
+        if (plannerOverlayLayer == null) return;
+        plannerOverlayLayer.getChildren().clear();
+        plannerOverlayLayer.setVisible(false);
+        plannerOverlayLayer.setManaged(false);
+    }
+
+    public void openBackgroundSelector() {
+        StackPane overlay = new StackPane();
+        overlay.getStyleClass().add("planner-overlay");
+        overlay.setPickOnBounds(true);
+        overlay.setOnMouseClicked(event -> {
+            if (event.getTarget() == overlay) {
+                hidePlannerOverlay();
+            }
+        });
+
+        VBox card = new VBox(18);
+        card.getStyleClass().addAll("planner-overlay-card", "background-selector-card");
+        card.setMaxWidth(520);
+        card.setOnMouseClicked(event -> event.consume());
+
+        HBox header = new HBox();
+        header.setAlignment(Pos.CENTER_LEFT);
+
+        VBox titleGroup = new VBox(4);
+        Label title = new Label("Backgrounds");
+        title.getStyleClass().addAll("planner-overlay-title", "background-selector-title");
+        Label subtitle = new Label("Choose a preset video or load your own MP4 file.");
+        subtitle.getStyleClass().add("background-selector-subtitle");
+        titleGroup.getChildren().addAll(title, subtitle);
+
+        Region spacer = new Region();
+        HBox.setHgrow(spacer, Priority.ALWAYS);
+
+        Button closeButton = new Button("✕");
+        closeButton.getStyleClass().add("close-button");
+        closeButton.setOnAction(_ -> hidePlannerOverlay());
+
+        header.getChildren().addAll(titleGroup, spacer, closeButton);
+
+        Label currentSourceLabel = new Label("Current: " + getBackgroundLabel(engine.getBackgroundVideoSource()));
+        currentSourceLabel.getStyleClass().add("background-current-label");
+
+        TilePane presetGrid = new TilePane();
+        presetGrid.setPrefColumns(2);
+        presetGrid.setHgap(12);
+        presetGrid.setVgap(12);
+        presetGrid.getStyleClass().add("background-selector-grid");
+
+        for (BackgroundOption preset : BACKGROUND_PRESETS) {
+            presetGrid.getChildren().add(createBackgroundOptionButton(preset));
+        }
+
+        Button addFileButton = new Button("Add file");
+        addFileButton.getStyleClass().addAll("button-main", "background-file-button");
+        addFileButton.setOnAction(_ -> chooseCustomBackgroundFile());
+
+        card.getChildren().addAll(header, currentSourceLabel, presetGrid, addFileButton);
+        overlay.getChildren().add(card);
+        showPlannerOverlay(overlay);
+    }
+
+    private Button createBackgroundOptionButton(BackgroundOption option) {
+        Button button = new Button();
+        button.getStyleClass().add("background-option-button");
+        button.setMaxWidth(Double.MAX_VALUE);
+        button.setPrefWidth(220);
+
+        VBox content = new VBox(6);
+        Label title = new Label(option.label());
+        title.getStyleClass().add("background-option-title");
+
+        Label meta = new Label(option.source().startsWith("classpath:") ? "Preset" : "Custom file");
+        if (BACKGROUND_NONE.equals(option.source())) {
+            meta.setText("Solid app background");
+        }
+        meta.getStyleClass().add("background-option-meta");
+
+        content.getChildren().addAll(title, meta);
+        button.setGraphic(content);
+        button.setContentDisplay(ContentDisplay.GRAPHIC_ONLY);
+
+        if (Objects.equals(normalizeBackgroundSource(engine.getBackgroundVideoSource()), option.source())) {
+            button.getStyleClass().add("background-option-button-active");
+        }
+
+        button.setOnAction(_ -> {
+            applyBackgroundVideo(option.source(), true);
+            openBackgroundSelector();
+        });
+
+        return button;
+    }
+
+    private void chooseCustomBackgroundFile() {
+        Window window = rootPane != null && rootPane.getScene() != null ? rootPane.getScene().getWindow() : null;
+        FileChooser chooser = new FileChooser();
+        chooser.setTitle("Choose background video");
+        chooser.getExtensionFilters().add(new FileChooser.ExtensionFilter("Video files", "*.mp4", "*.m4v", "*.mov"));
+
+        File selectedFile = chooser.showOpenDialog(window);
+        if (selectedFile == null) {
+            return;
+        }
+
+        applyBackgroundVideo(selectedFile.getAbsolutePath(), true);
+        hidePlannerOverlay();
+        NotificationManager.show("Background updated", selectedFile.getName(), NotificationManager.NotificationType.SUCCESS);
+    }
+
+    private String getBackgroundLabel(String source) {
+        String normalized = normalizeBackgroundSource(source);
+        for (BackgroundOption option : BACKGROUND_PRESETS) {
+            if (Objects.equals(option.source(), normalized)) {
+                return option.label();
+            }
+        }
+
+        if (BACKGROUND_NONE.equals(normalized)) {
+            return "No background";
+        }
+
+        return new File(normalized).getName();
+    }
+
     private Region getActivePanel() {
         if (mainContainer.isVisible()) return mainContainer;
         if (statsContainer.isVisible()) return statsContainer;
@@ -717,7 +990,7 @@ public class PomodoroController {
         container.getStyleClass().add("menu-today-container");
 
         Label title = new Label("TODAY'S SCHEDULED");
-        title.setStyle("-fx-font-weight: bold; -fx-font-size: 11px; -fx-text-fill: -color-fg-muted;");
+        title.getStyleClass().add("menu-section-title");
 
         VBox list = new VBox(5);
         List<Map<String, Object>> todaySessions;
@@ -732,7 +1005,7 @@ public class PomodoroController {
 
         if (todaySessions.isEmpty()) {
             Label empty = new Label("No scheduled sessions for today");
-            empty.setStyle("-fx-font-style: italic; -fx-opacity: 0.6;");
+            empty.getStyleClass().add("menu-empty-text");
             list.getChildren().add(empty);
         } else {
             todaySessions.sort(Comparator.comparing(this::extractSessionStartTime, Comparator.nullsLast(Comparator.naturalOrder())));
@@ -752,7 +1025,7 @@ public class PomodoroController {
         container.getStyleClass().add("menu-today-container");
 
         Label title = new Label("UPCOMING DEADLINES");
-        title.setStyle("-fx-font-weight: bold; -fx-font-size: 11px; -fx-text-fill: -color-fg-muted;");
+        title.getStyleClass().add("menu-section-title");
 
         VBox list = new VBox(5);
         List<Map<String, Object>> upcomingDeadlines;
@@ -785,11 +1058,42 @@ public class PomodoroController {
 
         if (upcomingDeadlines.isEmpty()) {
             Label empty = new Label("No upcoming deadlines");
-            empty.setStyle("-fx-font-style: italic; -fx-opacity: 0.6;");
+            empty.getStyleClass().add("menu-empty-text");
             list.getChildren().add(empty);
         } else {
             for (Map<String, Object> deadline : upcomingDeadlines) {
                 list.getChildren().add(createMiniDeadlineItem(deadline));
+            }
+        }
+
+        container.getChildren().addAll(title, list);
+        return container;
+    }
+
+    private VBox createTodayTodosList() {
+        VBox container = new VBox(10);
+        container.setPadding(new Insets(15));
+        container.getStyleClass().add("menu-today-container");
+
+        Label title = new Label("TODAY'S TO-DO");
+        title.getStyleClass().add("menu-section-title");
+
+        VBox list = new VBox(5);
+        List<Map<String, Object>> todos;
+        try {
+            todos = ApiClient.getTodosByDate(LocalDate.now());
+        } catch (Exception e) {
+            System.err.println("Error loading today's todos: " + e.getMessage());
+            todos = new ArrayList<>();
+        }
+
+        if (todos.isEmpty()) {
+            Label empty = new Label("No to-dos for today");
+            empty.getStyleClass().add("menu-empty-text");
+            list.getChildren().add(empty);
+        } else {
+            for (Map<String, Object> todo : todos) {
+                list.getChildren().add(createMiniTodoItem(todo));
             }
         }
 
@@ -805,7 +1109,7 @@ public class PomodoroController {
 
         Map<?, ?> task = (Map<?, ?>) session.get("task");
         Map<?, ?> tag = task != null ? (Map<?, ?>) task.get("tag") : null;
-        String color = tag != null ? (String) tag.get("color") : "#ffffff";
+        String color = tag != null ? (String) tag.get("color") : null;
         String tagName = tag != null ? (String) tag.get("name") : null;
         String taskName = task != null ? (String) task.get("name") : null;
 
@@ -813,19 +1117,22 @@ public class PomodoroController {
         colorIndicator.setPrefSize(4, 20);
         colorIndicator.setMinWidth(4);
         colorIndicator.setMaxWidth(4);
-        colorIndicator.setStyle("-fx-background-color: " + color + "; -fx-background-radius: 2;");
+        colorIndicator.getStyleClass().add("menu-color-indicator");
+        if (color != null && !color.isBlank()) {
+            colorIndicator.setStyle("-menu-tag-color: " + color + ";");
+        }
 
         VBox info = new VBox(2);
         Label lblTitle = new Label((String) session.get("title"));
-        lblTitle.setStyle("-fx-font-weight: bold; -fx-font-size: 13px;");
+        lblTitle.getStyleClass().add("menu-item-title");
 
         LocalDateTime start = extractSessionStartTime(session);
-        LocalDateTime end = ApiClient.parseApiTimestamp(session.get("endTime"));
+        LocalDateTime end = ApiClient.parseApiTimestamp(session.get("endDate"));
 
         String timeText = (start != null && end != null) ?
                 start.format(MENU_TIME_FORMAT) + " - " + end.format(MENU_TIME_FORMAT) : "";
         Label lblTime = new Label(timeText);
-        lblTime.setStyle("-fx-font-size: 13px; -fx-opacity: 0.7;");
+        lblTime.getStyleClass().add("menu-item-meta");
 
         Region spacer = new Region();
         HBox.setHgrow(spacer, Priority.ALWAYS);
@@ -833,7 +1140,6 @@ public class PomodoroController {
 
         Button btnPlay = new Button();
         FontIcon playIcon = new FontIcon("fas-play");
-        playIcon.setIconColor(Color.web(color));
         playIcon.getStyleClass().add("play-icon");
 
         btnPlay.setGraphic(playIcon);
@@ -852,20 +1158,25 @@ public class PomodoroController {
         item.setAlignment(Pos.CENTER_LEFT);
         item.setPadding(new Insets(8));
         item.getStyleClass().add("menu-session-item");
+        item.setCursor(javafx.scene.Cursor.HAND);
+        item.setOnMouseClicked(_ -> openPlannerPanel());
 
         Map<?, ?> task = (Map<?, ?>) deadline.get("task");
         Map<?, ?> tag = task != null ? (Map<?, ?>) task.get("tag") : null;
-        String color = tag != null ? (String) tag.get("color") : "#ef4444";
+        String color = tag != null ? (String) tag.get("color") : null;
 
         Region colorIndicator = new Region();
         colorIndicator.setPrefSize(4, 20);
         colorIndicator.setMinWidth(4);
         colorIndicator.setMaxWidth(4);
-        colorIndicator.setStyle("-fx-background-color: " + color + "; -fx-background-radius: 2;");
+        colorIndicator.getStyleClass().add("menu-color-indicator");
+        if (color != null && !color.isBlank()) {
+            colorIndicator.setStyle("-menu-tag-color: " + color + ";");
+        }
 
         VBox info = new VBox(2);
         Label lblTitle = new Label(String.valueOf(deadline.getOrDefault("title", "Deadline")));
-        lblTitle.setStyle("-fx-font-weight: bold; -fx-font-size: 13px;");
+        lblTitle.getStyleClass().add("menu-item-title");
 
         LocalDateTime dueDate = extractDeadlineDueDate(deadline);
 
@@ -878,14 +1189,47 @@ public class PomodoroController {
         String urgency = String.valueOf(deadline.getOrDefault("urgency", "Medium"));
 
         Label lblTime = new Label(timeText + (timeText.isEmpty() ? "" : " • ") + urgency);
-        lblTime.setStyle("-fx-font-size: 13px; -fx-opacity: 0.7;");
+        lblTime.getStyleClass().add("menu-item-meta");
 
         FontIcon deadlineIcon = new FontIcon("mdi2a-alarm");
-        deadlineIcon.setIconColor(Color.web(color));
         deadlineIcon.setIconSize(16);
+        if (color != null && !color.isBlank()) {
+            deadlineIcon.setIconColor(Color.web(color));
+        }
 
         info.getChildren().addAll(lblTitle, lblTime);
         item.getChildren().addAll(colorIndicator, deadlineIcon, info);
+        return item;
+    }
+
+    private HBox createMiniTodoItem(Map<String, Object> todo) {
+        HBox item = new HBox(10);
+        item.setAlignment(Pos.CENTER_LEFT);
+        item.setPadding(new Insets(8));
+        item.getStyleClass().add("menu-session-item");
+        item.setCursor(javafx.scene.Cursor.HAND);
+        item.setOnMouseClicked(_ -> openPlannerPanel());
+
+        boolean completed = ApiClient.parseBooleanFlag(todo.get("completed"));
+
+        FontIcon todoIcon = new FontIcon(completed ? "mdi2c-check-circle" : "mdi2c-checkbox-blank-circle-outline");
+        todoIcon.setIconSize(16);
+        todoIcon.setIconColor(completed ? Color.web("#9ca3af") : Color.web("#f59e0b"));
+
+        VBox info = new VBox(2);
+        Label lblTitle = new Label(String.valueOf(todo.getOrDefault("text", "To-Do")));
+        lblTitle.getStyleClass().add("menu-item-title");
+
+        Label lblStatus = new Label(completed ? "Completed" : "Pending");
+        lblStatus.getStyleClass().add("menu-item-meta");
+
+        if (completed) {
+            lblTitle.setOpacity(0.65);
+            lblStatus.setOpacity(0.5);
+        }
+
+        info.getChildren().addAll(lblTitle, lblStatus);
+        item.getChildren().addAll(todoIcon, info);
         return item;
     }
 
@@ -893,13 +1237,22 @@ public class PomodoroController {
         if (scheduleListContainer != null) {
             scheduleListContainer.getChildren().clear();
             scheduleListContainer.getChildren().add(createUpcomingDeadlinesList());
+            scheduleListContainer.getChildren().add(createTodayTodosList());
             scheduleListContainer.getChildren().add(createTodaySchedulesList());
         }
         refreshDynamicDock();
     }
 
     private LocalDateTime extractSessionStartTime(Map<String, Object> session) {
-        return ApiClient.parseApiTimestamp(session.get("startTime"));
+        return ApiClient.parseApiTimestamp(session.get("startDate"));
+    }
+
+    public String getSelectedTag() {
+        return setupManager.getSelectedTag();
+    }
+
+    public String getSelectedTask() {
+        return setupManager.getSelectedTask();
     }
 
     private LocalDateTime extractDeadlineDueDate(Map<String, Object> deadline) {
@@ -1099,6 +1452,8 @@ public class PomodoroController {
     }
 
     public String getCurrentTheme() { return engine.getCurrentTheme();}
+
+    private record BackgroundOption(String label, String source) {}
 
     //endregion
 

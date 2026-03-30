@@ -8,47 +8,72 @@ import java.time.LocalDateTime;
 import java.time.LocalTime;
 import java.util.List;
 import java.util.Map;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
+import java.util.concurrent.LinkedBlockingQueue;
+import java.util.concurrent.ThreadPoolExecutor;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicLong;
 
 public class PlannerController {
     private final DailyTab dailyTab;
     private final WeeklyTab weeklyTab;
     private final PlannerView view;
-    private final PomodoroController pomodoroController;
     private LocalDate selectedDate = LocalDate.now();
-    private final ExecutorService executor = Executors.newSingleThreadExecutor();
+    private final ThreadPoolExecutor executor = new ThreadPoolExecutor(
+            1, 1, 0L, TimeUnit.MILLISECONDS, new LinkedBlockingQueue<>()
+    );
+    private final AtomicLong refreshVersion = new AtomicLong();
 
     public PlannerController(PomodoroController controller) {
-        this.pomodoroController = controller;
         this.dailyTab = new DailyTab(controller);
         this.weeklyTab = new WeeklyTab(controller);
-        this.dailyTab.setRefreshAction(this::refresh);
+        this.dailyTab.setRefreshAction(this::refreshDailyOnly);
         this.weeklyTab.setRefreshAction(this::refresh);
         this.view = new PlannerView(controller, this, dailyTab, weeklyTab);
         refresh();
     }
 
     public void refresh() {
-        LocalDate weekStart = selectedDate.with(java.time.DayOfWeek.MONDAY);
-        LocalDate weekEnd = weekStart.plusDays(6);
+        requestRefresh(true);
+    }
 
+    public void refreshDailyOnly() {
+        requestRefresh(false);
+    }
+
+    private void requestRefresh(boolean includeWeek) {
+        LocalDate targetDate = selectedDate;
+        LocalDate weekStart = targetDate.with(java.time.DayOfWeek.MONDAY);
+        LocalDate weekEnd = weekStart.plusDays(6);
+        long requestId = refreshVersion.incrementAndGet();
+
+        executor.getQueue().clear();
         executor.submit(() -> {
             try {
-                List<Map<String, Object>> daySessions = loadScheduled(selectedDate, selectedDate);
-                List<Map<String, Object>> dayDeadlines = loadDeadlines(selectedDate, selectedDate);
-                List<Map<String, Object>> weekSessions = loadScheduled(weekStart, weekEnd);
-                List<Map<String, Object>> weekDeadlines = loadDeadlines(weekStart, weekEnd);
+                String note = ApiClient.getNoteByDate(targetDate);
+                List<Map<String, Object>> todos = ApiClient.getTodosByDate(targetDate);
+                List<Map<String, Object>> daySessions = loadScheduled(targetDate, targetDate);
+                List<Map<String, Object>> dayDeadlines = loadDeadlines(targetDate, targetDate);
+                List<Map<String, Object>> weekSessions = List.of();
+                List<Map<String, Object>> weekDeadlines = List.of();
 
+                if (includeWeek) {
+                    weekSessions = loadScheduled(weekStart, weekEnd);
+                    weekDeadlines = loadDeadlines(weekStart, weekEnd);
+                }
+
+                List<Map<String, Object>> finalWeekSessions = weekSessions;
+                List<Map<String, Object>> finalWeekDeadlines = weekDeadlines;
                 Platform.runLater(() -> {
-                    dailyTab.updateHeaderDate(selectedDate);
-                    dailyTab.refreshData(daySessions, dayDeadlines);
-                    weeklyTab.refreshData(weekStart, weekSessions, weekDeadlines);
+                    if (requestId != refreshVersion.get()) {
+                        return;
+                    }
 
+                    dailyTab.updateDayContent(targetDate, note, todos, daySessions, dayDeadlines);
+                    if (includeWeek) {
+                        weeklyTab.refreshData(weekStart, finalWeekSessions, finalWeekDeadlines);
+                    }
                     view.updateTitle();
-                    pomodoroController.refreshSideMenu();
                 });
-
             } catch (Exception e) {
                 System.err.println("Error refreshing Planner: " + e.getMessage());
             }
@@ -60,7 +85,7 @@ public class PlannerController {
                 format(startDate, LocalTime.MIN),
                 format(endDate, LocalTime.MAX)
         );
-        process(sessions, "startTime", "endTime");
+        process(sessions, "startDate", "endDate");
         return sessions;
     }
 
@@ -115,12 +140,12 @@ public class PlannerController {
         LocalDateTime deadline = ApiClient.parseApiTimestamp(item.get("deadline"));
         if (deadline != null) return deadline;
 
-        return ApiClient.parseApiTimestamp(item.get("startTime"));
+        return ApiClient.parseApiTimestamp(item.get("startDate"));
     }
 
     private LocalDateTime resolveEndDate(Map<String, Object> item, String primaryKey) {
         LocalDateTime primary = ApiClient.parseApiTimestamp(item.get(primaryKey));
-        return primary != null ? primary : ApiClient.parseApiTimestamp(item.get("endTime"));
+        return primary != null ? primary : ApiClient.parseApiTimestamp(item.get("endDate"));
     }
 
     public void nextDay() { move(selectedDate.plusDays(1)); }
@@ -130,8 +155,14 @@ public class PlannerController {
     public void today() { move(LocalDate.now()); }
 
     private void move(LocalDate date) {
+        LocalDate previousWeekStart = selectedDate.with(java.time.DayOfWeek.MONDAY);
         this.selectedDate = date;
-        refresh();
+        LocalDate nextWeekStart = selectedDate.with(java.time.DayOfWeek.MONDAY);
+        if (previousWeekStart.equals(nextWeekStart)) {
+            refreshDailyOnly();
+        } else {
+            refresh();
+        }
     }
 
     public DailyTab getDailyTab() { return dailyTab; }

@@ -2,6 +2,14 @@
 
     -fx-font-family: "SF Pro Display";
     -icon-red : #ff7a00;
+    -planner-urgency-high: #ff4444;
+    -planner-urgency-medium: #ff9a4b;
+    -planner-urgency-low: #89ff60;
+    -planner-todo-pending: -color-accent;
+    -planner-todo-completed: -icon-subtle;
+    -planner-delete-bg: -color-danger;
+    -planner-delete-bg-hover: -color-danger-hover;
+    -planner-window-close-bg: -color-danger;
 }
 
 .primer-dark {
@@ -42,6 +50,9 @@
     -color-danger-hover: #ff6b81;
     -icon-main: #eaeaea;
     -icon-subtle: #94a3b8;
+
+    -stage-icon: #ffffff;
+    -stage-hover-bg: rgba(255, 255, 255, 0.1);
 }
 
 .primer-light {
@@ -82,6 +93,9 @@
     -color-danger-hover: #cb2431;
     -icon-main: #4a2030;
     -icon-subtle: #9c6070;
+
+    -stage-icon: #000000;
+    -stage-hover-bg: rgba(0, 0, 0, 0.1);
 }
 
 .primer-electric-blue {
@@ -123,6 +137,9 @@
     -color-danger-hover: #fb7185;
     -icon-main: #00b4ff;
     -icon-subtle: #e0f7ff;
+
+    -stage-icon: #ffffff;
+    -stage-hover-bg: rgba(255, 255, 255, 0.1);
 }
 
 .primer-cappuccino {
@@ -165,6 +182,9 @@
 
     -icon-main: #cdd6f4;
     -icon-subtle: #6c7086;
+
+    -stage-icon: #ffffff;
+    -stage-hover-bg: rgba(255, 255, 255, 0.1);
 }
 
 .primer-sunset {
@@ -207,6 +227,9 @@
 
     -icon-main: #fde8d0;
     -icon-subtle: #a05c30;
+
+    -stage-icon: #ffffff;
+    -stage-hover-bg: rgba(255, 255, 255, 0.1);
 }
 
 .primer-midnight {
@@ -248,4 +271,7 @@
     -color-danger-hover: #ff6b81;
     -icon-main: #e8d5ff;
     -icon-subtle: #7c5fa0;
+
+    -stage-icon: #ffffff;
+    -stage-hover-bg: rgba(255, 255, 255, 0.1);
 }

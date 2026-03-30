@@ -27,6 +27,7 @@ public class PomodoroEngine {
     //endregion
 
     private String currentTheme = "primer-dark";
+    private String backgroundVideoSource = "classpath:/com/frandm/studytracker/videos/raindrops2.mp4";
 
     private int secondsRemaining;
     private int secondsElapsed = 0;
@@ -241,6 +242,7 @@ public class PomodoroEngine {
     public void setAlarmVolume(int alarmVolume) {this.alarmVolume = alarmVolume;}
     public void setNotificationVolume(int notificationVolume) {this.notificationVolume = notificationVolume;}
     public void setBackgroundMusicVolume(int backgroundMusicVolume) {this.backgroundMusicVolume = backgroundMusicVolume;}
+    public void setBackgroundVideoSource(String backgroundVideoSource) { this.backgroundVideoSource = backgroundVideoSource; }
     //endregion
 
     //region Getters
@@ -291,6 +293,7 @@ public class PomodoroEngine {
     public Mode getCurrentMode() { return currentMode; }
 
     public String getCurrentTheme() {return currentTheme; }
+    public String getBackgroundVideoSource() { return backgroundVideoSource; }
 
     public int getMasterVolume() {return masterVolume;}
     public int getAlarmVolume() {return alarmVolume;}

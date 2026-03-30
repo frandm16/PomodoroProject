@@ -41,6 +41,7 @@ public class ConfigManager {
         props.setProperty("currentMode", engine.getCurrentMode().name());
         props.setProperty("countdownMins", String.valueOf(engine.getCountdownMins()));
         props.setProperty("theme", String.valueOf(engine.getCurrentTheme()));
+        props.setProperty("backgroundVideoSource", String.valueOf(engine.getBackgroundVideoSource()));
 
 
         File configFile = getConfigFile();
@@ -81,6 +82,7 @@ public class ConfigManager {
                     Integer.parseInt(props.getProperty("countdownMins", String.valueOf(engine.getCountdownMins()))),
                     props.getProperty("theme", String.valueOf(engine.getCurrentTheme()))
             );
+            engine.setBackgroundVideoSource(props.getProperty("backgroundVideoSource", engine.getBackgroundVideoSource()));
         } catch (IOException | NumberFormatException e) {
             System.err.println("Error ConfigManager.load: " + e.getMessage());
         }

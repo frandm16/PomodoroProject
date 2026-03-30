@@ -15,7 +15,7 @@ public class TagService {
     }
 
     public List<Tag> getAll() {
-        return tagRepository.findByIsArchivedFalseOrderByNameAsc();
+        return tagRepository.findAllByOrderByNameAsc();
     }
 
     public Tag getOrCreate(String name, String color) {
@@ -27,22 +27,14 @@ public class TagService {
         });
     }
 
-    public Tag update(Long id, String color, Integer weeklyGoalMin) {
+    public Tag update(Long id, String color) {
         Tag tag = tagRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Tag not found"));
         if (color != null) tag.setColor(color);
-        if (weeklyGoalMin != null) tag.setWeeklyGoalMin(weeklyGoalMin);
         return tagRepository.save(tag);
     }
 
     public void delete(String name) {
         tagRepository.findByName(name).ifPresent(tagRepository::delete);
-    }
-
-    public void setArchived(String name, boolean archived) {
-        tagRepository.findByName(name).ifPresent(tag -> {
-            tag.setIsArchived(archived);
-            tagRepository.save(tag);
-        });
     }
 }
