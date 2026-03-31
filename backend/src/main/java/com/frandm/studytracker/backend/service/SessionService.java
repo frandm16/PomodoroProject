@@ -32,6 +32,11 @@ public class SessionService {
         return sessionRepository.findAll();
     }
 
+    public Session getById(Long id) {
+        return sessionRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("Session not found: " + id));
+    }
+
     public List<Session> getByDateRange(LocalDateTime start, LocalDateTime end) {
         return sessionRepository.findByDateRange(start, end);
     }
@@ -55,9 +60,26 @@ public class SessionService {
         return sessionRepository.save(session);
     }
 
-    public Session update(Long id, String title, String description, Integer rating) {
+    public Session fullUpdate(Long id, String tagName, String tagColor, String taskName,
+                              String title, String description,
+                              Integer totalMinutes, LocalDateTime startDate,
+                              LocalDateTime endDate, Integer rating) {
         Session session = sessionRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("Session not found"));
+                .orElseThrow(() -> new RuntimeException("Session not found: " + id));
+        Task task = taskService.getOrCreate(tagName, tagColor, taskName);
+        session.setTask(task);
+        session.setTitle(title);
+        session.setDescription(description);
+        session.setTotalMinutes(totalMinutes);
+        session.setStartDate(startDate);
+        session.setEndDate(endDate);
+        session.setRating(rating);
+        return sessionRepository.save(session);
+    }
+
+    public Session partialUpdate(Long id, String title, String description, Integer rating) {
+        Session session = sessionRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("Session not found: " + id));
         if (title != null) session.setTitle(title);
         if (description != null) session.setDescription(description);
         if (rating != null) session.setRating(rating);

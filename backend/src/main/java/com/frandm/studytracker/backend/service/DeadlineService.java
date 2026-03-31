@@ -22,6 +22,15 @@ public class DeadlineService {
         return deadlineRepository.findByDateRange(start, end);
     }
 
+    public List<Deadline> getAll() {
+        return deadlineRepository.findAll();
+    }
+
+    public Deadline getById(Long id) {
+        return deadlineRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("Deadline not found: " + id));
+    }
+
     public Deadline save(String tagName, String tagColor, String taskName,
                          String title, String description, String urgency,
                          LocalDateTime dueDate, Boolean allDay, Boolean isCompleted) {
@@ -29,16 +38,32 @@ public class DeadlineService {
         return populateAndSave(deadline, tagName, tagColor, taskName, title, description, urgency, dueDate, allDay, isCompleted);
     }
 
-    public Deadline update(Long id, String tagName, String tagColor, String taskName,
-                           String title, String description, String urgency,
-                           LocalDateTime dueDate, Boolean allDay) {
-        Deadline deadline = deadlineRepository.findById(id).orElseThrow();
+    public Deadline fullUpdate(Long id, String tagName, String tagColor, String taskName,
+                               String title, String description, String urgency,
+                               LocalDateTime dueDate, Boolean allDay, Boolean isCompleted) {
+        Deadline deadline = deadlineRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("Deadline not found: " + id));
         deadline.setTask(resolveTask(tagName, tagColor, taskName));
         deadline.setTitle(title);
         deadline.setDescription(description);
         deadline.setUrgency(urgency);
         deadline.setDueDate(dueDate);
         deadline.setAllDay(allDay);
+        if (isCompleted != null) deadline.setIsCompleted(isCompleted);
+        return deadlineRepository.save(deadline);
+    }
+
+    public Deadline partialUpdate(Long id, String title, String description,
+                                  String urgency, LocalDateTime dueDate,
+                                  Boolean allDay, Boolean isCompleted) {
+        Deadline deadline = deadlineRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("Deadline not found: " + id));
+        if (title != null) deadline.setTitle(title);
+        if (description != null) deadline.setDescription(description);
+        if (urgency != null) deadline.setUrgency(urgency);
+        if (dueDate != null) deadline.setDueDate(dueDate);
+        if (allDay != null) deadline.setAllDay(allDay);
+        if (isCompleted != null) deadline.setIsCompleted(isCompleted);
         return deadlineRepository.save(deadline);
     }
 
@@ -68,10 +93,6 @@ public class DeadlineService {
             throw new RuntimeException("Deadline taskName is required");
         }
         return taskService.getOrCreate(tagName, tagColor, taskName);
-    }
-
-    public List<Deadline> getAll() {
-        return deadlineRepository.findAll();
     }
 
     public void delete(Long id) {

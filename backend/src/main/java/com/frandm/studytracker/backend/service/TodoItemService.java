@@ -31,6 +31,11 @@ public class TodoItemService {
         return todoItemRepository.findAllByOrderByIdAsc();
     }
 
+    public TodoItem getById(Long id) {
+        return todoItemRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("TodoItem not found: " + id));
+    }
+
     public TodoItem create(Long taskId, String tagName, String taskName, LocalDate date, String text) {
         Task task = resolveTask(taskId, tagName, taskName);
         TodoItem item = new TodoItem();
@@ -40,15 +45,22 @@ public class TodoItemService {
         return todoItemRepository.save(item);
     }
 
-    public TodoItem update(Long id, String text, Boolean completed) {
+    public TodoItem fullUpdate(Long id, Long taskId, String tagName, String taskName, LocalDate date, String text, Boolean completed) {
         TodoItem item = todoItemRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("TodoItem not found: " + id));
-        if (text != null) {
-            item.setText(text);
-        }
-        if (completed != null) {
-            item.setCompleted(completed);
-        }
+        Task task = resolveTask(taskId, tagName, taskName);
+        item.setTask(task);
+        item.setDate(date);
+        item.setText(text);
+        if (completed != null) item.setCompleted(completed);
+        return todoItemRepository.save(item);
+    }
+
+    public TodoItem partialUpdate(Long id, String text, Boolean completed) {
+        TodoItem item = todoItemRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("TodoItem not found: " + id));
+        if (text != null) item.setText(text);
+        if (completed != null) item.setCompleted(completed);
         return todoItemRepository.save(item);
     }
 

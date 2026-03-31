@@ -40,4 +40,28 @@ public class TaskService {
         return taskRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Task not found: " + id));
     }
+
+    public Task fullUpdate(Long id, String tagName, String tagColor, String name) {
+        Task task = taskRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("Task not found: " + id));
+        Tag tag = tagService.getOrCreate(tagName, tagColor);
+        task.setTag(tag);
+        task.setName(name);
+        return taskRepository.save(task);
+    }
+
+    public Task partialUpdate(Long id, String tagName, String tagColor, String name) {
+        Task task = taskRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("Task not found: " + id));
+        if (tagName != null && tagColor != null) {
+            Tag tag = tagService.getOrCreate(tagName, tagColor);
+            task.setTag(tag);
+        }
+        if (name != null) task.setName(name);
+        return taskRepository.save(task);
+    }
+
+    public void delete(Long id) {
+        taskRepository.deleteById(id);
+    }
 }

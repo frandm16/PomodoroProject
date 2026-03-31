@@ -1,6 +1,7 @@
 package com.frandm.studytracker.ui.views.planner;
 
 import com.frandm.studytracker.controllers.PomodoroController;
+import com.frandm.studytracker.ui.views.FloatingDockView;
 import javafx.application.Platform;
 import javafx.geometry.Bounds;
 import javafx.geometry.Insets;
@@ -9,50 +10,47 @@ import javafx.scene.control.*;
 import javafx.scene.layout.*;
 import org.kordamp.ikonli.javafx.FontIcon;
 
+import java.util.List;
+
 public class PlannerView extends VBox {
 
     private final Label lblTitle = new Label();
     private final StackPane contentArea = new StackPane();
     private final PlannerController plannerController;
+    private final DailyTab dailyTab;
+    private final WeeklyTab weeklyTab;
 
-    private final ToggleButton btnDaily = new ToggleButton("Diario");
-    private final ToggleButton btnWeekly = new ToggleButton("Semanal");
+    private FloatingDockView tabBar;
 
     public PlannerView(PomodoroController controller, PlannerController plannerController, DailyTab daily, WeeklyTab weekly) {
         this.plannerController = plannerController;
+        this.dailyTab = daily;
+        this.weeklyTab = weekly;
         this.getStyleClass().add("planner-view");
         this.setSpacing(0);
 
-        ToggleGroup group = new ToggleGroup();
-        btnDaily.setToggleGroup(group);
-        btnWeekly.setToggleGroup(group);
-        btnDaily.setSelected(true);
+        HBox tabBarContainer = new HBox();
 
-        btnDaily.getStyleClass().add("left-pill");
-        btnWeekly.getStyleClass().add("right-pill");
+        tabBar = new FloatingDockView(tabBarContainer, List.of(
+                new FloatingDockView.DockItem("daily", "Daily", "Day view", "mdi2c-calendar"),
+                new FloatingDockView.DockItem("weekly", "Weekly", "Week overview", "mdi2c-calendar-week")
+        ));
 
-        btnDaily.setPrefWidth(120);
-        btnWeekly.setPrefWidth(120);
+        tabBar.setOnTabChanged(tabId -> {
+            dailyTab.setVisible("daily".equals(tabId));
+            weeklyTab.setVisible("weekly".equals(tabId));
+            updateTitle();
+        });
 
-        HBox pillContainer = new HBox(btnDaily, btnWeekly);
-        pillContainer.getStyleClass().add("segmented-button");
-        pillContainer.setAlignment(Pos.CENTER);
-        pillContainer.setPadding(new Insets(20, 0, 10, 0));
+        dailyTab.setVisible(true);
+        weeklyTab.setVisible(false);
 
         HBox header = createNavigationHeader(controller);
 
         VBox.setVgrow(contentArea, Priority.ALWAYS);
-        contentArea.getChildren().addAll(daily, weekly);
+        contentArea.getChildren().addAll(dailyTab, weeklyTab);
 
-        daily.visibleProperty().bind(btnDaily.selectedProperty());
-        weekly.visibleProperty().bind(btnWeekly.selectedProperty());
-
-        group.selectedToggleProperty().addListener((_, oldVal, newVal) -> {
-            if (newVal == null) oldVal.setSelected(true);
-            updateTitle();
-        });
-
-        this.getChildren().addAll(pillContainer, header, contentArea);
+        this.getChildren().addAll(tabBarContainer, header, contentArea);
         updateTitle();
     }
 
@@ -139,14 +137,12 @@ public class PlannerView extends VBox {
     }
 
     private void showDailyTab() {
-        if (!btnDaily.isSelected()) {
-            btnDaily.setSelected(true);
-        }
+        tabBar.setSelectedTab("daily");
         updateTitle();
     }
 
     private boolean isDaily() {
-        return btnDaily.isSelected();
+        return "daily".equals(tabBar.getSelectedTab());
     }
 
     public void updateTitle() {

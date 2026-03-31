@@ -271,11 +271,10 @@ public class DailyTab extends VBox {
 
             new Thread(() -> {
                 try {
-                    ApiClient.updateTodo(id, text, completed);
+                    ApiClient.patchTodo(id, text, completed);
                     data.put("text", text);
                     Platform.runLater(() -> {
                         replaceTodoRow(row, data);
-                        pomodoroController.refreshSideMenu();
                         closeOverlay();
                     });
                 } catch (Exception e) {
@@ -291,7 +290,6 @@ public class DailyTab extends VBox {
             todoListContainer.getChildren().remove(row);
             ensureTodoPlaceholder();
             updateTodoHeaderCount();
-            pomodoroController.refreshSideMenu();
             closeOverlay();
 
             new Thread(() -> {
@@ -376,7 +374,6 @@ public class DailyTab extends VBox {
                     todoListContainer.getChildren().removeIf(node -> node instanceof Label && node.getStyleClass().contains("empty-state-label"));
                     todoListContainer.getChildren().add(createTodoRow(created));
                     updateTodoHeaderCount();
-                    pomodoroController.refreshSideMenu();
                     closeOverlay();
                 });
             } catch (Exception e) { e.printStackTrace(); }
@@ -427,7 +424,6 @@ public class DailyTab extends VBox {
             status.setText(nextState ? "Completed" : "Pending");
             applyTodoCompletedState(row, completedIcon, todoIcon, info, nextState);
             updateTodoHeaderCount();
-            pomodoroController.refreshSideMenu();
 
             new Thread(() -> {
                 try {
@@ -441,7 +437,6 @@ public class DailyTab extends VBox {
                         status.setText(previousState ? "Completed" : "Pending");
                         applyTodoCompletedState(row, completedIcon, todoIcon, info, previousState);
                         updateTodoHeaderCount();
-                        pomodoroController.refreshSideMenu();
                     });
                 } finally {
                     Platform.runLater(() -> completedButton.setDisable(false));
@@ -651,7 +646,7 @@ public class DailyTab extends VBox {
 
             new Thread(() -> {
                 try {
-                    ApiClient.toggleDeadlineCompleted(((Number) data.get("id")).longValue());
+                    ApiClient.patchDeadline(((Number) data.get("id")).longValue(), null, null, null, null, false, nextState);
                     Platform.runLater(this::refreshPlannerAndMenu);
                 } catch (Exception error) {
                     error.printStackTrace();
@@ -1038,7 +1033,6 @@ public class DailyTab extends VBox {
 
     private void refreshPlannerAndMenu() {
         refreshAction.run();
-        pomodoroController.refreshSideMenu();
     }
 
     private String buildDeadlineStatus(long diff, boolean allDay) {

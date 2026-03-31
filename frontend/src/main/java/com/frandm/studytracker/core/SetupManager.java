@@ -98,7 +98,7 @@ public class SetupManager {
         return btn;
     }
 
-    public void renderTagsList(VBox container, Map<String, String> colors, Runnable onFilterChange) {
+    public void renderTagsList(VBox container, Map<String, String> colors, Map<String, Long> tagIds, Runnable onFilterChange) {
         container.getChildren().clear();
         colors.forEach((name, color) -> {
             HBox row = new HBox(10);
@@ -121,14 +121,17 @@ public class SetupManager {
 
             deleteBtn.setOnAction(e -> {
                 e.consume();
-                controller.openConfirmDeleteTag(name);
+                Long tagId = tagIds.get(name);
+                if (tagId != null) {
+                    controller.openConfirmDeleteTag(tagId);
+                }
             });
 
             row.getChildren().addAll(colorCircle, tagLabel, spacer, deleteBtn);
             row.setOnMouseClicked(e -> {
                 filterTag = (name.equals(filterTag)) ? null : name;
                 onFilterChange.run();
-                renderTagsList(container, colors, onFilterChange);
+                renderTagsList(container, colors, tagIds, onFilterChange);
             });
             container.getChildren().add(row);
         });

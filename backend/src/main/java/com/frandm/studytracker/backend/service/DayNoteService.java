@@ -4,6 +4,7 @@ import com.frandm.studytracker.backend.model.DayNote;
 import com.frandm.studytracker.backend.repository.DayNoteRepository;
 import org.springframework.stereotype.Service;
 import java.time.LocalDate;
+import java.util.List;
 
 @Service
 public class DayNoteService {
@@ -12,6 +13,15 @@ public class DayNoteService {
 
     public DayNoteService(DayNoteRepository dayNoteRepository) {
         this.dayNoteRepository = dayNoteRepository;
+    }
+
+    public List<DayNote> getAll() {
+        return dayNoteRepository.findAll();
+    }
+
+    public DayNote getById(Long id) {
+        return dayNoteRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("DayNote not found: " + id));
     }
 
     public DayNote getOrEmpty(LocalDate date) {
@@ -23,13 +33,31 @@ public class DayNoteService {
         });
     }
 
-    public DayNote save(LocalDate date, String content) {
-        DayNote note = dayNoteRepository.findByDate(date).orElseGet(() -> {
-            DayNote n = new DayNote();
-            n.setDate(date);
-            return n;
+    public DayNote create(LocalDate date, String content) {
+        return dayNoteRepository.findByDate(date).orElseGet(() -> {
+            DayNote note = new DayNote();
+            note.setDate(date);
+            note.setContent(content != null ? content : "");
+            return dayNoteRepository.save(note);
         });
-        note.setContent(content);
+    }
+
+    public DayNote fullUpdate(Long id, LocalDate date, String content) {
+        DayNote note = dayNoteRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("DayNote not found: " + id));
+        if (date != null) note.setDate(date);
+        note.setContent(content != null ? content : "");
         return dayNoteRepository.save(note);
+    }
+
+    public DayNote partialUpdate(Long id, String content) {
+        DayNote note = dayNoteRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("DayNote not found: " + id));
+        if (content != null) note.setContent(content);
+        return dayNoteRepository.save(note);
+    }
+
+    public void delete(Long id) {
+        dayNoteRepository.deleteById(id);
     }
 }

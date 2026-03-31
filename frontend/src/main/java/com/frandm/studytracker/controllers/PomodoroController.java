@@ -10,18 +10,15 @@ import com.frandm.studytracker.models.Session;
 import com.frandm.studytracker.ui.util.Animations;
 import com.frandm.studytracker.ui.util.UIManager;
 import com.frandm.studytracker.ui.views.FloatingDockView;
-import com.frandm.studytracker.ui.views.planner.PlannerController;
+import com.frandm.studytracker.ui.views.dashboard.StatsDashboardView;
 import com.frandm.studytracker.ui.views.logs.LogsView;
-import com.frandm.studytracker.ui.views.StatsDashboard;
+import com.frandm.studytracker.ui.views.planner.PlannerController;
 import javafx.application.Application;
 import javafx.application.Platform;
 import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;
-import javafx.scene.chart.AreaChart;
-import javafx.scene.chart.CategoryAxis;
-import javafx.scene.chart.PieChart;
 import javafx.scene.Node;
 import javafx.scene.control.*;
 import javafx.scene.input.KeyCode;
@@ -44,32 +41,19 @@ import java.time.format.DateTimeFormatter;
 import java.util.*;
 
 public class PomodoroController {
-    private static final String BACKGROUND_NONE = "none";
-    private static final String DEFAULT_BACKGROUND = "classpath:/com/frandm/studytracker/videos/raindrops2.mp4";
-    private static final List<BackgroundOption> BACKGROUND_PRESETS = List.of(
-            new BackgroundOption("No background", BACKGROUND_NONE),
-            new BackgroundOption("Raindrops Soft", "classpath:/com/frandm/studytracker/videos/raindrops2.mp4"),
-            new BackgroundOption("Raindrops Classic", "classpath:/com/frandm/studytracker/videos/raindrops.mp4"),
-            new BackgroundOption("Loop 01", "classpath:/com/frandm/studytracker/videos/bg-video-1.mp4"),
-            new BackgroundOption("Loop 02", "classpath:/com/frandm/studytracker/videos/bg-video-2.mp4"),
-            new BackgroundOption("Dashboard", "classpath:/com/frandm/studytracker/videos/dashboard-12.mp4")
-    );
-
 
     //region FXML - Componentes de Interfaz
     @FXML public GridPane mainContainer, setupPane, settingsPane, editSessionPane, summaryPane;
-    @FXML public StackPane rootPane, setupBox, editSessionBox, summaryBox, stackpaneCircle, confirmOverlay,
-            confirmTagOverlay, plannerOverlayLayer;
+    @FXML public StackPane rootPane, setupBox, editSessionBox, summaryBox, stackpaneCircle,
+            confirmOverlay, confirmTagOverlay, plannerOverlayLayer;
     @FXML public VBox timerTextContainer, notificationContainer, scheduleListContainer,
-            plannerContainer, historyContainer, statsPlaceholder, streakVBox, streakImage,
-            fuzzyResultsContainer, tagsListContainer, pomoSettingsPane,
-            countdownSettingsPane, settingsBox, confirmTagBox, confirmBox, themeButtonsContainer,
-            mainVbox;
+            plannerContainer, historyContainer, fuzzyResultsContainer, tagsListContainer,
+            pomoSettingsPane, countdownSettingsPane, settingsBox, confirmTagBox,
+            confirmBox, themeButtonsContainer, mainVbox;
     @FXML public HBox starsContainer, editStarsContainer, buttonsHbox, floatingDock, activeTaskContainer;
-    @FXML public Label timerLabel, stateLabel, workValLabel, shortValLabel, longValLabel, intervalValLabel,
+    @FXML public Label timerLabel, workValLabel, shortValLabel, longValLabel, intervalValLabel,
             alarmVolumeValLabel, widthSliderValLabel, countdownValLabel, circleSizeValLabel,
-            streakLabel, timeThisWeekLabel, timeLastMonthLabel, tasksLabel, bestDayLabel, selectedNameLabel,
-            notificationVolumeLabel, masterVolumeLabel, backgroundMusicVolumeLabel;
+            selectedNameLabel, notificationVolumeLabel, masterVolumeLabel, backgroundMusicVolumeLabel;
     @FXML public TextField summaryTitle, editTitleField, tagNameInput, fuzzySearchInput;
     @FXML public TextArea summaryDesc, editDescArea;
     @FXML public ComboBox<String> editTagCombo, editTaskCombo;
@@ -80,9 +64,6 @@ public class PomodoroController {
     @FXML public Slider workSlider, shortSlider, longSlider, intervalSlider, alarmVolumeSlider,
             widthSlider, countdownSlider, circleSizeSlider, notificationVolumeSlider, masterVolumeSlider,
             backgroundMusicVolumeSlider;
-    @FXML public AreaChart<String, Number> weeklyLineChart;
-    @FXML public CategoryAxis weeksXAxis;
-    @FXML public PieChart tagPieChart;
     @FXML public ColumnConstraints colRightStats, colCenterStats, colLeftStats;
     @FXML public ScrollPane statsContainer;
     @FXML public MediaView backgroundVideoView;
@@ -101,7 +82,7 @@ public class PomodoroController {
     public HBox titleBar;
 
 
-    private StatsDashboard statsDashboard;
+    private StatsDashboardView statsDashboard;
     private PlannerController plannerController;
     private LogsView logsView;
     private FloatingDockView floatingDockView;
@@ -121,7 +102,10 @@ public class PomodoroController {
 
     private Map<String, List<String>> tagsWithTasksMap = new HashMap<>();
     private Map<String, String> tagColors = new HashMap<>();
-    private String tagToDelete = null;
+    private Map<String, Long> tagIds = new HashMap<>();
+    private Long tagToDelete = null;
+
+    private BackgroundManager backgroundManager;
 
     @FXML
     public void initialize() {
@@ -134,9 +118,16 @@ public class PomodoroController {
         setupModeSystem();
         setupFuzzySearch();
         setupEngineCallbacks();
+        subscribeToTagEvents();
 
         updateEngineSettings();
         updateUIFromEngine();
+    }
+
+    private void subscribeToTagEvents() {
+        TagEventBus.getInstance().subscribe(event -> {
+            refreshTagsAndTasksAsync();
+        });
     }
 
     //region initialize
@@ -155,97 +146,18 @@ public class PomodoroController {
             return;
         }
 
+        backgroundManager = new BackgroundManager(backgroundVideoView, backgroundVideoOverlay, engine);
+
         backgroundVideoView.fitWidthProperty().bind(rootPane.widthProperty());
         backgroundVideoView.fitHeightProperty().bind(rootPane.heightProperty());
-        applyBackgroundVideo(engine.getBackgroundVideoSource(), false);
+
+        backgroundManager.applyBackground(engine.getBackgroundVideoSource(), false);
 
         rootPane.sceneProperty().addListener((_, oldScene, newScene) -> {
-            if (oldScene != null && newScene == null && backgroundVideoPlayer != null) {
-                backgroundVideoPlayer.stop();
-                backgroundVideoPlayer.dispose();
-                backgroundVideoPlayer = null;
+            if (oldScene != null && newScene == null) {
+                backgroundManager.disposeCurrentPlayer();
             }
         });
-    }
-
-    private void applyBackgroundVideo(String source, boolean persist) {
-        String normalizedSource = normalizeBackgroundSource(source);
-
-        if (backgroundVideoPlayer != null) {
-            backgroundVideoPlayer.stop();
-            backgroundVideoPlayer.dispose();
-            backgroundVideoPlayer = null;
-        }
-
-        if (BACKGROUND_NONE.equals(normalizedSource)) {
-            backgroundVideoView.setMediaPlayer(null);
-            backgroundVideoView.setVisible(false);
-            if (backgroundVideoOverlay != null) {
-                backgroundVideoOverlay.setVisible(false);
-            }
-            engine.setBackgroundVideoSource(normalizedSource);
-            if (persist) {
-                ConfigManager.save(engine);
-            }
-            return;
-        }
-
-        URL videoResource = resolveBackgroundResource(normalizedSource);
-        if (videoResource == null) {
-            if (!Objects.equals(normalizedSource, DEFAULT_BACKGROUND)) {
-                applyBackgroundVideo(DEFAULT_BACKGROUND, persist);
-            }
-            NotificationManager.show("Background unavailable", "Could not load the selected video", NotificationManager.NotificationType.WARNING);
-            return;
-        }
-
-        try {
-            backgroundVideoPlayer = new MediaPlayer(new Media(videoResource.toExternalForm()));
-            backgroundVideoPlayer.setCycleCount(MediaPlayer.INDEFINITE);
-            backgroundVideoPlayer.setMute(true);
-            backgroundVideoPlayer.setAutoPlay(true);
-
-            backgroundVideoView.setMediaPlayer(backgroundVideoPlayer);
-            backgroundVideoView.setVisible(true);
-            if (backgroundVideoOverlay != null) {
-                backgroundVideoOverlay.setVisible(true);
-            }
-            engine.setBackgroundVideoSource(normalizedSource);
-            if (persist) {
-                ConfigManager.save(engine);
-            }
-        } catch (RuntimeException ex) {
-            System.err.println("Error loading background video: " + ex.getMessage());
-            NotificationManager.show("Background error", "The selected file could not be played", NotificationManager.NotificationType.ERROR);
-        }
-    }
-
-    private String normalizeBackgroundSource(String source) {
-        if (source == null || source.isBlank()) {
-            return DEFAULT_BACKGROUND;
-        }
-        return source;
-    }
-
-    private URL resolveBackgroundResource(String source) {
-        if (source == null || source.isBlank() || BACKGROUND_NONE.equals(source)) {
-            return null;
-        }
-
-        if (source.startsWith("classpath:")) {
-            return getClass().getResource(source.substring("classpath:".length()));
-        }
-
-        File file = new File(source);
-        if (!file.exists()) {
-            return null;
-        }
-
-        try {
-            return file.toURI().toURL();
-        } catch (Exception ex) {
-            return null;
-        }
     }
 
     private void setupGeneratorsDEVELOP() {
@@ -269,12 +181,8 @@ public class PomodoroController {
         VBox.setVgrow(logsView, Priority.ALWAYS);
 
         // dashboard
-        statsDashboard = new StatsDashboard(
-                timeThisWeekLabel, streakLabel, streakVBox, streakImage, bestDayLabel,
-                tasksLabel, timeLastMonthLabel, weeklyLineChart,
-                tagPieChart, statsPlaceholder
-        );
-        statsDashboard.refresh();
+        statsDashboard = new StatsDashboardView(statsContainer);
+        //statsDashboard.refresh();
     }
 
     private void setupInitialUIState() {
@@ -331,7 +239,9 @@ public class PomodoroController {
                     floatingDockView.setSelectedSection(FloatingDockView.Section.STATS);
                     return;
                 }
-                //statsDashboard.refresh();
+                if (statsDashboard != null) {
+                    //statsDashboard.refresh();
+                }
                 uiManager.switchPanels(activePanel, statsContainer, direction);
             }
             case HISTORY -> {
@@ -474,16 +384,25 @@ public class PomodoroController {
 
     //region data
     public void refreshDatabaseData() {
+        refreshTagsAndTasks();
+        if (statsDashboard != null) {
+            statsDashboard.refresh();
+        }
+    }
+
+    public void refreshTagsAndTasks() {
         try {
             final Map<String, String> colors = new java.util.LinkedHashMap<>();
-            ApiClient.getTags().forEach(t -> colors.put((String) t.get("name"), (String) t.get("color")));
-            tagColors = colors;
-
+            final Map<String, Long> ids = new java.util.LinkedHashMap<>();
             final Map<String, List<String>> map = new java.util.LinkedHashMap<>();
-            ApiClient.getTags().forEach(t -> {
+
+            List<Map<String, Object>> tags = ApiClient.getTags();
+            tags.forEach(t -> {
                 String tagName = (String) t.get("name");
+                colors.put(tagName, (String) t.get("color"));
+                ids.put(tagName, ((Number) t.get("id")).longValue());
                 try {
-                    List<String> tasks = ApiClient.getTasksByTag(tagName).stream()
+                    List<String> tasks = ApiClient.getTasks(tagName).stream()
                             .map(task -> (String) task.get("name"))
                             .collect(java.util.stream.Collectors.toList());
                     map.put(tagName, tasks);
@@ -491,16 +410,57 @@ public class PomodoroController {
                     map.put(tagName, new ArrayList<>());
                 }
             });
+            tagColors = colors;
+            tagIds = ids;
             tagsWithTasksMap = map;
         } catch (Exception e) {
             System.err.println("Error refreshing data: " + e.getMessage());
         }
 
-        setupManager.renderTagsList(tagsListContainer, tagColors, () ->
+        setupManager.renderTagsList(tagsListContainer, tagColors, tagIds, () ->
                 setupManager.updateFuzzyResults(fuzzySearchInput.getText(), fuzzyResultsContainer, tagsWithTasksMap, tagColors, this::onTaskSelected)
         );
 
         setupManager.updateFuzzyResults("", fuzzyResultsContainer, tagsWithTasksMap, tagColors, this::onTaskSelected);
+    }
+
+    private void refreshTagsAndTasksAsync() {
+        new Thread(() -> {
+            try {
+                final Map<String, String> colors = new java.util.LinkedHashMap<>();
+                final Map<String, Long> ids = new java.util.LinkedHashMap<>();
+                final Map<String, List<String>> map = new java.util.LinkedHashMap<>();
+
+                List<Map<String, Object>> tags = ApiClient.getTags();
+                tags.forEach(t -> {
+                    String tagName = (String) t.get("name");
+                    colors.put(tagName, (String) t.get("color"));
+                    ids.put(tagName, ((Number) t.get("id")).longValue());
+                    try {
+                        List<String> tasks = ApiClient.getTasks(tagName).stream()
+                                .map(task -> (String) task.get("name"))
+                                .collect(java.util.stream.Collectors.toList());
+                        map.put(tagName, tasks);
+                    } catch (Exception ex) {
+                        map.put(tagName, new ArrayList<>());
+                    }
+                });
+
+                Platform.runLater(() -> {
+                    tagColors = colors;
+                    tagIds = ids;
+                    tagsWithTasksMap = map;
+
+                    setupManager.renderTagsList(tagsListContainer, tagColors, tagIds, () ->
+                            setupManager.updateFuzzyResults(fuzzySearchInput.getText(), fuzzyResultsContainer, tagsWithTasksMap, tagColors, this::onTaskSelected)
+                    );
+
+                    setupManager.updateFuzzyResults("", fuzzyResultsContainer, tagsWithTasksMap, tagColors, this::onTaskSelected);
+                });
+            } catch (Exception e) {
+                System.err.println("Error refreshing tags async: " + e.getMessage());
+            }
+        }, "tag-refresh-thread").start();
     }
 
     private void updateEngineSettings() {
@@ -580,15 +540,14 @@ public class PomodoroController {
                     ApiClient.formatApiTimestamp(LocalDateTime.now()),
                     currentRating
             );
-            statsDashboard.refresh();
-            logsView.resetAndReload();
         } catch (Exception e) {
             System.err.println("Error saving session: " + e.getMessage());
             NotificationManager.show("Error", "Session could not be saved", NotificationManager.NotificationType.ERROR);
             return;
         }
 
-        refreshDatabaseData();
+        statsDashboard.refresh();
+        logsView.getLogsController().refreshSessionData();
         currentRating=0;
         updateStarsUI();
 
@@ -633,19 +592,15 @@ public class PomodoroController {
                     (int)(selectedColor.getGreen() * 255),
                     (int)(selectedColor.getBlue() * 255));
 
-            try {
-                ApiClient.createTag(newTagName, hexColor);
-            } catch (Exception e) {
-                System.err.println("Error creating tag: " + e.getMessage());
-            }
-
             tagNameInput.clear();
-            refreshDatabaseData();
-            logsView.resetAndReload();
 
-            setupManager.renderTagsList(tagsListContainer, tagColors, () ->
-                    setupManager.updateFuzzyResults(fuzzySearchInput.getText(), fuzzyResultsContainer, tagsWithTasksMap, tagColors, this::onTaskSelected)
-            );
+            new Thread(() -> {
+                try {
+                    ApiClient.createTag(newTagName, hexColor);
+                } catch (Exception e) {
+                    System.err.println("Error creating tag: " + e.getMessage());
+                }
+            }, "tag-create-thread").start();
         }
     }
 
@@ -697,7 +652,7 @@ public class PomodoroController {
 
         header.getChildren().addAll(titleGroup, spacer, closeButton);
 
-        Label currentSourceLabel = new Label("Current: " + getBackgroundLabel(engine.getBackgroundVideoSource()));
+        Label currentSourceLabel = new Label("Current: " + backgroundManager.getLabel(engine.getBackgroundVideoSource()));
         currentSourceLabel.getStyleClass().add("background-current-label");
 
         TilePane presetGrid = new TilePane();
@@ -706,8 +661,13 @@ public class PomodoroController {
         presetGrid.setVgap(12);
         presetGrid.getStyleClass().add("background-selector-grid");
 
-        for (BackgroundOption preset : BACKGROUND_PRESETS) {
-            presetGrid.getChildren().add(createBackgroundOptionButton(preset));
+        for (BackgroundManager.BackgroundOption preset : backgroundManager.getDynamicPresets()) {
+            Button btn = backgroundManager.createOptionButton(
+                    preset,
+                    engine.getBackgroundVideoSource(),
+                    this::openBackgroundSelector
+            );
+            presetGrid.getChildren().add(btn);
         }
 
         Button addFileButton = new Button("Add file");
@@ -719,37 +679,6 @@ public class PomodoroController {
         showPlannerOverlay(overlay);
     }
 
-    private Button createBackgroundOptionButton(BackgroundOption option) {
-        Button button = new Button();
-        button.getStyleClass().add("background-option-button");
-        button.setMaxWidth(Double.MAX_VALUE);
-        button.setPrefWidth(220);
-
-        VBox content = new VBox(6);
-        Label title = new Label(option.label());
-        title.getStyleClass().add("background-option-title");
-
-        Label meta = new Label(option.source().startsWith("classpath:") ? "Preset" : "Custom file");
-        if (BACKGROUND_NONE.equals(option.source())) {
-            meta.setText("Solid app background");
-        }
-        meta.getStyleClass().add("background-option-meta");
-
-        content.getChildren().addAll(title, meta);
-        button.setGraphic(content);
-        button.setContentDisplay(ContentDisplay.GRAPHIC_ONLY);
-
-        if (Objects.equals(normalizeBackgroundSource(engine.getBackgroundVideoSource()), option.source())) {
-            button.getStyleClass().add("background-option-button-active");
-        }
-
-        button.setOnAction(_ -> {
-            applyBackgroundVideo(option.source(), true);
-            openBackgroundSelector();
-        });
-
-        return button;
-    }
 
     private void chooseCustomBackgroundFile() {
         Window window = rootPane != null && rootPane.getScene() != null ? rootPane.getScene().getWindow() : null;
@@ -762,24 +691,9 @@ public class PomodoroController {
             return;
         }
 
-        applyBackgroundVideo(selectedFile.getAbsolutePath(), true);
+        backgroundManager.applyBackground(selectedFile.getAbsolutePath(), true);
         hidePlannerOverlay();
         NotificationManager.show("Background updated", selectedFile.getName(), NotificationManager.NotificationType.SUCCESS);
-    }
-
-    private String getBackgroundLabel(String source) {
-        String normalized = normalizeBackgroundSource(source);
-        for (BackgroundOption option : BACKGROUND_PRESETS) {
-            if (Objects.equals(option.source(), normalized)) {
-                return option.label();
-            }
-        }
-
-        if (BACKGROUND_NONE.equals(normalized)) {
-            return "No background";
-        }
-
-        return new File(normalized).getName();
     }
 
     private Region getActivePanel() {
@@ -912,7 +826,7 @@ public class PomodoroController {
         if (opening) {
             fuzzySearchInput.clear();
 
-            setupManager.renderTagsList(tagsListContainer, tagColors, () ->
+            setupManager.renderTagsList(tagsListContainer, tagColors, tagIds, () ->
                     setupManager.updateFuzzyResults(fuzzySearchInput.getText(), fuzzyResultsContainer, tagsWithTasksMap, tagColors, this::onTaskSelected)
             );
 
@@ -1240,7 +1154,7 @@ public class PomodoroController {
             scheduleListContainer.getChildren().add(createTodayTodosList());
             scheduleListContainer.getChildren().add(createTodaySchedulesList());
         }
-        refreshDynamicDock();
+        //refreshDynamicDock();
     }
 
     private LocalDateTime extractSessionStartTime(Map<String, Object> session) {
@@ -1352,8 +1266,8 @@ public class PomodoroController {
         toggleConfirmDelete();
     }
 
-    public void openConfirmDeleteTag(String tagName) {
-        tagToDelete = tagName;
+    public void openConfirmDeleteTag(Long tagId) {
+        tagToDelete = tagId;
         Animations.show(confirmTagOverlay, confirmTagBox, null);
     }
 
@@ -1366,15 +1280,25 @@ public class PomodoroController {
     @FXML
     private void onConfirmDeleteTagClick() {
         if (tagToDelete != null) {
-            try {
-                ApiClient.deleteTag(tagToDelete);
-                resetFullApp();
-            } catch (Exception e) {
-                System.err.println("Error deleting tag: " + e.getMessage());
-            }
+            boolean wasSelectedTag = tagIds.entrySet().stream()
+                    .anyMatch(e -> e.getValue().equals(tagToDelete) && e.getKey().equals(setupManager.getSelectedTag()));
+
+            final Long tagIdToDelete = tagToDelete;
             closeConfirmDeleteTag();
-            refreshDatabaseData();
-            NotificationManager.show("Tag Deleted", "Success", NotificationManager.NotificationType.SUCCESS);
+
+            new Thread(() -> {
+                try {
+                    ApiClient.deleteTag(tagIdToDelete);
+                    Platform.runLater(() -> {
+                        if (wasSelectedTag) {
+                            resetFullApp();
+                        }
+                        NotificationManager.show("Tag Deleted", "Success", NotificationManager.NotificationType.SUCCESS);
+                    });
+                } catch (Exception e) {
+                    System.err.println("Error deleting tag: " + e.getMessage());
+                }
+            }, "tag-delete-thread").start();
         }
     }
 

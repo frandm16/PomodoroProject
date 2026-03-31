@@ -23,6 +23,11 @@ public class ScheduledSessionService {
         return scheduledSessionRepository.findAll();
     }
 
+    public ScheduledSession getById(Long id) {
+        return scheduledSessionRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("ScheduledSession not found: " + id));
+    }
+
     public List<ScheduledSession> getByDateRange(LocalDateTime start, LocalDateTime end) {
         return scheduledSessionRepository.findByDateRange(start, end);
     }
@@ -41,18 +46,24 @@ public class ScheduledSessionService {
         return scheduledSessionRepository.save(session);
     }
 
-    public ScheduledSession update(Long id, String tagName, String taskName, String title,
-                                   LocalDateTime start, LocalDateTime end) {
+    public ScheduledSession fullUpdate(Long id, String tagName, String taskName, String title,
+                                       LocalDateTime start, LocalDateTime end) {
         ScheduledSession session = scheduledSessionRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("ScheduledSession not found"));
-
+                .orElseThrow(() -> new RuntimeException("ScheduledSession not found: " + id));
         Task task = taskService.getOrCreate(tagName, "#94a3b8", taskName);
-
         session.setTask(task);
         session.setTitle(title);
         session.setStartDate(start);
         session.setEndDate(end);
+        return scheduledSessionRepository.save(session);
+    }
 
+    public ScheduledSession partialUpdate(Long id, String title, LocalDateTime start, LocalDateTime end) {
+        ScheduledSession session = scheduledSessionRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("ScheduledSession not found: " + id));
+        if (title != null) session.setTitle(title);
+        if (start != null) session.setStartDate(start);
+        if (end != null) session.setEndDate(end);
         return scheduledSessionRepository.save(session);
     }
 

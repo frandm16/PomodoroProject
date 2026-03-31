@@ -26,6 +26,11 @@ bin/
 out/
 cmake-build-*/
 
+.settings/
+.classpath
+.project
+.factorypath
+
 *.db
 *.sqlite
 *.sqlite3

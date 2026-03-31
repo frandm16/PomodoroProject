@@ -1,6 +1,7 @@
 package com.frandm.studytracker.ui.views.planner;
 
 import com.frandm.studytracker.client.ApiClient;
+import com.frandm.studytracker.core.TagEventBus;
 import com.frandm.studytracker.controllers.PomodoroController;
 import javafx.application.Platform;
 import javafx.geometry.Insets;
@@ -45,6 +46,9 @@ public class WeeklyTab extends VBox {
         this.getStyleClass().add("calendar-root");
         VBox.setVgrow(this, Priority.ALWAYS);
         initializeUI();
+        TagEventBus.getInstance().subscribe(event -> {
+            cachedTagData = null;
+        });
     }
 
     public void setRefreshAction(Runnable refreshAction) {
@@ -927,7 +931,6 @@ public class WeeklyTab extends VBox {
 
     private void refreshPlannerAndMenu() {
         refreshAction.run();
-        controller.refreshSideMenu();
     }
 
     private String getStartTime(Map<String, Object> s) {

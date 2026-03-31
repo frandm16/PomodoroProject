@@ -3,6 +3,7 @@ package com.frandm.studytracker.backend.controller;
 import com.frandm.studytracker.backend.model.Deadline;
 import com.frandm.studytracker.backend.service.DeadlineService;
 import com.frandm.studytracker.backend.util.DateTimeUtils;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import java.time.LocalDateTime;
 import java.util.List;
@@ -20,7 +21,7 @@ public class DeadlineController {
     }
 
     @GetMapping
-    public List<Deadline> getDeadlines(
+    public List<Deadline> list(
             @RequestParam(required = false) String start,
             @RequestParam(required = false) String end) {
 
@@ -34,13 +35,13 @@ public class DeadlineController {
         return deadlineService.getByDateRange(startDt, endDt);
     }
 
-    @GetMapping("/all")
-    public List<Deadline> getAll() {
-        return deadlineService.getAll();
+    @GetMapping("/{id}")
+    public Deadline get(@PathVariable Long id) {
+        return deadlineService.getById(id);
     }
 
     @PostMapping
-    public Deadline save(@RequestBody Map<String, Object> body) {
+    public Deadline create(@RequestBody Map<String, Object> body) {
         return deadlineService.save(
                 (String) body.get("tagName"),
                 (String) body.get("tagColor"),
@@ -56,7 +57,7 @@ public class DeadlineController {
 
     @PutMapping("/{id}")
     public Deadline update(@PathVariable Long id, @RequestBody Map<String, Object> body) {
-        return deadlineService.update(
+        return deadlineService.fullUpdate(
                 id,
                 (String) body.get("tagName"),
                 (String) body.get("tagColor"),
@@ -65,17 +66,30 @@ public class DeadlineController {
                 (String) body.get("description"),
                 (String) body.get("urgency"),
                 DateTimeUtils.parseApiTimestamp((String) body.get("dueDate")),
-                (Boolean) body.get("allDay")
+                (Boolean) body.get("allDay"),
+                (Boolean) body.get("isCompleted")
         );
     }
 
-    @PatchMapping("/{id}/toggle")
-    public Deadline toggle(@PathVariable Long id) {
-        return deadlineService.toggleCompleted(id);
+    @PatchMapping("/{id}")
+    public Deadline patch(@PathVariable Long id, @RequestBody Map<String, Object> body) {
+        LocalDateTime dueDate = body.get("dueDate") != null
+                ? DateTimeUtils.parseApiTimestamp((String) body.get("dueDate"))
+                : null;
+        return deadlineService.partialUpdate(
+                id,
+                (String) body.get("title"),
+                (String) body.get("description"),
+                (String) body.get("urgency"),
+                dueDate,
+                (Boolean) body.get("allDay"),
+                (Boolean) body.get("isCompleted")
+        );
     }
 
     @DeleteMapping("/{id}")
-    public void delete(@PathVariable Long id) {
+    public ResponseEntity<Void> delete(@PathVariable Long id) {
         deadlineService.delete(id);
+        return ResponseEntity.ok().build();
     }
 }

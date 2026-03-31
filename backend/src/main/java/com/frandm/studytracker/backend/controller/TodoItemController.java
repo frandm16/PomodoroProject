@@ -20,16 +20,21 @@ public class TodoItemController {
     }
 
     @GetMapping
-    public List<TodoItem> getTodos(@RequestParam(required = false) Long taskId,
-                                   @RequestParam(required = false) String date) {
+    public List<TodoItem> list(@RequestParam(required = false) Long taskId,
+                               @RequestParam(required = false) String date) {
         return todoItemService.getFiltered(
                 taskId,
                 date != null && !date.isBlank() ? LocalDate.parse(date) : null
         );
     }
 
+    @GetMapping("/{id}")
+    public TodoItem get(@PathVariable Long id) {
+        return todoItemService.getById(id);
+    }
+
     @PostMapping
-    public TodoItem createTodo(@RequestBody Map<String, Object> body) {
+    public TodoItem create(@RequestBody Map<String, Object> body) {
         return todoItemService.create(
                 body.get("taskId") instanceof Number number ? number.longValue() : null,
                 (String) body.get("tagName"),
@@ -40,9 +45,21 @@ public class TodoItemController {
     }
 
     @PutMapping("/{id}")
-    public ResponseEntity<Void> updateTodo(@PathVariable Long id,
-                                           @RequestBody Map<String, Object> body) {
-        todoItemService.update(
+    public TodoItem update(@PathVariable Long id, @RequestBody Map<String, Object> body) {
+        return todoItemService.fullUpdate(
+                id,
+                body.get("taskId") instanceof Number number ? number.longValue() : null,
+                (String) body.get("tagName"),
+                (String) body.get("taskName"),
+                body.get("date") != null ? LocalDate.parse((String) body.get("date")) : null,
+                (String) body.get("text"),
+                (Boolean) body.get("completed")
+        );
+    }
+
+    @PatchMapping("/{id}")
+    public ResponseEntity<Void> patch(@PathVariable Long id, @RequestBody Map<String, Object> body) {
+        todoItemService.partialUpdate(
                 id,
                 (String) body.get("text"),
                 (Boolean) body.get("completed")
@@ -51,7 +68,7 @@ public class TodoItemController {
     }
 
     @DeleteMapping("/{id}")
-    public ResponseEntity<Void> deleteTodo(@PathVariable Long id) {
+    public ResponseEntity<Void> delete(@PathVariable Long id) {
         todoItemService.delete(id);
         return ResponseEntity.ok().build();
     }

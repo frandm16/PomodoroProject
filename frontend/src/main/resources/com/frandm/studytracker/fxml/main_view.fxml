@@ -5,10 +5,6 @@
 <?import javafx.scene.layout.*?>
 <?import javafx.scene.media.MediaView?>
 <?import javafx.scene.shape.Circle?>
-<?import javafx.scene.chart.PieChart?>
-<?import javafx.scene.chart.CategoryAxis?>
-<?import javafx.scene.chart.NumberAxis?>
-<?import javafx.scene.chart.AreaChart?>
 <?import javafx.scene.effect.GaussianBlur?>
 <?import org.kordamp.ikonli.javafx.FontIcon?>
 
@@ -25,6 +21,10 @@
                preserveRatio="false"
                smooth="true"
                StackPane.alignment="CENTER" />
+
+    <Region maxHeight="Infinity" maxWidth="Infinity" styleClass="background-video">
+
+    </Region>
 
     <VBox >
         <HBox fx:id="titleBar" alignment="CENTER_RIGHT" minHeight="40.0" prefHeight="40.0" styleClass="custom-title-bar">
@@ -58,163 +58,19 @@
                 <rowConstraints>
                     <RowConstraints vgrow="ALWAYS" />
                 </rowConstraints>
-                <padding><Insets top="80" bottom="50"/></padding>
-                <ScrollPane fx:id="statsContainer" visible="false" managed="false" GridPane.columnIndex="1" fitToWidth="true">
-                    <VBox  alignment="TOP_CENTER" spacing="30" >
-                        <GridPane hgap="20" vgap="20"  alignment="TOP_CENTER">
-                            <columnConstraints>
-                                <ColumnConstraints percentWidth="25" />
-                                <ColumnConstraints percentWidth="25" />
-                                <ColumnConstraints percentWidth="25" />
-                                <ColumnConstraints percentWidth="25" />
-                            </columnConstraints>
-                            <rowConstraints>
-                                <RowConstraints vgrow="ALWAYS" />
-
-                                <RowConstraints vgrow="ALWAYS" />
-
-                                <RowConstraints vgrow="ALWAYS" />
-                            </rowConstraints>
-
-                            <VBox VBox.vgrow="ALWAYS" GridPane.columnIndex="0" GridPane.rowIndex="0" GridPane.columnSpan="2" GridPane.rowSpan="2">
-                                <GridPane VBox.vgrow="ALWAYS" hgap="20" vgap="20" maxWidth="Infinity" alignment="TOP_CENTER" maxHeight="Infinity">
-                                    <columnConstraints>
-                                        <ColumnConstraints percentWidth="50" />
-                                        <ColumnConstraints percentWidth="50" />
-                                    </columnConstraints>
-                                    <rowConstraints>
-                                        <RowConstraints vgrow="ALWAYS" />
-                                        <RowConstraints vgrow="ALWAYS" />
-                                    </rowConstraints>
-
-                                    <VBox styleClass="stat-cardbasic" GridPane.columnIndex="0" GridPane.rowIndex="0">
-                                        <HBox>
-                                            <VBox HBox.hgrow="ALWAYS">
-                                                <Label text="This Week" styleClass="small-card-title" />
-                                                <Label fx:id="timeThisWeekLabel" text="0.0h" styleClass="small-card-main-content" />
-                                                <Label text="Focus time" />
-                                            </VBox>
-                                            <VBox maxHeight="-Infinity" >
-                                                <VBox alignment="CENTER"
-                                                      minWidth="25" maxWidth="25"
-                                                      minHeight="25" maxHeight="25">
-                                                    <FontIcon iconLiteral="mdi2c-clock-time-four-outline" styleClass="stat-icon" />
-                                                </VBox>
-                                            </VBox>
-                                        </HBox>
-                                    </VBox>
-
-                                    <VBox fx:id="streakVBox" styleClass="stat-cardbasic" GridPane.columnIndex="1" GridPane.rowIndex="0">
-                                        <HBox>
-                                            <VBox HBox.hgrow="ALWAYS">
-                                                <Label text="Streak" styleClass="small-card-title" />
-                                                <Label fx:id="streakLabel" text="0 Days" styleClass="small-card-main-content" />
-                                                <Label text="Current streak" />
-                                            </VBox>
-
-                                            <VBox fx:id="streakImage" visible="false" managed="false" maxHeight="-Infinity" >
-                                                <VBox alignment="CENTER"
-                                                      minWidth="25" maxWidth="25"
-                                                      minHeight="25" maxHeight="25">
-                                                    <FontIcon iconLiteral="mdi2f-fire" styleClass="stat-icon" />
-                                                </VBox>
-                                            </VBox>
-
-                                        </HBox>
-
-
-
-                                    </VBox>
-
-                                    <VBox styleClass="stat-cardbasic" GridPane.columnIndex="0" GridPane.rowIndex="1">
-                                        <HBox>
-                                            <VBox HBox.hgrow="ALWAYS">
-                                                <Label text="Best Day" styleClass="small-card-title" />
-                                                <Label fx:id="bestDayLabel" text="Null" styleClass="small-card-main-content" />
-                                                <Label text="Most productive day" />
-                                            </VBox>
-                                            <VBox  maxHeight="-Infinity" >
-                                                <VBox alignment="CENTER"
-                                                      minWidth="25" maxWidth="25"
-                                                      minHeight="25" maxHeight="25">
-                                                    <FontIcon iconLiteral="mdi2c-calendar-blank" styleClass="stat-icon" />
-                                                </VBox>
-                                            </VBox>
-
-                                        </HBox>
-
-                                    </VBox>
-
-                                    <VBox styleClass="stat-cardbasic" GridPane.columnIndex="1" GridPane.rowIndex="1">
-                                        <HBox>
-                                            <VBox HBox.hgrow="ALWAYS">
-                                                <Label text="Sessions" styleClass="small-card-title" />
-                                                <Label fx:id="tasksLabel" text="0" styleClass="small-card-main-content" />
-                                                <Label text="Completed all-time" />
-                                            </VBox>
-
-                                            <VBox  maxHeight="-Infinity" >
-                                                <VBox alignment="CENTER"
-                                                      minWidth="25" maxWidth="25"
-                                                      minHeight="25" maxHeight="25">
-                                                    <FontIcon iconLiteral="mdi2f-format-list-bulleted" styleClass="stat-icon" />
-                                                </VBox>
-
-                                            </VBox>
-                                        </HBox>
-                                    </VBox>
-                                </GridPane>
-                            </VBox>
-
-                            <VBox styleClass="stat-cardbasic" GridPane.columnIndex="2" GridPane.rowIndex="0" GridPane.columnSpan="2" GridPane.rowSpan="2">
-                                <Label text="Weekly Progress" styleClass="big-card-title" />
-                                <Label text="Hours studied in the last 12 weeks" styleClass="big-card-description" />
-                                <AreaChart fx:id="weeklyLineChart" prefHeight="300" maxWidth="Infinity" legendVisible="false" animated="false">
-                                    <xAxis>
-                                        <CategoryAxis side="BOTTOM" fx:id="weeksXAxis" tickLabelsVisible="false" tickMarkVisible="false" gapStartAndEnd="false" />
-                                    </xAxis>
-                                    <yAxis>
-                                        <NumberAxis side="LEFT" />
-                                    </yAxis>
-                                </AreaChart>
-                            </VBox>
-
-                            <VBox fx:id="statsPlaceholder" styleClass="stat-cardbasic" GridPane.columnIndex="0" GridPane.rowIndex="2" GridPane.columnSpan="4" >
-                                <Label text="Activity Heatmap" styleClass="big-card-title" />
-                                <Label text="Last year of study sessions" styleClass="big-card-description" />
-                                <Separator />
-
-                            </VBox>
-
-                            <VBox styleClass="stat-cardbasic" GridPane.columnIndex="0" GridPane.rowIndex="3" GridPane.columnSpan="2">
-                                <Label text="Last Month" styleClass="small-card-title" />
-                                <Label fx:id="timeLastMonthLabel" text="0.0h" styleClass="small-card-main-content" />
-                                <Label text="Total study time"  />
-                            </VBox>
-
-                            <VBox styleClass="stat-cardbasic" GridPane.columnIndex="2" GridPane.rowIndex="3" GridPane.rowSpan="2" GridPane.columnSpan="2">
-                                <Label text="Project Distribution" styleClass="big-card-title" />
-                                <Label text="Distribution by Projects" styleClass="big-card-description" />
-                                <Separator />
-                                <PieChart fx:id="tagPieChart"
-                                          startAngle="90"
-                                          labelsVisible="false"
-                                          legendSide="RIGHT" maxWidth="-Infinity" maxHeight="-Infinity"/>
-                            </VBox>
-                        </GridPane>
-                    </VBox>
-                </ScrollPane>
+                <ScrollPane fx:id="statsContainer" visible="false" managed="false" GridPane.columnIndex="1" fitToWidth="true" />
             </GridPane >
             <GridPane  StackPane.alignment="TOP_CENTER" fx:id="mainContainer" maxHeight="Infinity" maxWidth="Infinity" >
                 <columnConstraints>
-                    <ColumnConstraints percentWidth="15" />
-                    <ColumnConstraints  percentWidth="70" />
-                    <ColumnConstraints percentWidth="15" />
+                    <ColumnConstraints percentWidth="25" />
+                    <ColumnConstraints  percentWidth="50" />
+                    <ColumnConstraints percentWidth="25" />
                 </columnConstraints>
                 <rowConstraints>
                     <RowConstraints vgrow="ALWAYS" />
                 </rowConstraints>
-                <VBox fx:id="scheduleListContainer" spacing="10" alignment="TOP_RIGHT" GridPane.columnIndex="2" />
+                <VBox fx:id="scheduleListContainer" GridPane.columnIndex="2" alignment="CENTER"
+                      GridPane.valignment="TOP" GridPane.halignment="RIGHT" maxWidth="-Infinity" maxHeight="-Infinity"/>
                 <VBox GridPane.columnIndex="1" spacing="20" alignment="CENTER" >
                     <StackPane fx:id="stackpaneCircle"  VBox.vgrow="ALWAYS" >
                         <VBox fx:id="mainVbox" maxWidth="-Infinity" maxHeight="-Infinity" styleClass="main-vbox" alignment="CENTER" >
@@ -281,7 +137,7 @@
                 <rowConstraints>
                     <RowConstraints vgrow="ALWAYS" />
                 </rowConstraints>
-                <VBox fx:id="plannerContainer" visible="false" managed="false" alignment="TOP_CENTER" GridPane.columnIndex="1"  >
+                <VBox fx:id="plannerContainer" visible="false" managed="false" alignment="TOP_CENTER" GridPane.columnIndex="1" >
                     <padding><Insets top="40" bottom="40" left="50" right="50"/></padding>
                 </VBox>
             </GridPane>
@@ -617,6 +473,7 @@
             </HBox>
         </StackPane>
     </GridPane>
+
     <GridPane fx:id="summaryPane" visible="false" managed="false" maxHeight="Infinity" maxWidth="Infinity">
         <columnConstraints>
             <ColumnConstraints percentWidth="35" />

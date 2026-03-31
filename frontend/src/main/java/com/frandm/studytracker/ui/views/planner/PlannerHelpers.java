@@ -23,7 +23,7 @@ public class PlannerHelpers {
                 String tagName = String.valueOf(tag.get("name"));
                 tagColors.put(tagName, String.valueOf(tag.getOrDefault("color", "")));
                 try {
-                    List<String> taskNames = ApiClient.getTasksByTag(tagName)
+                    List<String> taskNames = ApiClient.getTasks(tagName)
                             .stream()
                             .map(task -> String.valueOf(task.get("name")))
                             .collect(Collectors.toList());

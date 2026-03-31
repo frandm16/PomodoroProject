@@ -9,7 +9,10 @@
     -planner-todo-completed: -icon-subtle;
     -planner-delete-bg: -color-danger;
     -planner-delete-bg-hover: -color-danger-hover;
-    -planner-window-close-bg: -color-danger;
+    -planner-window-close-bg: #c22b1c;
+    -color-border: #d1d1d1;
+    -bg-panels: #161b22;
+    -color-accent: rgba(255, 183, 0);
 }
 
 .primer-dark {
@@ -53,6 +56,9 @@
 
     -stage-icon: #ffffff;
     -stage-hover-bg: rgba(255, 255, 255, 0.1);
+
+    -bg-dashboard: rgb(23, 38, 64, 0.85);
+    -fg-dashboard: rgba(22, 27, 34, 0.7);
 }
 
 .primer-light {
@@ -96,6 +102,9 @@
 
     -stage-icon: #000000;
     -stage-hover-bg: rgba(0, 0, 0, 0.1);
+
+    -bg-dashboard: rgb(253, 240, 243, 0.85);
+    -fg-dashboard: rgba(228, 163, 179, 0.3);
 }
 
 .primer-electric-blue {
@@ -140,6 +149,9 @@
 
     -stage-icon: #ffffff;
     -stage-hover-bg: rgba(255, 255, 255, 0.1);
+
+    -bg-dashboard: rgb(0, 13, 31, 0.85);
+    -fg-dashboard: rgba(0, 21, 41, 0.7);
 }
 
 .primer-cappuccino {
@@ -154,7 +166,7 @@
 
     -color-menu: #1e1e2e;
     -color-hover: #313244;
-    -bg-panels: #181825;
+    -bg-panels: rgb(24, 24, 37);
     -text-main: #cdd6f4;
     -text-dark: #cdd6f4;
     -text-muted: #6c7086;
@@ -185,6 +197,9 @@
 
     -stage-icon: #ffffff;
     -stage-hover-bg: rgba(255, 255, 255, 0.1);
+
+    -bg-dashboard: rgb(24, 24, 37, 0.85);
+    -fg-dashboard: rgba(49, 50, 68, 0.7);
 }
 
 .primer-sunset {
@@ -230,6 +245,9 @@
 
     -stage-icon: #ffffff;
     -stage-hover-bg: rgba(255, 255, 255, 0.1);
+
+    -bg-dashboard: rgb(26, 14, 5, 0.85);
+    -fg-dashboard: rgba(18, 10, 3, 0.7);
 }
 
 .primer-midnight {
@@ -274,4 +292,7 @@
 
     -stage-icon: #ffffff;
     -stage-hover-bg: rgba(255, 255, 255, 0.1);
+
+    -bg-dashboard: rgb(10, 3, 20, 0.85);
+    -fg-dashboard: rgba(124, 95, 160, 0.2);
 }

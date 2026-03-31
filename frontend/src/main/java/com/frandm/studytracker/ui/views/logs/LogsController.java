@@ -86,7 +86,7 @@ public class LogsController {
     private void updateTaskCombo(ComboBox<String> taskCombo, String tagName) {
         taskCombo.getItems().clear();
         try {
-            ApiClient.getTasksByTag(tagName).forEach(t -> taskCombo.getItems().add((String) t.get("name")));
+            ApiClient.getTasks(tagName).forEach(t -> taskCombo.getItems().add((String) t.get("name")));
         } catch (Exception e) {
             System.err.println("Error loading tasks: " + e.getMessage());
         }
@@ -127,7 +127,7 @@ public class LogsController {
     public void saveEdit(String title, String desc, String tagName, String taskName) {
         if (sessionToEdit != null) {
             try {
-                ApiClient.updateSession(
+                ApiClient.patchSession(
                         sessionToEdit.getId(),
                         title,
                         desc,
@@ -142,9 +142,16 @@ public class LogsController {
         }
     }
 
-    public void refreshAll() {
+    public void refreshSessionData() {
         if (historyTab != null) historyTab.resetAndReload();
-        if (calendarTab != null) calendarTab.refresh();
+        if (calendarTab != null) {
+            calendarTab.loadWeekSessions();
+            calendarTab.refresh();
+        }
+    }
+
+    public void refreshAll() {
+        refreshSessionData();
         if (focusTab != null) focusTab.refreshFocusAreasGrid();
     }
 
@@ -167,5 +174,14 @@ public class LogsController {
 
     public Session getSessionToEdit() {
         return sessionToEdit;
+    }
+
+    public void openAddTagOverlay() {
+        mainController.switchToTimer();
+        mainController.toggleSetup();
+    }
+
+    public void openDeleteTagOverlay(long tagId, String tagName) {
+        mainController.openConfirmDeleteTag(tagId);
     }
 }
