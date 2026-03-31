@@ -168,20 +168,12 @@ public class LogsController {
         mainController.updateIcon(button, style, iconCode, tooltipText);
     }
 
-    public int getEditRating() {
-        return editRating;
-    }
-
-    public Session getSessionToEdit() {
-        return sessionToEdit;
-    }
-
     public void openAddTagOverlay() {
         mainController.switchToTimer();
         mainController.toggleSetup();
     }
 
-    public void openDeleteTagOverlay(long tagId, String tagName) {
+    public void openDeleteTagOverlay(long tagId) {
         mainController.openConfirmDeleteTag(tagId);
     }
 }

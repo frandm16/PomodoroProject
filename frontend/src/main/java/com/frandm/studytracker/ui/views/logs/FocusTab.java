@@ -2,21 +2,17 @@ package com.frandm.studytracker.ui.views.logs;
 
 import com.frandm.studytracker.client.ApiClient;
 import com.frandm.studytracker.core.TagEventBus;
-import com.frandm.studytracker.ui.util.Animations;
 import javafx.application.Platform;
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;
 import javafx.scene.control.*;
 import javafx.scene.layout.*;
-import javafx.scene.paint.Color;
 import javafx.util.Duration;
 import org.kordamp.ikonli.javafx.FontIcon;
-
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.stream.Collectors;
 
 public class FocusTab extends VBox {
     private final LogsController logsController;
@@ -87,7 +83,7 @@ public class FocusTab extends VBox {
 
         this.getChildren().addAll(focusAreasRoot, detailRoot);
 
-        TagEventBus.getInstance().subscribe(event -> refreshFocusAreasGrid());
+        TagEventBus.getInstance().subscribe(_ -> refreshFocusAreasGrid());
 
         refreshFocusAreasGrid();
     }
@@ -143,7 +139,6 @@ public class FocusTab extends VBox {
                 case "Active" -> !isArchived;
                 case "Archived" -> isArchived;
                 case "Favorites" -> isFavorite && !isArchived;
-                case "All" -> true;
                 default -> true;
             };
             if (include) {
@@ -256,7 +251,6 @@ public class FocusTab extends VBox {
         btnFavorite.setOnAction(e -> {
             e.consume();
             btnFavorite.setDisable(true);
-            final boolean previousState = isFavorite;
             new Thread(() -> {
                 try {
                     ApiClient.patchTag(tagId, Map.of("isFavorite", !isFavorite));
@@ -296,7 +290,7 @@ public class FocusTab extends VBox {
         Tooltip.install(btnDelete, new Tooltip("Delete"));
         btnDelete.setOnAction(e -> {
             e.consume();
-            logsController.openDeleteTagOverlay(tagId, name);
+            logsController.openDeleteTagOverlay(tagId);
         });
 
         actionsRow.getChildren().addAll(btnFavorite, btnArchive, btnDelete);
@@ -366,9 +360,9 @@ public class FocusTab extends VBox {
         if (totalMinutes >= 60) {
             long h = totalMinutes / 60;
             long m = totalMinutes % 60;
-            timeText = String.format("%dh %02dm total \u00b7 %d task%s", h, m, sessions, sessions != 1 ? "s" : "");
+            timeText = String.format("%dh %02dm total · %d task%s", h, m, sessions, sessions != 1 ? "s" : "");
         } else {
-            timeText = String.format("%dm total \u00b7 %d task%s", totalMinutes, sessions, sessions != 1 ? "s" : "");
+            timeText = String.format("%dm total · %d task%s", totalMinutes, sessions, sessions != 1 ? "s" : "");
         }
         totalStatsLabel.setText(timeText);
 

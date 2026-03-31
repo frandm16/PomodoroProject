@@ -33,7 +33,6 @@ public class PomodoroEngine {
     private int secondsElapsed = 0;
 
     private final int timePerSeconds = 123;
-    private int totalSecondsInActiveSession;
 
     private int masterVolume = 100;
     private int alarmVolume = 100;
@@ -95,7 +94,6 @@ public class PomodoroEngine {
             case LONG_BREAK -> secondsRemaining = longMins * 60;
             case WAITING -> {}
         }
-        this.totalSecondsInActiveSession = secondsRemaining;
 
         if (onTick != null) onTick.run();
         if (onStateChange != null) onStateChange.run();
@@ -145,7 +143,6 @@ public class PomodoroEngine {
                 if (currentMode == Mode.COUNTDOWN) {
                     this.secondsRemaining = CountdownMins * 60;
                 }
-                this.totalSecondsInActiveSession = getTotalSecondsForCurrentState();
             } else {
                 currentState = lastActiveState;
             }
@@ -216,9 +213,6 @@ public class PomodoroEngine {
     public void setShortMins(int mins) { this.shortMins = mins; }
     public void setLongMins(int mins) { this.longMins = mins; }
     public void setInterval(int interval) { this.interval = interval; }
-    //public void setAutoStartBreaks(boolean value) { this.autoStartBreaks = value; }
-    //public void setAutoStartPomo(boolean value) { this.autoStartPomodoros = value; }
-    //public void setCountBreakTime(boolean value) { this.countBreakTime = value; }
     public void setOnTick(Runnable r) { this.onTick = r; }
     public void setOnStateChange(Runnable r) { this.onStateChange = r; }
     public void setOnTimerFinished(Runnable r) {this.onTimerFinished = r;}
@@ -235,10 +229,8 @@ public class PomodoroEngine {
         } else if (mode == Mode.TIMER) {
             this.secondsRemaining = 0;
             this.currentState = State.MENU;
-            this.totalSecondsInActiveSession = 60; //para que el arco de vueltas cada min
         } else if (mode == Mode.COUNTDOWN) {
             this.secondsRemaining = CountdownMins * 60;
-            this.totalSecondsInActiveSession = secondsRemaining;
             this.currentState = State.MENU;
         }
 
@@ -249,7 +241,6 @@ public class PomodoroEngine {
         this.CountdownMins = mins;
         if (currentMode == Mode.COUNTDOWN && currentState == State.MENU) {
             this.secondsRemaining = mins * 60;
-            this.totalSecondsInActiveSession = secondsRemaining;
             if (onTick != null) onTick.run();
         }
     }
@@ -260,7 +251,6 @@ public class PomodoroEngine {
     public void setBackgroundMusicVolume(int backgroundMusicVolume) {this.backgroundMusicVolume = backgroundMusicVolume;}
     public void setBackgroundVideoSource(String backgroundVideoSource) { this.backgroundVideoSource = backgroundVideoSource; }
     public void setNotificationDuration(int v) { this.notificationDuration = v; }
-    public void setEnableToastNotifications(boolean v) { this.enableToastNotifications = v; }
     //endregion
 
     //region Getters
@@ -284,20 +274,6 @@ public class PomodoroEngine {
     public boolean isAutoStartBreaks() { return this.autoStartBreaks; }
     public boolean isAutoStartPomo() { return this.autoStartPomodoros; }
     public boolean isCountBreakTime() { return this.countBreakTime; }
-    public int getTotalSecondsForCurrentState() {
-        if (currentMode == Mode.COUNTDOWN) {
-            return CountdownMins * 60;
-        }
-        if (currentMode == Mode.TIMER) {
-            return 3600;
-        }
-        State logical = getLogicalState();
-        return switch (logical) {
-            case SHORT_BREAK -> shortMins * 60;
-            case LONG_BREAK -> longMins * 60;
-            default -> workMins * 60;
-        };
-    }
     public int getSecondsRemaining() {
         return secondsRemaining;
     }

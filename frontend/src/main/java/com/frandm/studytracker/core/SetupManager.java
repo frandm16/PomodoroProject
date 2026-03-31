@@ -35,7 +35,7 @@ public class SetupManager {
             Button createBtn = new Button("+ Create Task: '" + input + "'");
             createBtn.setMaxWidth(Double.MAX_VALUE);
             if(filterTag != null){
-                createBtn.setOnAction(e -> {
+                createBtn.setOnAction(_ -> {
                     try {
                         ApiClient.getOrCreateTask(filterTag, colors.getOrDefault(filterTag, "#ffffff"), input);
                     } catch (Exception err) {
@@ -50,7 +50,7 @@ public class SetupManager {
                     NotificationManager.show("Task created", "Successfully created " + input, NotificationManager.NotificationType.SUCCESS);
                 });
             }else{
-                createBtn.setOnAction(e -> NotificationManager.show("Cant create task", "A tag must be selected", NotificationManager.NotificationType.ERROR));
+                createBtn.setOnAction(_ -> NotificationManager.show("Cant create task", "A tag must be selected", NotificationManager.NotificationType.ERROR));
             }
             container.getChildren().addAll(createBtn, new Separator());
         }
@@ -89,7 +89,7 @@ public class SetupManager {
         btn.setAlignment(Pos.CENTER_LEFT);
         String color = colors.getOrDefault(tag, "#ffffff");
         btn.setStyle("-fx-border-color: " + color + "; -fx-border-width: 0 0 0 4;");
-        btn.setOnAction(e -> {
+        btn.setOnAction(_ -> {
             selectedTask = task;
             selectedTag = tag;
             controller.handleStartSessionFromSetup();
@@ -128,7 +128,7 @@ public class SetupManager {
             });
 
             row.getChildren().addAll(colorCircle, tagLabel, spacer, deleteBtn);
-            row.setOnMouseClicked(e -> {
+            row.setOnMouseClicked(_ -> {
                 filterTag = (name.equals(filterTag)) ? null : name;
                 onFilterChange.run();
                 renderTagsList(container, colors, tagIds, onFilterChange);
@@ -139,7 +139,6 @@ public class SetupManager {
 
     public String getSelectedTag() { return selectedTag; }
     public String getSelectedTask() { return selectedTask; }
-    public String getFilterTag() { return filterTag; }
 
     public void setSelectedTag(String tag) { this.selectedTag = tag; }
     public void setSelectedTask(String task) { this.selectedTask = task; }

@@ -17,7 +17,6 @@ public class LogsView extends StackPane {
     private final FocusTab focusTab;
     private final CalendarTab calendarTab;
 
-    private final StackPane contentArea;
     private String currentTabId;
 
     public LogsView(PomodoroController pomodoroController) {
@@ -37,7 +36,7 @@ public class LogsView extends StackPane {
 
         this.logsController.setViews(historyTab, focusTab, calendarTab);
 
-        contentArea = new StackPane();
+        StackPane contentArea = new StackPane();
         VBox.setVgrow(contentArea, Priority.ALWAYS);
         contentArea.getChildren().addAll(historyTab, focusTab, calendarTab);
 
@@ -81,17 +80,6 @@ public class LogsView extends StackPane {
         slideIn.setToY(0);
         fadeIn.play();
         slideIn.play();
-/*
-        switch (tabId) {
-            case "history" -> historyTab.resetAndReload();
-            case "focus" -> focusTab.refreshFocusAreasGrid();
-            case "calendar" -> {
-                calendarTab.loadWeekSessions();
-                calendarTab.refresh();
-            }
-        }
-
- */
     }
 
     private Node getTabNode(String tabId) {
@@ -103,17 +91,8 @@ public class LogsView extends StackPane {
         };
     }
 
-    public void resetAndReload() {
-        if (logsController != null) {
-            logsController.refreshAll();
-        }
-    }
-
     public LogsController getLogsController() {
         return logsController;
     }
 
-    public CalendarTab getCalendarTab() {
-        return calendarTab;
-    }
 }

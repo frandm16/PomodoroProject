@@ -37,7 +37,7 @@ public class Animations {
         }
 
         if (onFinished != null) {
-            parallel.setOnFinished(e -> onFinished.run());
+            parallel.setOnFinished(_ -> onFinished.run());
         }
 
         parallel.play();
@@ -60,7 +60,7 @@ public class Animations {
             parallel.getChildren().add(scale);
         }
 
-        parallel.setOnFinished(e -> {
+        parallel.setOnFinished(_ -> {
             if (overlay != null) {
                 overlay.setVisible(false);
                 overlay.setManaged(false);

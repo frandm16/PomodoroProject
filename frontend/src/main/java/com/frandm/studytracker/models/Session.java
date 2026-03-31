@@ -14,7 +14,6 @@ public class Session {
     private final String startDate;
     private final String endDate;
     private int rating;
-    private boolean isFavorite;
 
     public Session(int id, String tag, String tagColor, String task, String title,
                    String description, int totalMinutes, String startDate, String endDate) {
@@ -28,7 +27,6 @@ public class Session {
         this.startDate = startDate;
         this.endDate = endDate;
         this.rating = 0;
-        this.isFavorite = false;
     }
 
     public int getId() { return id; }
@@ -44,14 +42,11 @@ public class Session {
     public int getRating() { return rating; }
     public void setRating(int rating) { this.rating = rating; }
 
-    public boolean isFavorite() { return isFavorite; }
-    public void setFavorite(boolean favorite) { isFavorite = favorite; }
+    public void setFavorite(boolean ignoredFavorite) {
+    }
 
     public LocalDateTime getStartDateTime() {
         return ApiClient.parseApiTimestamp(startDate);
     }
 
-    public LocalDateTime getEndDateTime() {
-        return ApiClient.parseApiTimestamp(endDate);
-    }
 }

@@ -58,11 +58,6 @@ public class StatsDashboardView {
     private static final String OPTION_ALL_DAY_TYPES = "Any day";
     private static final DateTimeFormatter DAY_LABEL_FORMAT = DateTimeFormatter.ofPattern("MMM dd", Locale.US);
 
-    private final ScrollPane host;
-    private final HBox root;
-    private final VBox sidebar;
-    private final VBox content;
-
     private final ComboBox<String> rangePresetCombo;
     private final DatePicker startDatePicker;
     private final DatePicker endDatePicker;
@@ -104,9 +99,8 @@ public class StatsDashboardView {
     private ScrollPane heatmapScroll;
 
     public StatsDashboardView(ScrollPane host) {
-        this.host = host;
 
-        sidebar = new VBox(18);
+        VBox sidebar = new VBox(18);
         sidebar.getStyleClass().addAll("dashboard-panel", "dashboard-sidebar");
         sidebar.setPrefWidth(290);
         sidebar.setMinWidth(290);
@@ -163,7 +157,7 @@ public class StatsDashboardView {
                 filterSummaryLabel
         );
 
-        content = new VBox(24);
+        VBox content = new VBox(24);
         content.getStyleClass().add("dashboard-content");
 
         VBox heroCard = new VBox(16);
@@ -272,7 +266,7 @@ public class StatsDashboardView {
 
         content.getChildren().addAll(heroCard, statsGrid, chartsRow, lowerRow, heatmapCard);
 
-        root = new HBox(20, sidebar, content);
+        HBox root = new HBox(20, sidebar, content);
         root.getStyleClass().add("dashboard-workspace");
         root.setPadding(new Insets(18, 0, 60, 0));
         HBox.setHgrow(content, Priority.ALWAYS);
@@ -288,44 +282,6 @@ public class StatsDashboardView {
         loadCatalogs();
         syncFilterOptions();
         bindFilterEventsIfNeeded();
-
-        Map<LocalDate, Integer> globalHeatmapMinutes = new TreeMap<>();
-        for (Session s : allSessions) {
-            LocalDate date = extractSessionDate(s);
-            if (date != null) globalHeatmapMinutes.merge(date, s.getTotalMinutes(), Integer::sum);
-        }
-        updateHeatmap(globalHeatmapMinutes);
-
-        applyFiltersAndRender();
-    }
-
-    public void refreshSessionsOnly() {
-        allSessions = loadSessions();
-
-        tasksByTag.clear();
-        try {
-            for (Map<String, Object> tagMap : ApiClient.getTags()) {
-                String tagName = String.valueOf(tagMap.get("name"));
-                List<String> tasks = tasksByTag.computeIfAbsent(tagName, _ -> new ArrayList<>());
-                try {
-                    for (Map<String, Object> taskMap : ApiClient.getTasks(tagName)) {
-                        String taskName = String.valueOf(taskMap.get("name"));
-                        if (!tasks.contains(taskName)) tasks.add(taskName);
-                    }
-                } catch (Exception ignored) {}
-            }
-        } catch (Exception ignored) {}
-
-        allSessions.forEach(session -> {
-            String tag = normalizeLabel(session.getTag(), "No tag");
-            String task = normalizeLabel(session.getTask(), "No task");
-            tasksByTag.computeIfAbsent(tag, _ -> new ArrayList<>());
-            if (!tasksByTag.get(tag).contains(task)) {
-                tasksByTag.get(tag).add(task);
-            }
-        });
-
-        syncFilterOptions();
 
         Map<LocalDate, Integer> globalHeatmapMinutes = new TreeMap<>();
         for (Session s : allSessions) {
@@ -495,7 +451,7 @@ public class StatsDashboardView {
         applyMetrics(snapshot);
         updateTrendChart(snapshot.timelineMinutes());
         updateWeekdayChart(snapshot.weekdayMinutes());
-        updateTagChart(snapshot.tagMinutes(), snapshot.tagColors());
+        updateTagChart(snapshot.tagMinutes());
         updateInsights(snapshot);
     }
 
@@ -573,7 +529,7 @@ public class StatsDashboardView {
             end = end == null ? last : end;
         }
 
-        if (start != null && end != null && !start.isAfter(end)) {
+        if (!start.isAfter(end)) {
             LocalDate cursor = start;
             while (!cursor.isAfter(end)) {
                 minutesByDay.putIfAbsent(cursor, 0);
@@ -670,7 +626,7 @@ public class StatsDashboardView {
         });
     }
 
-    private void updateTagChart(Map<String, Integer> tagMinutes, Map<String, String> tagColors) {
+    private void updateTagChart(Map<String, Integer> tagMinutes) {
         breakdownPills.getChildren().clear();
 
         if (tagMinutes.isEmpty()) {
@@ -791,7 +747,7 @@ public class StatsDashboardView {
         heatmapScroll.addEventFilter(ScrollEvent.SCROLL, event -> {
             if (event.getDeltaY() != 0) {
                 double delta = event.getDeltaY() / 360.0;
-                heatmapScroll.setHvalue(Math.max(0, Math.min(1, heatmapScroll.getHvalue() - delta)));
+                heatmapScroll.setHvalue(Math.clamp(heatmapScroll.getHvalue() - delta, 0, 1));
                 event.consume();
             }
         });

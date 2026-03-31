@@ -100,7 +100,7 @@ public class SoundManager {
             double volumeStep = startVolume / steps;
 
             Timeline fadeOut = new Timeline(
-                    new KeyFrame(Duration.millis(50), e -> {
+                    new KeyFrame(Duration.millis(50), _ -> {
                         if(musicPlayer != null) {
                             double newVol = musicPlayer.getVolume() - volumeStep;
                             if (newVol <= 0) {

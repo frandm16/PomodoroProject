@@ -22,7 +22,6 @@ public class CalendarTab extends VBox {
     private GridPane calendarGrid;
     private GridPane headerGrid;
     private ScrollPane scrollPane;
-    private HBox headerBar;
     private LocalDate currentWeekStart;
     private final LogsController logsController;
     private final double ROW_HEIGHT = 60.0;
@@ -41,7 +40,7 @@ public class CalendarTab extends VBox {
     }
 
     private void initializeUI() {
-        headerBar = new HBox(15);
+        HBox headerBar = new HBox(15);
         headerBar.setAlignment(Pos.CENTER_LEFT);
         headerBar.setPadding(new Insets(10, 30, 10, 30));
         headerBar.getStyleClass().add("planner-nav-bar");

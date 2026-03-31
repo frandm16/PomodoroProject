@@ -47,9 +47,7 @@ public class WeeklyTab extends VBox {
         this.getStyleClass().add("calendar-root");
         VBox.setVgrow(this, Priority.ALWAYS);
         initializeUI();
-        TagEventBus.getInstance().subscribe(event -> {
-            cachedTagData = null;
-        });
+        TagEventBus.getInstance().subscribe(_ -> cachedTagData = null);
     }
 
     public void setRefreshAction(Runnable refreshAction) {
@@ -64,7 +62,7 @@ public class WeeklyTab extends VBox {
     }
 
     public void openCreateScheduledSession(double screenX, double screenY) {
-        showPopup(null, currentWeekStart, screenX, screenY, 9, 0, true);
+        showPopup(null, currentWeekStart, screenX, screenY, 9, true);
     }
 
     public void openCreateDeadline(double screenX, double screenY) {
@@ -177,7 +175,7 @@ public class WeeklyTab extends VBox {
                 final int finalH = h;
                 clickZone.setOnMouseClicked(e -> {
                     if (e.getClickCount() == 1) {
-                        showPopup(null, date, e.getScreenX(), e.getScreenY(), finalH, 0, false);
+                        showPopup(null, date, e.getScreenX(), e.getScreenY(), finalH, false);
                         e.consume();
                     }
                 });
@@ -455,7 +453,7 @@ public class WeeklyTab extends VBox {
         String color = s.getOrDefault("tag_color", "#94a3b8").toString();
         double height = Math.max(MIN_BLOCK_HEIGHT, Duration.between(drawStart, drawEnd).toMinutes() * (ROW_HEIGHT / 60.0));
         HBox block = createSessionBlock(isFragment ? "" : (title != null && !title.isEmpty() ? title : taskName), isFragment ? "" : tagName, color, fullStart, fullEnd, height, isFragment);
-        block.setOnMouseClicked(e -> { showPopup(s, drawStart.toLocalDate(), e.getScreenX(), e.getScreenY(), drawStart.getHour(), drawStart.getMinute(), true); e.consume(); });
+        block.setOnMouseClicked(e -> { showPopup(s, drawStart.toLocalDate(), e.getScreenX(), e.getScreenY(), drawStart.getHour(), true); e.consume(); });
         double yStart = (drawStart.getHour() * ROW_HEIGHT) + (drawStart.getMinute() * (ROW_HEIGHT / 60.0));
 
         block.setLayoutY(yStart);
@@ -561,9 +559,7 @@ public class WeeklyTab extends VBox {
         return m.substring(0, 1).toUpperCase() + m.substring(1) + " " + currentWeekStart.getYear();
     }
 
-    public void setCurrentWeekStart(LocalDate date) { this.currentWeekStart = date.with(DayOfWeek.MONDAY); }
-
-    private void showPopup(Map<String, Object> s, LocalDate d, double sx, double sy, int h, int m, boolean isClick) {
+    private void showPopup(Map<String, Object> s, LocalDate d, double sx, double sy, int h, boolean isClick) {
 
         // control popup
         long now = System.currentTimeMillis();

@@ -39,9 +39,8 @@ public class HistoryTab extends VBox {
     private String currentSort = "newest";
     private int currentOffset = 0;
     private final int PAGE_SIZE = 50;
-    private LocalDate lastDate = null;
     private VBox lastSessionsContainer = null;
-    private List<Session> allLoadedSessions = new ArrayList<>();
+    private final List<Session> allLoadedSessions = new ArrayList<>();
     private boolean hasMoreData = true;
 
     public HistoryTab(LogsController logsController) {
@@ -126,9 +125,7 @@ public class HistoryTab extends VBox {
     }
 
     private void setupFilterListeners() {
-        searchField.textProperty().addListener((_, _, _) -> {
-            applyFiltersAndRender();
-        });
+        searchField.textProperty().addListener((_, _, _) -> applyFiltersAndRender());
 
         dateFromPicker.valueProperty().addListener((_, _, newVal) -> {
             dateFrom = newVal;
@@ -223,7 +220,6 @@ public class HistoryTab extends VBox {
 
     public void resetAndReload() {
         currentOffset = 0;
-        lastDate = null;
         allLoadedSessions.clear();
         sessionsContainer.getChildren().clear();
         lastSessionsContainer = null;
@@ -253,19 +249,17 @@ public class HistoryTab extends VBox {
             if (sessionDate == null || sessionDate.isAfter(dateTo)) return false;
         }
 
-        if (minRating > 0 && s.getRating() < minRating) return false;
-
-        return true;
+        return minRating <= 0 || s.getRating() >= minRating;
     }
 
     private List<Session> sortSessions(List<Session> sessions) {
         List<Session> sorted = new ArrayList<>(sessions);
         switch (currentSort) {
-            case "oldest" -> sorted.sort(Comparator.comparing((Session s) -> s.getStartDateTime()));
+            case "oldest" -> sorted.sort(Comparator.comparing(Session::getStartDateTime));
             case "longest" -> sorted.sort(Comparator.comparingInt(Session::getTotalMinutes).reversed());
             case "shortest" -> sorted.sort(Comparator.comparingInt(Session::getTotalMinutes));
             case "highest_rated" -> sorted.sort(Comparator.comparingInt(Session::getRating).reversed());
-            default -> sorted.sort(Comparator.comparing((Session s) -> s.getStartDateTime()).reversed());
+            default -> sorted.sort(Comparator.comparing(Session::getStartDateTime).reversed());
         }
         return sorted;
     }
@@ -278,7 +272,7 @@ public class HistoryTab extends VBox {
             grouped.computeIfAbsent(date, _ -> new ArrayList<>()).add(s);
         }
         for (List<Session> daySessions : grouped.values()) {
-            daySessions.sort(Comparator.comparing((Session s) -> s.getStartDateTime()));
+            daySessions.sort(Comparator.comparing(Session::getStartDateTime));
         }
         return grouped;
     }
@@ -305,7 +299,7 @@ public class HistoryTab extends VBox {
                 );
                 if (m.get("rating") != null) s.setRating(((Number) m.get("rating")).intValue());
                 return s;
-            }).collect(Collectors.toList());
+            }).toList();
 
             hasMoreData = newSessions.size() == PAGE_SIZE;
         } catch (Exception e) {
@@ -341,7 +335,6 @@ public class HistoryTab extends VBox {
     private void renderSessions(List<Session> filteredSessions) {
         sessionsContainer.getChildren().clear();
         lastSessionsContainer = null;
-        lastDate = null;
 
         LocalDate today = LocalDate.now();
 
@@ -436,7 +429,7 @@ public class HistoryTab extends VBox {
 
         String start = s.getStartDate().substring(11, 16);
         String end = s.getEndDate().substring(11, 16);
-        Label timeRange = new Label(start + " \u2014 " + end);
+        Label timeRange = new Label(start + " — " + end);
         timeRange.getStyleClass().add("timeline-card-time");
 
         Label duration = new Label(s.getTotalMinutes() + "m");

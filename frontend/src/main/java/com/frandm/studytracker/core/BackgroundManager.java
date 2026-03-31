@@ -84,7 +84,7 @@ public class BackgroundManager {
             URL url = getClass().getResource(VIDEOS_PATH);
             if (url != null) {
                 File folder = new File(url.toURI());
-                File[] files = folder.listFiles((dir, name) -> name.toLowerCase().endsWith(".mp4"));
+                File[] files = folder.listFiles((_, name) -> name.toLowerCase().endsWith(".mp4"));
                 if (files != null) {
                     Arrays.sort(files, Comparator.comparing(File::getName));
                     for (File f : files) {

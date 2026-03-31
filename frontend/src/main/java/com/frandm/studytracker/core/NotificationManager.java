@@ -86,7 +86,7 @@ public class NotificationManager {
 
         FadeTransition fadeOut = new FadeTransition(Duration.millis(300), toastRoot);
         fadeOut.setToValue(0);
-        fadeOut.setOnFinished(e -> {
+        fadeOut.setOnFinished(_ -> {
             container.getChildren().remove(toastRoot);
             updateContainerTransparency();
         });

@@ -38,20 +38,10 @@ public class TagEventBus {
         }
     }
 
-    public void unsubscribe(Listener listener) {
-        listeners.remove(listener);
-    }
-
     public void publish(Type type, Long tagId, String tagName) {
         TagEvent event = new TagEvent(type, tagId, tagName);
         for (Listener listener : listeners) {
             Platform.runLater(() -> listener.onTagChanged(event));
-        }
-    }
-
-    public void publishRefreshAll() {
-        for (Listener listener : listeners) {
-            Platform.runLater(() -> listener.onTagChanged(new TagEvent(Type.UPDATED, null, null)));
         }
     }
 
