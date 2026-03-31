@@ -15,6 +15,7 @@ import com.frandm.studytracker.ui.views.logs.LogsView;
 import com.frandm.studytracker.ui.views.planner.PlannerController;
 import javafx.application.Application;
 import javafx.application.Platform;
+import javafx.animation.Timeline;
 import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
 import javafx.geometry.Insets;
@@ -42,6 +43,7 @@ import java.util.*;
 
 public class PomodoroController {
 
+    public static final String PROJECT_VERSION = "v1.3.0";
     //region FXML - Componentes de Interfaz
     @FXML public GridPane mainContainer, setupPane, settingsPane, editSessionPane, summaryPane;
     @FXML public StackPane rootPane, setupBox, editSessionBox, summaryBox, stackpaneCircle,
@@ -67,18 +69,29 @@ public class PomodoroController {
     @FXML public ColumnConstraints colRightStats, colCenterStats, colLeftStats;
     @FXML public ScrollPane statsContainer;
     @FXML public MediaView backgroundVideoView;
-    @FXML public Region backgroundVideoOverlay;
+
+    @FXML public ToggleSwitch enableToastToggle;
+    @FXML public Slider notifDurationSlider;
+    @FXML public Label notifDurationLabel, appVersionLabel;
+    @FXML public FontIcon musicToggleIcon;
     //endregion
 
     private final PomodoroEngine engine = new PomodoroEngine();
     private final SetupManager setupManager = new SetupManager(this);
     private final UIManager uiManager = new UIManager();
+    @FXML
     public Label ModeSubnameLabel;
+    @FXML
     public Label ModeNameLabel;
+    @FXML
     public FontIcon timerIcon;
+    @FXML
     public Button minBtn;
+    @FXML
     public Button maxBtn;
+    @FXML
     public Button closeBtn;
+    @FXML
     public HBox titleBar;
 
 
@@ -106,6 +119,8 @@ public class PomodoroController {
     private Long tagToDelete = null;
 
     private BackgroundManager backgroundManager;
+    @FXML
+    private Region backgroundVideoOverlay;
 
     @FXML
     public void initialize() {
@@ -125,7 +140,7 @@ public class PomodoroController {
     }
 
     private void subscribeToTagEvents() {
-        TagEventBus.getInstance().subscribe(event -> {
+        TagEventBus.getInstance().subscribe(_ -> {
             refreshTagsAndTasksAsync();
         });
     }
@@ -136,9 +151,17 @@ public class PomodoroController {
         // setupGeneratorsDEVELOP();
         // -------------------------------------------
         ConfigManager.load(engine);
-        refreshDatabaseData();
         applyTheme();
         NotificationManager.init(notificationContainer);
+        NotificationManager.setEngine(engine);
+        new Thread(() -> {
+            refreshTagsAndTasks();
+            Platform.runLater(() -> {
+                if (statsDashboard != null) {
+                    statsDashboard.refresh();
+                }
+            });
+        }, "data-refresh-thread").start();
     }
 
     private void setupBackgroundVideo() {
@@ -182,7 +205,6 @@ public class PomodoroController {
 
         // dashboard
         statsDashboard = new StatsDashboardView(statsContainer);
-        //statsDashboard.refresh();
     }
 
     private void setupInitialUIState() {
@@ -231,7 +253,6 @@ public class PomodoroController {
                     floatingDockView.setSelectedSection(FloatingDockView.Section.PLANNER);
                     return;
                 }
-                //plannerController.refresh();
                 uiManager.switchPanels(activePanel, plannerContainer, direction);
             }
             case STATS -> {
@@ -240,7 +261,6 @@ public class PomodoroController {
                     return;
                 }
                 if (statsDashboard != null) {
-                    //statsDashboard.refresh();
                 }
                 uiManager.switchPanels(activePanel, statsContainer, direction);
             }
@@ -249,7 +269,6 @@ public class PomodoroController {
                     floatingDockView.setSelectedSection(FloatingDockView.Section.HISTORY);
                     return;
                 }
-                //logsView.resetAndReload();
                 uiManager.switchPanels(activePanel, historyContainer, direction);
             }
         }
@@ -267,7 +286,9 @@ public class PomodoroController {
         setupSlider(workSlider, workValLabel, engine.getWorkMins(), engine::setWorkMins, " min");
         setupSlider(shortSlider, shortValLabel, engine.getShortMins(), engine::setShortMins, " min");
         setupSlider(longSlider, longValLabel, engine.getLongMins(), engine::setLongMins, " min");
-        setupSlider(intervalSlider, intervalValLabel, engine.getInterval(), engine::setInterval, " min");
+        setupSlider(intervalSlider, intervalValLabel, engine.getInterval(), engine::setInterval, "");
+        setupSlider(countdownSlider, countdownValLabel, engine.getCountdownMins(), engine::setCountdownMins, " min");
+
         setupSlider(masterVolumeSlider, masterVolumeLabel, engine.getMasterVolume(), (newVolume) -> {
             engine.setMasterVolume(newVolume);
             SoundManager.updateMusicVolume();
@@ -278,18 +299,24 @@ public class PomodoroController {
             engine.setBackgroundMusicVolume(newVolume);
             SoundManager.updateMusicVolume();
         }, " %");
+
         setupSlider(widthSlider, widthSliderValLabel, engine.getWidthStats(), engine::setWidthStats, " %");
-        setupSlider(countdownSlider, countdownValLabel, engine.getCountdownMins(), engine::setCountdownMins, " min");
         setupSlider(circleSizeSlider, circleSizeValLabel, engine.getUiSize(), (newVal) -> {
             engine.setUiSize(newVal);
             SIZE_FACTOR = newVal * 0.05;
             resizeUI();
         }, " %");
+
+        setupSlider(notifDurationSlider, notifDurationLabel, engine.getNotificationDuration(), engine::setNotificationDuration, "s");
         SoundManager.setEngine(engine);
 
         autoBreakToggle.setSelected(engine.isAutoStartBreaks());
         autoPomoToggle.setSelected(engine.isAutoStartPomo());
         countBreakTime.setSelected(engine.isCountBreakTime());
+
+        if (enableToastToggle != null) enableToastToggle.setSelected(engine.isEnableToastNotifications());
+
+        if (appVersionLabel != null) appVersionLabel.setText(PROJECT_VERSION);
 
         colCenterStats.percentWidthProperty().bind(widthSlider.valueProperty());
         colLeftStats.percentWidthProperty().bind(widthSlider.valueProperty().multiply(-1).add(100).divide(2));
@@ -368,9 +395,6 @@ public class PomodoroController {
 
         double size = Math.min(width, height);
         double scaleFactor = size * SIZE_FACTOR;
-
-        //mainVbox.setScaleX(scaleFactor);
-        //mainVbox.setScaleY(scaleFactor);
 
         double scaleMain = scaleFactor / 500.0;
         double scaleButtons = scaleMain / (scaleFactor / 400.0);
@@ -480,7 +504,9 @@ public class PomodoroController {
                 (int)circleSizeSlider.getValue(),
                 engine.getCurrentMode(),
                 (int)countdownSlider.getValue(),
-                engine.getCurrentTheme()
+                engine.getCurrentTheme(),
+                (int)notifDurationSlider.getValue(),
+                enableToastToggle != null && enableToastToggle.isSelected()
         );
     }
     //endregion
@@ -579,6 +605,61 @@ public class PomodoroController {
 
         updateEngineSettings();
         ConfigManager.save(engine);
+    }
+
+    @FXML
+    private void handlePreviewAlarm() {
+        SoundManager.play(SoundManager.SoundType.ALARM);
+    }
+
+    @FXML
+    private void handlePreviewNotification() {
+        SoundManager.play(SoundManager.SoundType.NOTIFICATION);
+    }
+
+    @FXML
+    private void handleToggleMusic() {
+        SoundManager.toggleMusic(SoundManager.SoundType.BACKGROUND_MUSIC);
+        if (musicToggleIcon != null) {
+            String currentIcon = musicToggleIcon.getIconLiteral();
+            musicToggleIcon.setIconLiteral(currentIcon.contains("play") ? "mdi2p-pause-circle-outline" : "mdi2p-play-circle-outline");
+        }
+    }
+
+    @FXML
+    private void handleResetAllSettings() {
+        engine.resetToDefaults();
+
+        workSlider.setValue(engine.getWorkMins());
+        shortSlider.setValue(engine.getShortMins());
+        longSlider.setValue(engine.getLongMins());
+        intervalSlider.setValue(engine.getInterval());
+        countdownSlider.setValue(engine.getCountdownMins());
+
+        masterVolumeSlider.setValue(engine.getMasterVolume());
+        alarmVolumeSlider.setValue(engine.getAlarmVolume());
+        notificationVolumeSlider.setValue(engine.getNotificationVolume());
+        backgroundMusicVolumeSlider.setValue(engine.getBackgroundMusicVolume());
+
+        widthSlider.setValue(engine.getWidthStats());
+        circleSizeSlider.setValue(engine.getUiSize());
+        notifDurationSlider.setValue(engine.getNotificationDuration());
+
+        autoBreakToggle.setSelected(false);
+        autoPomoToggle.setSelected(false);
+        countBreakTime.setSelected(false);
+        if (enableToastToggle != null) enableToastToggle.setSelected(true);
+
+        pomoModeBtn.setSelected(true);
+        engine.setMode(PomodoroEngine.Mode.POMODORO);
+
+        engine.setCurrentTheme("primer-dark");
+        applyTheme();
+
+        updateEngineSettings();
+        SoundManager.updateMusicVolume();
+        ConfigManager.save(engine);
+        NotificationManager.show("Settings Reset", "All settings have been restored to defaults.", NotificationManager.NotificationType.INFO);
     }
 
     @FXML

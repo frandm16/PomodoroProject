@@ -164,6 +164,172 @@
     -fx-border-width: 0 0 3 0;
 }
 
+/* --- Settings Cards --- */
+.settings-card {
+    -fx-background-color: -color-bg-subtle;
+    -fx-background-radius: 14;
+    -fx-padding: 16 18;
+    -fx-spacing: 10;
+    -fx-border-color: -color-border-subtle-light;
+    -fx-border-radius: 14;
+    -fx-border-width: 1;
+}
+
+.settings-card-title {
+    -fx-font-size: 15px;
+    -fx-font-weight: bold;
+    -fx-text-fill: -text-dark;
+}
+
+.settings-field-label {
+    -fx-font-size: 12px;
+    -fx-font-weight: 600;
+    -fx-text-fill: -text-muted;
+}
+
+.settings-toggle-label {
+    -fx-font-size: 14px;
+    -fx-text-fill: -text-main;
+}
+
+.settings-card-separator .line {
+    -fx-border-color: -color-border-subtle-light;
+    -fx-border-width: 1 0 0 0;
+}
+
+/* --- Settings Stepper (Numeric Input + -) --- */
+.settings-stepper {
+    -fx-background-color: -bg-panels;
+    -fx-background-radius: 10;
+    -fx-border-color: -color-border-subtle-light;
+    -fx-border-radius: 10;
+    -fx-border-width: 1;
+    -fx-spacing: 0;
+}
+
+.settings-stepper-btn {
+    -fx-background-color: transparent;
+    -fx-text-fill: -text-muted;
+    -fx-font-size: 16px;
+    -fx-font-weight: bold;
+    -fx-min-width: 34;
+    -fx-min-height: 34;
+    -fx-background-radius: 0;
+    -fx-cursor: hand;
+    -fx-padding: 0;
+}
+
+.settings-stepper-btn:hover {
+    -fx-background-color: -color-hover;
+    -fx-text-fill: -text-main;
+}
+
+.settings-stepper-input {
+    -fx-background-color: transparent;
+    -fx-text-fill: -text-main;
+    -fx-font-size: 16px;
+    -fx-font-weight: bold;
+    -fx-border-width: 0;
+    -fx-padding: 6 2;
+    -fx-background-insets: 0;
+    -fx-prompt-text-fill: -text-muted;
+}
+
+.settings-stepper-input:focused {
+    -fx-background-color: transparent;
+    -fx-border-width: 0;
+}
+
+/* --- Settings Sound Volume Icons --- */
+.settings-volume-icon {
+    -fx-icon-size: 18;
+    -fx-icon-color: -icon-subtle;
+}
+
+.settings-preview-btn {
+    -fx-background-color: transparent;
+    -fx-cursor: hand;
+    -fx-padding: 4;
+    -fx-background-radius: 50%;
+}
+
+.settings-preview-btn:hover {
+    -fx-background-color: -color-hover;
+}
+
+.settings-preview-icon {
+    -fx-icon-size: 20;
+    -fx-icon-color: -icon-subtle;
+}
+
+.settings-preview-btn:hover .settings-preview-icon {
+    -fx-icon-color: -color-accent;
+}
+
+/* --- Settings About Tab --- */
+.settings-about-icon {
+    -fx-icon-size: 48;
+    -fx-icon-color: -color-accent;
+}
+
+.settings-about-title {
+    -fx-font-size: 22px;
+    -fx-font-weight: bold;
+    -fx-text-fill: -text-dark;
+}
+
+.settings-about-version {
+    -fx-font-size: 14px;
+    -fx-text-fill: -text-muted;
+    -fx-font-weight: 600;
+}
+
+.settings-about-desc {
+    -fx-font-size: 13px;
+    -fx-text-fill: -text-muted;
+    -fx-line-spacing: 3;
+}
+
+/* --- Settings Danger Zone --- */
+.settings-card-danger {
+    -fx-background-color: rgba(255, 71, 87, 0.08);
+    -fx-background-radius: 14;
+    -fx-padding: 16 18;
+    -fx-spacing: 10;
+    -fx-border-color: rgba(255, 71, 87, 0.25);
+    -fx-border-radius: 14;
+    -fx-border-width: 1;
+}
+
+.settings-card-title-danger {
+    -fx-font-size: 15px;
+    -fx-font-weight: bold;
+    -fx-text-fill: -color-danger;
+}
+
+.settings-danger-desc {
+    -fx-font-size: 13px;
+    -fx-text-fill: -text-muted;
+}
+
+.settings-danger-btn {
+    -fx-background-color: transparent;
+    -fx-text-fill: -color-danger;
+    -fx-font-weight: bold;
+    -fx-font-size: 14px;
+    -fx-border-color: -color-danger;
+    -fx-border-radius: 10;
+    -fx-background-radius: 10;
+    -fx-padding: 10 16;
+    -fx-cursor: hand;
+}
+
+.settings-danger-btn:hover {
+    -fx-background-color: rgba(255, 71, 87, 0.12);
+    -fx-border-color: -color-danger-hover;
+    -fx-text-fill: -color-danger-hover;
+}
+
 /* endregion */
 /* region --- dashboard --- */
 .dashboard-scroll {

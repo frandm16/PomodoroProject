@@ -10,7 +10,6 @@ import javafx.util.Duration;
 import org.kordamp.ikonli.javafx.FontIcon;
 
 public class NotificationManager {
-    private static final Duration DISPLAY_TIME = Duration.seconds(4);
     private static final int MAX_NOTIFICATIONS = 5;
 
     public enum NotificationType {
@@ -35,14 +34,22 @@ public class NotificationManager {
     }
 
     private static VBox container;
-
+    private static PomodoroEngine engine;
 
     public static void init(VBox notificationVBox) {
         container = notificationVBox;
     }
 
+    public static void setEngine(PomodoroEngine engineInstance) {
+        engine = engineInstance;
+    }
+
     public static void show(String title, String message, NotificationType type) {
         if (container == null) return;
+        if (engine != null && !engine.isEnableToastNotifications()) return;
+
+        int durationSeconds = (engine != null) ? engine.getNotificationDuration() : 4;
+        Duration displayTime = Duration.seconds(durationSeconds);
 
         VBox toastRoot = new VBox();
         toastRoot.getStyleClass().addAll("notification-toast");
@@ -92,10 +99,10 @@ public class NotificationManager {
 
         Timeline progressTimeline = new Timeline(
                 new KeyFrame(Duration.ZERO, new KeyValue(progressBar.scaleXProperty(), 1.0)),
-                new KeyFrame(DISPLAY_TIME, new KeyValue(progressBar.scaleXProperty(), 0.0))
+                new KeyFrame(displayTime, new KeyValue(progressBar.scaleXProperty(), 0.0))
         );
 
-        PauseTransition delay = new PauseTransition(DISPLAY_TIME);
+        PauseTransition delay = new PauseTransition(displayTime);
         delay.setOnFinished(_ -> fadeOut.play());
 
         if(container.getChildren().size() >= MAX_NOTIFICATIONS){
@@ -104,7 +111,10 @@ public class NotificationManager {
 
         container.getChildren().addFirst(toastRoot);
         updateContainerTransparency();
+
         SoundManager.play(SoundManager.SoundType.NOTIFICATION);
+
+
         slideIn.play();
         progressTimeline.play();
         delay.play();

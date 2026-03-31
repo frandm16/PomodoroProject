@@ -42,6 +42,8 @@ public class ConfigManager {
         props.setProperty("countdownMins", String.valueOf(engine.getCountdownMins()));
         props.setProperty("theme", String.valueOf(engine.getCurrentTheme()));
         props.setProperty("backgroundVideoSource", String.valueOf(engine.getBackgroundVideoSource()));
+        props.setProperty("notificationDuration", String.valueOf(engine.getNotificationDuration()));
+        props.setProperty("enableToastNotifications", String.valueOf(engine.isEnableToastNotifications()));
 
 
         File configFile = getConfigFile();
@@ -80,7 +82,9 @@ public class ConfigManager {
                     Integer.parseInt(props.getProperty("uiSizeFactor", String.valueOf(engine.getUiSize()))),
                     PomodoroEngine.Mode.valueOf(props.getProperty("currentMode", String.valueOf(engine.getCurrentMode()))),
                     Integer.parseInt(props.getProperty("countdownMins", String.valueOf(engine.getCountdownMins()))),
-                    props.getProperty("theme", String.valueOf(engine.getCurrentTheme()))
+                    props.getProperty("theme", String.valueOf(engine.getCurrentTheme())),
+                    Integer.parseInt(props.getProperty("notificationDuration", String.valueOf(engine.getNotificationDuration()))),
+                    Boolean.parseBoolean(props.getProperty("enableToastNotifications", String.valueOf(engine.isEnableToastNotifications())))
             );
             engine.setBackgroundVideoSource(props.getProperty("backgroundVideoSource", engine.getBackgroundVideoSource()));
         } catch (IOException | NumberFormatException e) {

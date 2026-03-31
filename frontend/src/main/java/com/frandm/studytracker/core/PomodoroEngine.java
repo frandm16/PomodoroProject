@@ -43,6 +43,9 @@ public class PomodoroEngine {
     private int widthStats = 50;
     private int uiSize = 55;
 
+    private int notificationDuration = 4;
+    private boolean enableToastNotifications = true;
+
     private Runnable onTick;
     private Runnable onStateChange;
     private Runnable onTimerFinished;
@@ -97,7 +100,7 @@ public class PomodoroEngine {
         if (onTick != null) onTick.run();
         if (onStateChange != null) onStateChange.run();
     }
-    public void updateSettings(int w, int s, int l, int i, boolean aBreak, boolean aPomo, boolean cBreak, int masterVolume, int alarmVolume, int notificationVolume, int backgroundMusicVolume, int inWidthStats, int uiSize, Mode mode, int countdownMins, String currentTheme) {
+    public void updateSettings(int w, int s, int l, int i, boolean aBreak, boolean aPomo, boolean cBreak, int masterVolume, int alarmVolume, int notificationVolume, int backgroundMusicVolume, int inWidthStats, int uiSize, Mode mode, int countdownMins, String currentTheme, int notificationDuration, boolean enableToastNotifications) {
         this.workMins = w;
         this.shortMins = s;
         this.longMins = l;
@@ -115,6 +118,9 @@ public class PomodoroEngine {
         this.backgroundMusicVolume = backgroundMusicVolume;
 
         this.currentTheme = currentTheme;
+
+        this.notificationDuration = notificationDuration;
+        this.enableToastNotifications = enableToastNotifications;
 
         if (currentState == State.MENU) {
             setMode(mode);
@@ -192,6 +198,16 @@ public class PomodoroEngine {
         this.autoStartBreaks = false;
         this.autoStartPomodoros = false;
         this.countBreakTime = false;
+        this.notificationDuration = 4;
+        this.enableToastNotifications = true;
+        this.masterVolume = 100;
+        this.alarmVolume = 100;
+        this.notificationVolume = 100;
+        this.backgroundMusicVolume = 100;
+        this.widthStats = 50;
+        this.uiSize = 55;
+        this.CountdownMins = 10;
+        this.currentTheme = "primer-dark";
     }
     //endregion
 
@@ -243,13 +259,14 @@ public class PomodoroEngine {
     public void setNotificationVolume(int notificationVolume) {this.notificationVolume = notificationVolume;}
     public void setBackgroundMusicVolume(int backgroundMusicVolume) {this.backgroundMusicVolume = backgroundMusicVolume;}
     public void setBackgroundVideoSource(String backgroundVideoSource) { this.backgroundVideoSource = backgroundVideoSource; }
+    public void setNotificationDuration(int v) { this.notificationDuration = v; }
+    public void setEnableToastNotifications(boolean v) { this.enableToastNotifications = v; }
     //endregion
 
     //region Getters
     public String getFormattedTime() {
         return String.format("%02d:%02d", secondsRemaining / 60, secondsRemaining % 60);}
     public State getCurrentState() { return currentState; }
-    //public State getLastActiveState() { return lastActiveState; }
     public int getSessionCounter() {return sessionCounter;}
     public State getLogicalState() {
         if (currentState == State.WAITING) {
@@ -281,9 +298,6 @@ public class PomodoroEngine {
             default -> workMins * 60;
         };
     }
-    public int getTotalSecondsActive() {
-        return totalSecondsInActiveSession > 0 ? totalSecondsInActiveSession : getTotalSecondsForCurrentState();
-    }
     public int getSecondsRemaining() {
         return secondsRemaining;
     }
@@ -299,5 +313,8 @@ public class PomodoroEngine {
     public int getAlarmVolume() {return alarmVolume;}
     public int getNotificationVolume() {return notificationVolume;}
     public int getBackgroundMusicVolume() {return backgroundMusicVolume;}
+
+    public int getNotificationDuration() { return notificationDuration; }
+    public boolean isEnableToastNotifications() { return enableToastNotifications; }
     //endregion
 }
