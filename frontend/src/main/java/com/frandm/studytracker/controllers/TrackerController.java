@@ -143,13 +143,16 @@ public class TrackerController {
     }
 
     private void subscribeToTagEvents() {
-        TagEventBus.getInstance().subscribe(_ -> refreshTagsAndTasksAsync());
+        TagEventBus.getInstance().subscribe(_ -> {
+            refreshTagsAndTasksAsync();
+            Platform.runLater(this::refreshSideMenu);
+        });
     }
 
     //region initialize
     private void initializeCoreSystems() {
         // ---------------- TEST ---------------------
-        // setupGeneratorsDEVELOP();
+         setupGeneratorsDEVELOP();
         // -------------------------------------------
         ConfigManager.load(engine);
         appearanceManager.bindRoot(rootPane);
@@ -448,7 +451,13 @@ public class TrackerController {
 
     //region data
     public void refreshDatabaseData() {
-        refreshTagsAndTasks();
+        refreshTagsAndTasksAsync();
+        if (plannerController != null) {
+            plannerController.refresh();
+        }
+        if (logsView != null && logsView.getLogsController() != null) {
+            logsView.getLogsController().refreshAll();
+        }
         if (statsDashboard != null) {
             statsDashboard.refresh();
         }
@@ -1426,6 +1435,7 @@ public class TrackerController {
                         if (wasSelectedTag) {
                             resetFullApp();
                         }
+                        refreshDatabaseData();
                         NotificationManager.show("Tag Deleted", "Success", NotificationManager.NotificationType.SUCCESS);
                     });
                 } catch (Exception e) {
