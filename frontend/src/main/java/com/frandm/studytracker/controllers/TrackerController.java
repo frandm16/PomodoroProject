@@ -152,7 +152,7 @@ public class TrackerController {
     //region initialize
     private void initializeCoreSystems() {
         // ---------------- TEST ---------------------
-         setupGeneratorsDEVELOP();
+        // setupGeneratorsDEVELOP();
         // -------------------------------------------
         ConfigManager.load(engine);
         appearanceManager.bindRoot(rootPane);
@@ -282,6 +282,20 @@ public class TrackerController {
         if (getActivePanel() == plannerContainer) return;
         if (floatingDockView != null) {
             floatingDockView.triggerSection(FloatingDockView.Section.PLANNER);
+        }
+    }
+
+    public void openStatsPanel() {
+        if (getActivePanel() == statsContainer) return;
+        if (floatingDockView != null) {
+            floatingDockView.triggerSection(FloatingDockView.Section.STATS);
+        }
+    }
+
+    public void openHistoryPanel() {
+        if (getActivePanel() == historyContainer) return;
+        if (floatingDockView != null) {
+            floatingDockView.triggerSection(FloatingDockView.Section.HISTORY);
         }
     }
 

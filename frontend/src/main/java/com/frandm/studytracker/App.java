@@ -97,7 +97,13 @@ public class App extends Application {
         if (controller != null) {
             controller.setShortcutManager(shortcutManager);
             controller.setFullscreenToggleAction(() -> finalStage.setFullScreen(!finalStage.isFullScreen()));
-            shortcutManager.setActionHandler("toggle_start_pause", controller::toggleStartPauseAction);
+            shortcutManager.setActionHandler("open_timer_tab", controller::switchToTimer);
+            shortcutManager.setActionHandler("open_planner_tab", controller::openPlannerPanel);
+            shortcutManager.setActionHandler("open_stats_tab", controller::openStatsPanel);
+            shortcutManager.setActionHandler("open_history_tab", controller::openHistoryPanel);
+            shortcutManager.setActionHandler(
+                    "toggle_start_pause", controller::switchToTimer, () -> Platform.runLater(controller::toggleStartPauseAction)
+            );
             shortcutManager.setActionHandler("skip_session", controller::triggerSkipAction);
             shortcutManager.setActionHandler("finish_session", controller::triggerFinishAction);
             shortcutManager.setActionHandler("toggle_settings", controller::toggleSettings);

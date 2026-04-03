@@ -1,5 +1,6 @@
 package com.frandm.studytracker.core;
 
+import javafx.animation.PauseTransition;
 import javafx.scene.Scene;
 import javafx.scene.control.Control;
 import javafx.scene.input.KeyCode;
@@ -19,6 +20,7 @@ import java.util.function.Consumer;
 import java.util.function.Supplier;
 
 public class ShortcutManager {
+    private static final int SHORTCUT_GUARD_MS = 180;
 
     public static final String MENU_ACTION_ID = "toggle_shortcut_menu";
     public static final String MENU_SHORTCUT_LABEL = "Open Shortcut Menu";
@@ -32,6 +34,10 @@ public class ShortcutManager {
 
     private static final List<ShortcutDefinition> DEFINITIONS = List.of(
             new ShortcutDefinition("toggle_shortcut_menu", "Open Shortcut Menu", combo(KeyCode.SLASH, false, false, false, false)),
+            new ShortcutDefinition("open_timer_tab", "Open Timer Tab", combo(KeyCode.DIGIT1, true, false, false, false)),
+            new ShortcutDefinition("open_planner_tab", "Open Planner Tab", combo(KeyCode.DIGIT2, true, false, false, false)),
+            new ShortcutDefinition("open_stats_tab", "Open Stats Tab", combo(KeyCode.DIGIT3, true, false, false, false)),
+            new ShortcutDefinition("open_history_tab", "Open Logs Tab", combo(KeyCode.DIGIT4, true, false, false, false)),
             new ShortcutDefinition("toggle_start_pause", "Start / Pause", combo(KeyCode.SPACE, false, false, false, false)),
             new ShortcutDefinition("skip_session", "Skip Session", combo(KeyCode.N, true, true, false, false)),
             new ShortcutDefinition("finish_session", "Finish Session", combo(KeyCode.F, true, true, false, false)),
@@ -51,11 +57,14 @@ public class ShortcutManager {
     private Scene scene;
     private String captureActionId;
     private Consumer<CaptureResult> captureCallback;
+    private boolean shortcutDispatchLocked;
+    private final PauseTransition shortcutGuard = new PauseTransition(javafx.util.Duration.millis(SHORTCUT_GUARD_MS));
 
     public ShortcutManager() {
         for (ShortcutDefinition definition : DEFINITIONS) {
             definitionsById.put(definition.id(), definition);
         }
+        shortcutGuard.setOnFinished(_ -> shortcutDispatchLocked = false);
         loadPersistedShortcuts();
     }
 
@@ -83,8 +92,19 @@ public class ShortcutManager {
         return formatCombination(combination);
     }
 
-    public void setActionHandler(String actionId, Runnable handler) {
-        actionHandlers.put(actionId, handler);
+    public void setActionHandler(String actionId, Runnable... handlers) {
+        if (handlers == null || handlers.length == 0) {
+            actionHandlers.remove(actionId);
+            return;
+        }
+
+        actionHandlers.put(actionId, () -> {
+            for (Runnable handler : handlers) {
+                if (handler != null) {
+                    handler.run();
+                }
+            }
+        });
     }
 
     public void triggerAction(String actionId) {
@@ -172,7 +192,12 @@ public class ShortcutManager {
             return;
         }
 
+        if (shortcutDispatchLocked) {
+            return;
+        }
+
         if (event.getCode() == KeyCode.ESCAPE && shortcutMenuVisibleSupplier.get()) {
+            lockShortcutDispatch();
             closeShortcutMenuAction.run();
             event.consume();
             return;
@@ -185,6 +210,7 @@ public class ShortcutManager {
         for (ShortcutDefinition definition : DEFINITIONS) {
             KeyCodeCombination combination = shortcutsById.get(definition.id());
             if (combination != null && combination.match(event)) {
+                lockShortcutDispatch();
                 triggerAction(definition.id());
                 event.consume();
                 return;
@@ -241,6 +267,11 @@ public class ShortcutManager {
             return false;
         }
         return scene.getFocusOwner() instanceof Control;
+    }
+
+    private void lockShortcutDispatch() {
+        shortcutDispatchLocked = true;
+        shortcutGuard.playFromStart();
     }
 
     private static KeyCodeCombination toCombination(KeyEvent event) {
