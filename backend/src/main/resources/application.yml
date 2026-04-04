@@ -21,4 +21,4 @@ spring:
     locations: classpath:db/migration
 
 server:
-  port: ${SERVER_PORT}
+  port: ${BACKEND_PRIVATE_PORT}
