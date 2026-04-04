@@ -880,6 +880,7 @@ public class StatsDashboardView {
     private ComboBox<String> createCombo() {
         ComboBox<String> combo = new ComboBox<>();
         combo.setMaxWidth(Double.MAX_VALUE);
+        combo.getStyleClass().add("filter-combobox");
         return combo;
     }
 

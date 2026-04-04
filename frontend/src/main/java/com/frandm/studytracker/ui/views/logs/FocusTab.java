@@ -40,6 +40,7 @@ public class FocusTab extends VBox {
         archiveFilterCombo.getItems().addAll("Active", "Archived", "Favorites", "All");
         archiveFilterCombo.setValue("Active");
         archiveFilterCombo.setMaxWidth(120);
+        archiveFilterCombo.getStyleClass().add("filter-button-logger");
         archiveFilterCombo.setOnAction(_ -> refreshFocusAreasGrid());
 
         Region spacer = new Region();

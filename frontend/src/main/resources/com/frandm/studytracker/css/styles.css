@@ -664,6 +664,7 @@
 }
 
 .dashboard-reset-button {
+    -fx-background-color: transparent;
     -fx-background-radius: 14;
     -fx-border-radius: 14;
     -fx-padding: 10 14;
@@ -681,7 +682,7 @@
 }
 
 .dashboard-date-picker {
-    -fx-background-color: -color-bg-subtle;
+    -fx-background-color: transparent;
     -fx-border-color: -color-border-subtle-light;
     -fx-border-radius: 10;
     -fx-background-radius: 10;
@@ -1711,7 +1712,6 @@
     -fx-padding: 8 0 18 0;
 }
 
-
 .detail-title-label {
     -fx-font-size: 25px;
     -fx-font-weight: bold;
@@ -2498,7 +2498,7 @@
 /* endregion */
 /* region --- combobox --- */
 .combo-box {
-    -fx-background-color: -color-bg-subtle;
+    -fx-background-color: transparent;
     -fx-background-radius: 10;
     -fx-border-color: -color-border-subtle-light;
     -fx-border-radius: 10;
@@ -2541,7 +2541,7 @@
 }
 
 .combo-box-popup .list-view {
-    -fx-background-color: -bg-panels;
+    -fx-background-color: -color-bg-default;
     -fx-background-radius: 10;
     -fx-border-color: -color-border-subtle;
     -fx-border-radius: 10;
@@ -2557,7 +2557,6 @@
 }
 
 .combo-box-popup .list-cell:hover {
-    -fx-background-color: -color-hover;
     -fx-text-fill: -text-main;
     -fx-cursor: hand;
 }
@@ -2929,7 +2928,7 @@
 }
 
 .daily-note-text {
-    -fx-background-color: -color-bg-subtle;
+    -fx-background-color: linear-gradient(from 0% 0% to 100% 100%, -bg-dashboard, -fg-dashboard);
     -fx-background-radius: 10;
     -fx-padding: 16 18;
     -fx-content-display: left;

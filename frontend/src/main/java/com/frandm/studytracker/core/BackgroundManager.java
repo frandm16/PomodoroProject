@@ -3,27 +3,44 @@ package com.frandm.studytracker.core;
 import javafx.scene.control.Button;
 import javafx.scene.control.ContentDisplay;
 import javafx.scene.control.Label;
+import javafx.scene.layout.Region;
 import javafx.scene.layout.VBox;
 import javafx.scene.media.Media;
 import javafx.scene.media.MediaPlayer;
 import javafx.scene.media.MediaView;
-import javafx.scene.layout.Region;
+
 import java.io.File;
+import java.io.InputStream;
 import java.net.URL;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Objects;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.nio.file.StandardCopyOption;
 
 public class BackgroundManager {
     public static final String BACKGROUND_NONE = "none";
-    private static final String VIDEOS_PATH = "/com/frandm/studytracker/videos/background/";
+    private static final String BUNDLED_VIDEOS_PATH = "/com/frandm/studytracker/videos/background/";
+    private static final String PRESET_PREFIX = "preset:";
+    private static final String BACKGROUNDS_DIR_NAME = "backgrounds";
+    private static final List<String> BUNDLED_BACKGROUND_FILES = List.of(
+            "192357-892475199_medium.mp4",
+            "343048_medium.mp4",
+            "91562-629172467_medium.mp4",
+            "Chimenea.mp4",
+            "Lluvia 1.mp4",
+            "Lluvia 2.mp4",
+            "Salon.mp4"
+    );
 
     private final MediaView backgroundVideoView;
     private final Region backgroundVideoOverlay;
     private final TrackerEngine engine;
     private MediaPlayer backgroundVideoPlayer;
+    private Path externalBackgroundsDir;
 
     public BackgroundManager(MediaView videoView, Region overlay, TrackerEngine engine) {
         this.backgroundVideoView = videoView;
@@ -78,20 +95,19 @@ public class BackgroundManager {
 
     public List<BackgroundOption> getDynamicPresets() {
         List<BackgroundOption> options = new ArrayList<>();
-        options.add(new BackgroundOption("No background", BACKGROUND_NONE));
+        options.add(new BackgroundOption("No background", BACKGROUND_NONE, true));
 
         try {
-            URL url = getClass().getResource(VIDEOS_PATH);
-            if (url != null) {
-                File folder = new File(url.toURI());
-                File[] files = folder.listFiles((_, name) -> name.toLowerCase().endsWith(".mp4"));
-                if (files != null) {
-                    Arrays.sort(files, Comparator.comparing(File::getName));
-                    for (File f : files) {
-                        String name = f.getName();
-                        String label = name.substring(0, name.lastIndexOf('.'));
-                        options.add(new BackgroundOption(label, "classpath:" + VIDEOS_PATH + name));
-                    }
+            Path folder = getExternalBackgroundsDir();
+            if (folder != null && Files.isDirectory(folder)) {
+                try (var files = Files.list(folder)) {
+                    files.filter(Files::isRegularFile)
+                            .filter(path -> path.getFileName().toString().toLowerCase().endsWith(".mp4"))
+                            .sorted(Comparator.comparing(path -> path.getFileName().toString().toLowerCase()))
+                            .forEach(path -> {
+                                String name = path.getFileName().toString();
+                                options.add(new BackgroundOption(getDisplayName(name), PRESET_PREFIX + name, true));
+                            });
                 }
             }
         } catch (Exception e) {
@@ -110,7 +126,7 @@ public class BackgroundManager {
         Label title = new Label(option.label());
         title.getStyleClass().add("background-option-title");
 
-        String metaText = option.source().startsWith("classpath:") ? "Preset" : "Custom file";
+        String metaText = option.isPreset() ? "Preset" : "Custom file";
         if (BACKGROUND_NONE.equals(option.source())) {
             metaText = "Solid app background";
         }
@@ -137,6 +153,10 @@ public class BackgroundManager {
         String normalized = normalizeSource(source);
         if (BACKGROUND_NONE.equals(normalized)) return "No background";
 
+        if (normalized.startsWith(PRESET_PREFIX)) {
+            return getDisplayName(normalized.substring(PRESET_PREFIX.length()));
+        }
+
         return getDynamicPresets().stream()
                 .filter(opt -> Objects.equals(opt.source(), normalized))
                 .map(BackgroundOption::label)
@@ -145,12 +165,41 @@ public class BackgroundManager {
     }
 
     private String normalizeSource(String source) {
-        return (source == null || source.isBlank()) ? BACKGROUND_NONE : source;
+        if (source == null || source.isBlank()) {
+            return BACKGROUND_NONE;
+        }
+
+        String trimmed = source.trim();
+        if (trimmed.startsWith("classpath:")) {
+            String fileName = trimmed.substring(trimmed.lastIndexOf('/') + 1);
+            if (BUNDLED_BACKGROUND_FILES.contains(fileName)) {
+                return PRESET_PREFIX + fileName;
+            }
+        }
+
+        return trimmed;
     }
 
     private URL resolveResource(String source) {
         if (BACKGROUND_NONE.equals(source)) return null;
+        if (source.startsWith(PRESET_PREFIX)) {
+            String fileName = source.substring(PRESET_PREFIX.length());
+            Path presetPath = getExternalBackgroundsDir().resolve(fileName);
+            try {
+                return Files.exists(presetPath) ? presetPath.toUri().toURL() : null;
+            } catch (Exception e) {
+                return null;
+            }
+        }
         if (source.startsWith("classpath:")) {
+            String fileName = source.substring(source.lastIndexOf('/') + 1);
+            Path presetPath = getExternalBackgroundsDir().resolve(fileName);
+            try {
+                if (Files.exists(presetPath)) {
+                    return presetPath.toUri().toURL();
+                }
+            } catch (Exception ignored) {
+            }
             return getClass().getResource(source.substring("classpath:".length()));
         }
         File file = new File(source);
@@ -167,5 +216,61 @@ public class BackgroundManager {
         }
     }
 
-    public record BackgroundOption(String label, String source) {}
+    private Path getExternalBackgroundsDir() {
+        if (externalBackgroundsDir != null) {
+            return externalBackgroundsDir;
+        }
+
+        Path appDir = resolveAppDirectory();
+        externalBackgroundsDir = appDir.resolve(BACKGROUNDS_DIR_NAME);
+
+        try {
+            Files.createDirectories(externalBackgroundsDir);
+            copyBundledBackgroundsIfMissing(externalBackgroundsDir);
+        } catch (Exception e) {
+            Logger.error("Error preparing external backgrounds directory", e);
+        }
+
+        return externalBackgroundsDir;
+    }
+
+    private void copyBundledBackgroundsIfMissing(Path targetDir) {
+        for (String fileName : BUNDLED_BACKGROUND_FILES) {
+            Path target = targetDir.resolve(fileName);
+            if (Files.exists(target)) {
+                continue;
+            }
+
+            try (InputStream input = getClass().getResourceAsStream(BUNDLED_VIDEOS_PATH + fileName)) {
+                if (input == null) {
+                    continue;
+                }
+                Files.copy(input, target, StandardCopyOption.REPLACE_EXISTING);
+            } catch (Exception e) {
+                Logger.error("Error copying bundled background: " + fileName, e);
+            }
+        }
+    }
+
+    private Path resolveAppDirectory() {
+        try {
+            Path location = Paths.get(BackgroundManager.class.getProtectionDomain().getCodeSource().getLocation().toURI());
+            if (Files.isDirectory(location)) {
+                Path parent = location.getParent();
+                return parent != null ? parent : location;
+            }
+            Path parent = location.getParent();
+            return parent != null ? parent : Paths.get(System.getProperty("user.dir"));
+        } catch (Exception e) {
+            Logger.error("Error resolving app directory", e);
+            return Paths.get(System.getProperty("user.dir"));
+        }
+    }
+
+    private String getDisplayName(String fileName) {
+        int dotIndex = fileName.lastIndexOf('.');
+        return dotIndex > 0 ? fileName.substring(0, dotIndex) : fileName;
+    }
+
+    public record BackgroundOption(String label, String source, boolean isPreset) {}
 }

@@ -229,6 +229,13 @@
                         <configuration>
                             <target>
                                 <delete dir="../dist/temp" failonerror="false"/>
+                                <delete dir="target/backgrounds" failonerror="false"/>
+                                <mkdir dir="target/backgrounds"/>
+                                <copy todir="target/backgrounds" overwrite="true">
+                                    <fileset dir="src/main/resources/com/frandm/studytracker/videos/background">
+                                        <include name="**/*.mp4"/>
+                                    </fileset>
+                                </copy>
                             </target>
                         </configuration>
                     </execution>
