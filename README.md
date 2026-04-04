@@ -94,16 +94,10 @@ cd backend
 mvn spring-boot:run
 ```
 
-Or with Docker Compose profiles:
+Or with Docker Compose:
 
 ```bash
-docker compose --profile full up -d
-```
-
-Use the backend-only profile when you already have PostgreSQL running elsewhere:
-
-```bash
-docker compose --profile backend-only up -d
+docker compose up -d
 ```
 
 ### Frontend
@@ -125,8 +119,8 @@ API_URL=http://localhost:8080/api
 Create a `.env` file at the project root:
 
 ```env
-BACKEND_PORT=8082
-BACKEND_HOST_PORT=8080
+BACKEND_PUBLIC_PORT=8080
+BACKEND_PRIVATE_PORT=8080
 DB_HOST=localhost
 DB_PORT=5432
 DB_NAME=studytracker
@@ -137,15 +131,10 @@ API_URL=http://localhost:8080/api
 
 Variable meaning:
 
-- `BACKEND_PORT`: port where Spring Boot listens inside the process and container.
-- `BACKEND_HOST_PORT`: port exposed on your machine by Docker Compose.
+- `BACKEND_PUBLIC_PORT`: port exposed on your machine by Docker Compose.
+- `BACKEND_PRIVATE_PORT`: port where Spring Boot listens inside the process and container.
 - `DB_HOST` / `DB_PORT`: PostgreSQL host and port used by the backend.
 - `API_URL`: base URL used by the frontend to reach the backend.
-
-Profile behavior:
-
-- `full`: starts `db` and `backend-full`; the backend is forced to use the internal Docker host `db:5432`.
-- `backend-only`: starts only `backend-only`; the backend uses `DB_HOST` and `DB_PORT` from `.env`.
 
 ---
 

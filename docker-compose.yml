@@ -2,7 +2,6 @@ services:
   db:
     image: postgres:16
     container_name: studytracker-db
-    profiles: ["full"]
     environment:
       POSTGRES_USER: ${DB_USER}
       POSTGRES_PASSWORD: ${DB_PASSWORD}
@@ -17,12 +16,9 @@ services:
       timeout: 5s
       retries: 5
 
-  backend-full:
-    build:
-      context: .
-      dockerfile: ./Dockerfile
+  backend:
+    image: ghcr.io/frandm16/studytracker-backend:v2.0.0
     container_name: studytracker-backend
-    profiles: ["full"]
     env_file:
       - .env
     environment:
@@ -35,17 +31,6 @@ services:
     depends_on:
       db:
         condition: service_healthy
-    ports:
-      - "${BACKEND_PUBLIC_PORT}:${BACKEND_PRIVATE_PORT}"
-
-  backend-only:
-    build:
-      context: .
-      dockerfile: ./Dockerfile
-    container_name: studytracker-backend
-    profiles: ["backend-only"]
-    env_file:
-      - .env
     ports:
       - "${BACKEND_PUBLIC_PORT}:${BACKEND_PRIVATE_PORT}"
 
