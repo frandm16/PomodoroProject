@@ -181,7 +181,7 @@
                             <goal>jpackage</goal>
                         </goals>
                         <configuration>
-                            <name>StudyTracker</name>
+                            <name>StudyZen</name>
                             <type>MSI</type>
                             <destination>${release.path}</destination>
                             <input>target</input>
@@ -190,7 +190,7 @@
                             <mainClass>com.frandm.studytracker.Launcher</mainClass>
                             <icon>src/main/resources/com/frandm/studytracker/images/SZlogo.ico</icon>
                             <vendor>Fran Dorado</vendor>
-                            <winMenuGroup>StudyTracker</winMenuGroup>
+                            <winMenuGroup>StudyZen</winMenuGroup>
                             <winDirChooser>true</winDirChooser>
                             <winShortcut>true</winShortcut>
                             <winMenu>true</winMenu>
@@ -203,7 +203,7 @@
                             <goal>jpackage</goal>
                         </goals>
                         <configuration>
-                            <name>StudyTracker-v${project.version}-Portable</name>
+                            <name>StudyZen-v${project.version}-Portable</name>
                             <type>APP_IMAGE</type>
                             <destination>${release.path}</destination>
                             <input>target</input>
@@ -246,10 +246,10 @@
                         </goals>
                         <configuration>
                             <target>
-                                <move file="${release.path}/StudyTracker-${project.version}.msi"
-                                      tofile="${release.path}/StudyTracker-v${project.version}-Setup.msi"/>
-                                <zip destfile="${release.path}/StudyTracker-v${project.version}-Portable.zip"
-                                     basedir="${release.path}/StudyTracker-v${project.version}-Portable"/>
+                                <move file="${release.path}/StudyZen-${project.version}.msi"
+                                      tofile="${release.path}/StudyZen-v${project.version}-Setup.msi"/>
+                                <zip destfile="${release.path}/StudyZen-v${project.version}-Portable.zip"
+                                     basedir="${release.path}/StudyZen-v${project.version}-Portable"/>
                             </target>
                         </configuration>
                     </execution>
