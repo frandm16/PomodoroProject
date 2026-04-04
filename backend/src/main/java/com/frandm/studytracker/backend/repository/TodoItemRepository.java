@@ -10,6 +10,4 @@ import java.util.List;
 public interface TodoItemRepository extends JpaRepository<TodoItem, Long> {
     List<TodoItem> findAllByOrderByIdAsc();
     List<TodoItem> findByDateOrderByIdAsc(LocalDate date);
-    List<TodoItem> findByTask_IdOrderByIdAsc(Long taskId);
-    List<TodoItem> findByTask_IdAndDateOrderByIdAsc(Long taskId, LocalDate date);
 }

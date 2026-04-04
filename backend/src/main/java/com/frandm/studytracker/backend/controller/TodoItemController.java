@@ -20,10 +20,8 @@ public class TodoItemController {
     }
 
     @GetMapping
-    public List<TodoItem> list(@RequestParam(required = false) Long taskId,
-                               @RequestParam(required = false) String date) {
+    public List<TodoItem> list(@RequestParam(required = false) String date) {
         return todoItemService.getFiltered(
-                taskId,
                 date != null && !date.isBlank() ? LocalDate.parse(date) : null
         );
     }
@@ -36,9 +34,6 @@ public class TodoItemController {
     @PostMapping
     public TodoItem create(@RequestBody Map<String, Object> body) {
         return todoItemService.create(
-                body.get("taskId") instanceof Number number ? number.longValue() : null,
-                (String) body.get("tagName"),
-                (String) body.get("taskName"),
                 LocalDate.parse((String) body.get("date")),
                 (String) body.get("text")
         );
@@ -48,9 +43,6 @@ public class TodoItemController {
     public TodoItem update(@PathVariable Long id, @RequestBody Map<String, Object> body) {
         return todoItemService.fullUpdate(
                 id,
-                body.get("taskId") instanceof Number number ? number.longValue() : null,
-                (String) body.get("tagName"),
-                (String) body.get("taskName"),
                 body.get("date") != null ? LocalDate.parse((String) body.get("date")) : null,
                 (String) body.get("text"),
                 (Boolean) body.get("completed")
@@ -58,13 +50,12 @@ public class TodoItemController {
     }
 
     @PatchMapping("/{id}")
-    public ResponseEntity<Void> patch(@PathVariable Long id, @RequestBody Map<String, Object> body) {
-        todoItemService.partialUpdate(
+    public TodoItem patch(@PathVariable Long id, @RequestBody Map<String, Object> body) {
+        return todoItemService.partialUpdate(
                 id,
                 (String) body.get("text"),
                 (Boolean) body.get("completed")
         );
-        return ResponseEntity.ok().build();
     }
 
     @DeleteMapping("/{id}")

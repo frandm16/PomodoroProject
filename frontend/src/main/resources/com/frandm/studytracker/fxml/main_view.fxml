@@ -165,400 +165,138 @@
     </HBox>
 
 
-    <GridPane fx:id="settingsPane" visible="false" managed="false" maxHeight="Infinity" maxWidth="Infinity">
+
+
+
+    <GridPane fx:id="welcomeGuidePane" visible="false" managed="false" maxHeight="Infinity" maxWidth="Infinity">
+        <columnConstraints>
+            <ColumnConstraints percentWidth="23" />
+            <ColumnConstraints percentWidth="54" />
+            <ColumnConstraints percentWidth="23" />
+        </columnConstraints>
+        <rowConstraints>
+            <RowConstraints percentHeight="16" />
+            <RowConstraints percentHeight="68" />
+            <RowConstraints percentHeight="16" />
+        </rowConstraints>
+        <Region styleClass="welcome-guide-overlay" GridPane.columnSpan="3" GridPane.rowSpan="3">
+            <effect><GaussianBlur radius="15" /></effect>
+        </Region>
+        <StackPane fx:id="welcomeGuideBox" GridPane.columnIndex="1" GridPane.rowIndex="1">
+            <VBox spacing="20" styleClass="welcome-guide-card" maxWidth="760">
+                <Label fx:id="welcomeGuideProgressLabel" text="Step 1 of 4" styleClass="welcome-guide-progress"/>
+                <HBox alignment="CENTER_LEFT" spacing="16">
+                    <StackPane styleClass="welcome-guide-icon-shell">
+                        <FontIcon fx:id="welcomeGuideFeatureIconOne" iconLiteral="mdi2c-compass-outline" styleClass="welcome-guide-icon"/>
+                    </StackPane>
+                    <VBox spacing="6">
+                        <Label fx:id="welcomeGuideTitleLabel" text="Welcome To StudyZen" styleClass="welcome-guide-title" />
+                        <Label fx:id="welcomeGuideSubtitleLabel" text="A personal study tracker for planning your weeks, logging focus sessions and reviewing your progress with your own self-hosted backend."
+                               wrapText="true" styleClass="welcome-guide-subtitle"/>
+                    </VBox>
+                </HBox>
+
+                <HBox spacing="18" styleClass="welcome-guide-feature-grid">
+                    <VBox spacing="10" HBox.hgrow="ALWAYS" styleClass="welcome-guide-feature-card">
+                        <FontIcon iconLiteral="mdi2t-timer-outline" styleClass="welcome-guide-feature-icon"/>
+                        <Label fx:id="welcomeFeatureTitleOne" text="Track" styleClass="welcome-guide-feature-title"/>
+                        <Label fx:id="welcomeFeatureCopyOne" text="Run focused sessions, rate them and build a reliable personal study history." wrapText="true"
+                               styleClass="welcome-guide-feature-copy"/>
+                    </VBox>
+                    <VBox spacing="10" HBox.hgrow="ALWAYS" styleClass="welcome-guide-feature-card">
+                        <FontIcon fx:id="welcomeGuideFeatureIconTwo" iconLiteral="mdi2c-calendar-month-outline" styleClass="welcome-guide-feature-icon"/>
+                        <Label fx:id="welcomeFeatureTitleTwo" text="Plan" styleClass="welcome-guide-feature-title"/>
+                        <Label fx:id="welcomeFeatureCopyTwo" text="Organize deadlines, todos and scheduled study blocks from one place." wrapText="true"
+                               styleClass="welcome-guide-feature-copy"/>
+                    </VBox>
+                    <VBox spacing="10" HBox.hgrow="ALWAYS" styleClass="welcome-guide-feature-card">
+                        <FontIcon fx:id="welcomeGuideFeatureIconThree" iconLiteral="mdi2c-chart-line" styleClass="welcome-guide-feature-icon"/>
+                        <Label fx:id="welcomeFeatureTitleThree" text="Review" styleClass="welcome-guide-feature-title"/>
+                        <Label fx:id="welcomeFeatureCopyThree" text="Inspect your patterns with stats, logs and weekly views to improve consistency." wrapText="true"
+                               styleClass="welcome-guide-feature-copy"/>
+                    </VBox>
+                </HBox>
+
+                <VBox spacing="10" styleClass="welcome-guide-tip-card">
+                    <Label fx:id="welcomeGuideTipTitleLabel" text="Before you start" styleClass="welcome-guide-tip-title"/>
+                    <Label fx:id="welcomeGuideTipCopyLabel" text="StudyZen works with your own backend. After this short intro, you'll set the server URL and the app will remember it for future launches."
+                           wrapText="true" styleClass="welcome-guide-tip-copy"/>
+                </VBox>
+
+                <HBox spacing="12" alignment="CENTER_LEFT">
+                    <Button text="Skip" onAction="#handleSkipWelcomeGuide" styleClass="button-secondary, welcome-guide-secondary-btn"/>
+                    <Button fx:id="welcomeGuideBackButton" text="Back" onAction="#handleBackWelcomeGuide" managed="false" visible="false" styleClass="button-secondary, welcome-guide-secondary-btn"/>
+                    <Region HBox.hgrow="ALWAYS" />
+                    <Button fx:id="welcomeGuideContinueButton" text="Continue" onAction="#handleContinueWelcomeGuide" styleClass="button-main, welcome-guide-primary-btn"/>
+                </HBox>
+            </VBox>
+        </StackPane>
+    </GridPane>
+
+    <GridPane fx:id="connectionSetupPane" visible="false" managed="false" maxHeight="Infinity" maxWidth="Infinity">
         <columnConstraints>
             <ColumnConstraints percentWidth="25" />
             <ColumnConstraints percentWidth="50" />
             <ColumnConstraints percentWidth="25" />
         </columnConstraints>
         <rowConstraints>
-            <RowConstraints percentHeight="8" />
-            <RowConstraints percentHeight="84" />
-            <RowConstraints percentHeight="8" />
+            <RowConstraints percentHeight="20" />
+            <RowConstraints percentHeight="60" />
+            <RowConstraints percentHeight="20" />
         </rowConstraints>
-
-        <Region onMouseClicked="#toggleSettings" style="-fx-background-color: rgba(0,0,0,0.5);" GridPane.columnSpan="3" GridPane.rowSpan="3">
+        <Region styleClass="connection-setup-overlay" GridPane.columnSpan="3" GridPane.rowSpan="3">
             <effect><GaussianBlur radius="15" /></effect>
         </Region>
+        <StackPane fx:id="connectionSetupBox" GridPane.columnIndex="1" GridPane.rowIndex="1">
+            <VBox spacing="20" styleClass="connection-setup-card" maxWidth="700">
+                <HBox alignment="CENTER_LEFT" spacing="16">
+                    <StackPane styleClass="connection-setup-icon-shell">
+                        <FontIcon iconLiteral="mdi2s-server-network-outline" styleClass="connection-setup-icon"/>
+                    </StackPane>
+                    <VBox spacing="6">
+                        <Label text="Connect Your StudyZen Backend" styleClass="connection-setup-title" />
+                        <Label text="Set the server URL once and the app will remember it for future launches."
+                               wrapText="true" styleClass="connection-setup-subtitle"/>
+                    </VBox>
+                </HBox>
 
-        <VBox fx:id="settingsBox" GridPane.columnIndex="1" GridPane.rowIndex="1" styleClass="settings-sidebar">
-
-            <HBox alignment="CENTER_LEFT" style="-fx-padding: 18 25 12 25;">
-                <Label text="SETTINGS" styleClass="sidebar-title" />
-                <Region HBox.hgrow="ALWAYS" />
-                <Button onAction="#toggleSettings" text="✕" styleClass="close-button" />
-            </HBox>
-            <Separator />
-
-            <TabPane VBox.vgrow="ALWAYS" tabClosingPolicy="UNAVAILABLE" styleClass="settings-tabpane">
-                <Tab text="General">
-                    <ScrollPane fitToWidth="true">
-                        <VBox spacing="25" style="-fx-padding: 25;">
-
-                            <VBox spacing="10">
-                                <Label text="Mode Selector" styleClass="section-label" />
-                                <HBox styleClass="segmented-button" alignment="CENTER" maxWidth="-Infinity">
-                                    <ToggleButton fx:id="pomoModeBtn" text="Pomodoro" styleClass="left-pill" />
-                                    <ToggleButton fx:id="timerModeBtn" text="Timer" />
-                                    <ToggleButton fx:id="countdownModeBtn" text="Countdown" styleClass="right-pill" />
-                                </HBox>
-                            </VBox>
-
-                            <VBox fx:id="pomoSettingsPane" spacing="25" visible="false" managed="false">
-                                <HBox alignment="CENTER_LEFT">
-                                    <Label text="Time (minutes)" styleClass="section-label"/>
-                                    <Region HBox.hgrow="ALWAYS"/>
-                                    <Button onAction="#handleResetTimeSettings" text="Reset" styleClass="reset-button"/>
-                                </HBox>
-                                <VBox spacing="8">
-                                    <HBox alignment="CENTER_LEFT">
-                                        <Label text="Pomodoro"/>
-                                        <Region HBox.hgrow="ALWAYS"/>
-                                        <Label fx:id="workValLabel" text="25" styleClass="val-label"/>
-                                    </HBox>
-                                    <Slider fx:id="workSlider" min="1" max="180"/>
-                                </VBox>
-                                <VBox spacing="8">
-                                    <HBox alignment="CENTER_LEFT">
-                                        <Label text="Short Break"/>
-                                        <Region HBox.hgrow="ALWAYS"/>
-                                        <Label fx:id="shortValLabel" text="5" styleClass="val-label"/>
-                                    </HBox>
-                                    <Slider fx:id="shortSlider" min="1" max="25"/>
-                                </VBox>
-                                <VBox spacing="8">
-                                    <HBox alignment="CENTER_LEFT">
-                                        <Label text="Long Break"/>
-                                        <Region HBox.hgrow="ALWAYS"/>
-                                        <Label fx:id="longValLabel" text="15" styleClass="val-label"/>
-                                    </HBox>
-                                    <Slider fx:id="longSlider" min="1" max="50"/>
-                                </VBox>
-                                <VBox spacing="8">
-                                    <HBox alignment="CENTER_LEFT">
-                                        <Label text="Long Break Interval"/>
-                                        <Region HBox.hgrow="ALWAYS"/>
-                                        <Label fx:id="intervalValLabel" text="4" styleClass="val-label"/>
-                                    </HBox>
-                                    <Slider fx:id="intervalSlider" min="1" max="20"/>
-                                </VBox>
-                                <VBox spacing="15">
-                                    <HBox alignment="CENTER_LEFT">
-                                        <Label text="Auto Start Breaks" HBox.hgrow="ALWAYS" maxWidth="Infinity"/>
-                                        <ToggleSwitch fx:id="autoBreakToggle" styleClass="toggle-switch"/>
-                                    </HBox>
-                                    <HBox alignment="CENTER_LEFT">
-                                        <Label text="Auto Start Pomodoros" HBox.hgrow="ALWAYS" maxWidth="Infinity"/>
-                                        <ToggleSwitch fx:id="autoPomoToggle" styleClass="toggle-switch"/>
-                                    </HBox>
-                                    <HBox alignment="CENTER_LEFT">
-                                        <Label text="Count Break Time" HBox.hgrow="ALWAYS" maxWidth="Infinity"/>
-                                        <ToggleSwitch fx:id="countBreakTime" styleClass="toggle-switch"/>
-                                    </HBox>
-                                </VBox>
-
-                            </VBox>
-                            <VBox fx:id="countdownSettingsPane" spacing="25" visible="false" managed="false">
-                                <VBox spacing="5">
-                                    <HBox alignment="CENTER_LEFT">
-                                        <Label text="Countdown Timer" />
-                                        <Pane HBox.hgrow="ALWAYS" />
-                                        <Label fx:id="countdownValLabel" text="10" styleClass="val-label" />
-                                    </HBox>
-                                    <Slider fx:id="countdownSlider" min="1" max="180" />
-                                </VBox>
-                            </VBox>
+                <HBox spacing="18" styleClass="connection-setup-body">
+                    <VBox spacing="14" prefWidth="220" styleClass="connection-setup-side">
+                        <Label text="Quick Start" styleClass="connection-setup-side-title"/>
+                        <VBox spacing="10" styleClass="connection-setup-step">
+                            <Label text="1" styleClass="connection-step-badge"/>
+                            <Label text="Start your backend with Docker Compose." wrapText="true" styleClass="connection-step-text"/>
                         </VBox>
-                    </ScrollPane>
-                </Tab>
-                <Tab text="Appearance">
-                    <ScrollPane fitToWidth="true">
-                        <VBox spacing="16" style="-fx-padding: 22 25 22 25;">
-
-                            <VBox spacing="14" styleClass="settings-card">
-                                <Label text="UI Customization" styleClass="settings-card-title"/>
-                                <VBox spacing="8">
-                                    <HBox alignment="CENTER_LEFT">
-                                        <Label text="Stats Width"/>
-                                        <Region HBox.hgrow="ALWAYS"/>
-                                        <Label fx:id="widthSliderValLabel" text="50%" styleClass="val-label"/>
-                                    </HBox>
-                                    <Slider fx:id="widthSlider" min="25" value="50"/>
-                                </VBox>
-                                <VBox spacing="8">
-                                    <HBox alignment="CENTER_LEFT">
-                                        <Label text="UI Scale"/>
-                                        <Region HBox.hgrow="ALWAYS"/>
-                                        <Label fx:id="circleSizeValLabel" text="25" styleClass="val-label"/>
-                                    </HBox>
-                                    <Slider fx:id="circleSizeSlider" min="30" max="75" value="50"/>
-                                </VBox>
-                            </VBox>
-
-                            <VBox spacing="14" styleClass="settings-card">
-                                <Label text="Theme" styleClass="settings-card-title"/>
-                                <VBox spacing="10" fx:id="themeButtonsContainer">
-                                    <HBox spacing="10" alignment="CENTER_LEFT">
-                                        <Button onAction="#handleThemeChange" userData="primer-dark" styleClass="theme-btn">
-                                            <graphic>
-                                                <VBox spacing="6" alignment="CENTER">
-                                                    <HBox spacing="8" alignment="CENTER">
-                                                        <Circle radius="8" fill="#172640"/>
-                                                        <Circle radius="8" fill="#0f2a29"/>
-                                                        <Circle radius="8" fill="#7aefa7"/>
-                                                        <Circle radius="8" fill="#132246"/>
-                                                        <Circle radius="8" fill="#8dc3fd"/>
-                                                    </HBox>
-                                                    <Label text="Dark" styleClass="theme-btn-label"/>
-                                                </VBox>
-                                            </graphic>
-                                        </Button>
-                                        <Button onAction="#handleThemeChange" userData="primer-light" styleClass="theme-btn">
-                                            <graphic>
-                                                <VBox spacing="6" alignment="CENTER">
-                                                    <HBox spacing="8" alignment="CENTER">
-                                                        <Circle radius="8" fill="#f8f9fa"/>
-                                                        <Circle radius="8" fill="#dcfce7"/>
-                                                        <Circle radius="8" fill="#166534"/>
-                                                        <Circle radius="8" fill="#dbeafe"/>
-                                                        <Circle radius="8" fill="#1e40af"/>
-                                                    </HBox>
-                                                    <Label text="Light" styleClass="theme-btn-label"/>
-                                                </VBox>
-                                            </graphic>
-                                        </Button>
-                                        <Button onAction="#handleThemeChange" userData="primer-electric-blue" styleClass="theme-btn">
-                                            <graphic>
-                                                <VBox spacing="6" alignment="CENTER">
-                                                    <HBox spacing="8" alignment="CENTER">
-                                                        <Circle radius="8" fill="#000d1f"/>
-                                                        <Circle radius="8" fill="#002a3a"/>
-                                                        <Circle radius="8" fill="#00e5ff"/>
-                                                        <Circle radius="8" fill="#001a4a"/>
-                                                        <Circle radius="8" fill="#60a0ff"/>
-                                                    </HBox>
-                                                    <Label text="Electric" styleClass="theme-btn-label"/>
-                                                </VBox>
-                                            </graphic>
-                                        </Button>
-                                    </HBox>
-                                    <HBox spacing="10" alignment="CENTER_LEFT">
-                                        <Button onAction="#handleThemeChange" userData="primer-cappuccino" styleClass="theme-btn">
-                                            <graphic>
-                                                <VBox spacing="6" alignment="CENTER">
-                                                    <HBox spacing="8" alignment="CENTER">
-                                                        <Circle radius="8" fill="#1e1e2e"/>
-                                                        <Circle radius="8" fill="#1e3a2a"/>
-                                                        <Circle radius="8" fill="#a6e3a1"/>
-                                                        <Circle radius="8" fill="#1a2640"/>
-                                                        <Circle radius="8" fill="#89dceb"/>
-                                                    </HBox>
-                                                    <Label text="Catppuccin" styleClass="theme-btn-label"/>
-                                                </VBox>
-                                            </graphic>
-                                        </Button>
-                                        <Button onAction="#handleThemeChange" userData="primer-sunset" styleClass="theme-btn">
-                                            <graphic>
-                                                <VBox spacing="6" alignment="CENTER">
-                                                    <HBox spacing="8" alignment="CENTER">
-                                                        <Circle radius="8" fill="#1a0e05"/>
-                                                        <Circle radius="8" fill="#2e1205"/>
-                                                        <Circle radius="8" fill="#ffb347"/>
-                                                        <Circle radius="8" fill="#2e0a0a"/>
-                                                        <Circle radius="8" fill="#ff6b6b"/>
-                                                    </HBox>
-                                                    <Label text="Sunset" styleClass="theme-btn-label"/>
-                                                </VBox>
-                                            </graphic>
-                                        </Button>
-                                        <Button onAction="#handleThemeChange" userData="primer-midnight" styleClass="theme-btn">
-                                            <graphic>
-                                                <VBox spacing="6" alignment="CENTER">
-                                                    <HBox spacing="8" alignment="CENTER">
-                                                        <Circle radius="8" fill="#12071e"/>
-                                                        <Circle radius="8" fill="#1e0a2e"/>
-                                                        <Circle radius="8" fill="#d080ff"/>
-                                                        <Circle radius="8" fill="#0a1a2e"/>
-                                                        <Circle radius="8" fill="#80b0ff"/>
-                                                    </HBox>
-                                                    <Label text="Midnight" styleClass="theme-btn-label"/>
-                                                </VBox>
-                                            </graphic>
-                                        </Button>
-                                    </HBox>
-                                </VBox>
-                            </VBox>
-
-                            <VBox spacing="14" styleClass="settings-card">
-                                <Label text="Notifications" styleClass="settings-card-title"/>
-                                <HBox alignment="CENTER_LEFT">
-                                    <Label text="Toast Notifications" HBox.hgrow="ALWAYS" maxWidth="Infinity" styleClass="settings-toggle-label"/>
-                                    <ToggleSwitch fx:id="enableToastToggle" styleClass="toggle-switch"/>
-                                </HBox>
-                                <VBox spacing="4">
-                                    <HBox alignment="CENTER_LEFT">
-                                        <Label text="Notification Duration"/>
-                                        <Region HBox.hgrow="ALWAYS"/>
-                                        <Label fx:id="notifDurationLabel" text="4s" styleClass="val-label"/>
-                                    </HBox>
-                                    <Slider fx:id="notifDurationSlider" min="2" max="10" majorTickUnit="1" minorTickCount="0" snapToTicks="true" showTickMarks="true" showTickLabels="true"/>
-                                </VBox>
-                            </VBox>
-
+                        <VBox spacing="10" styleClass="connection-setup-step">
+                            <Label text="2" styleClass="connection-step-badge"/>
+                            <Label text="Use the default local server if you are running everything on this machine." wrapText="true" styleClass="connection-step-text"/>
                         </VBox>
-                    </ScrollPane>
-                </Tab>
-                <Tab text="Sound">
-                    <ScrollPane fitToWidth="true">
-                        <VBox spacing="16" style="-fx-padding: 22 25 22 25;">
-
-                            <VBox spacing="14" styleClass="settings-card">
-                                <Label text="Master Volume" styleClass="settings-card-title"/>
-                                <HBox alignment="CENTER_LEFT" spacing="12">
-                                    <FontIcon iconLiteral="mdi2v-volume-high" styleClass="settings-volume-icon"/>
-                                    <Slider fx:id="masterVolumeSlider" HBox.hgrow="ALWAYS"/>
-                                    <Label fx:id="masterVolumeLabel" text="100%" styleClass="val-label" minWidth="45"/>
-                                </HBox>
-                            </VBox>
-
-                            <VBox spacing="14" styleClass="settings-card">
-                                <HBox alignment="CENTER_LEFT">
-                                    <Label text="Alarm" styleClass="settings-card-title"/>
-                                    <Region HBox.hgrow="ALWAYS"/>
-                                    <Button onAction="#handlePreviewAlarm" styleClass="settings-preview-btn">
-                                        <graphic>
-                                            <FontIcon iconLiteral="mdi2p-play-circle-outline" styleClass="settings-preview-icon"/>
-                                        </graphic>
-                                    </Button>
-                                </HBox>
-                                <HBox alignment="CENTER_LEFT" spacing="12">
-                                    <FontIcon iconLiteral="mdi2b-bell-outline" styleClass="settings-volume-icon"/>
-                                    <Slider fx:id="alarmVolumeSlider" HBox.hgrow="ALWAYS"/>
-                                    <Label fx:id="alarmVolumeValLabel" text="100%" styleClass="val-label" minWidth="45"/>
-                                </HBox>
-                                <TitledPane text="Alarm Sound" styleClass="settings-titled-pane" expanded="false">
-                                    <VBox spacing="8">
-                                        <HBox alignment="CENTER_LEFT" spacing="12">
-                                            <Label text="Preset:" styleClass="settings-sub-label"/>
-                                            <ComboBox fx:id="alarmPresetComboBox" HBox.hgrow="ALWAYS"
-                                                      maxWidth="Infinity"/>
-                                        </HBox>
-                                        <HBox alignment="CENTER_LEFT" spacing="12">
-                                            <Label text="Custom:" styleClass="settings-sub-label"/>
-                                            <TextField fx:id="customAlarmSoundField" editable="false"
-                                                       HBox.hgrow="ALWAYS" promptText="Select MP3 file..."/>
-                                            <Button onAction="#handleBrowseAlarmSound" text="Browse"
-                                                    styleClass="settings-browse-btn"/>
-                                            <Button onAction="#handleResetAlarmSound" text="Reset"
-                                                    styleClass="settings-reset-btn"/>
-                                        </HBox>
-                                    </VBox>
-                                </TitledPane>
-                            </VBox>
-
-                            <VBox spacing="14" styleClass="settings-card">
-                                <HBox alignment="CENTER_LEFT">
-                                    <Label text="Notifications" styleClass="settings-card-title"/>
-                                    <Region HBox.hgrow="ALWAYS"/>
-                                    <Button onAction="#handlePreviewNotification" styleClass="settings-preview-btn">
-                                        <graphic>
-                                            <FontIcon iconLiteral="mdi2p-play-circle-outline" styleClass="settings-preview-icon"/>
-                                        </graphic>
-                                    </Button>
-                                </HBox>
-                                <HBox alignment="CENTER_LEFT" spacing="12">
-                                    <FontIcon iconLiteral="mdi2n-notification-clear-all" styleClass="settings-volume-icon"/>
-                                    <Slider fx:id="notificationVolumeSlider" HBox.hgrow="ALWAYS"/>
-                                    <Label fx:id="notificationVolumeLabel" text="100%" styleClass="val-label" minWidth="45"/>
-                                </HBox>
-                                <TitledPane text="Notification Sound" styleClass="settings-titled-pane" expanded="false">
-                                    <VBox spacing="8" >
-                                        <HBox alignment="CENTER_LEFT" spacing="12">
-                                            <Label text="Success:" styleClass="settings-sub-label"/>
-                                            <TextField fx:id="successSoundField" editable="false" HBox.hgrow="ALWAYS"
-                                                       promptText="Default"/>
-                                            <Button onAction="#handleBrowseSuccessSound" text="Browse"
-                                                    styleClass="settings-browse-btn"/>
-                                            <Button onAction="#handleResetSuccessSound" text="Reset"
-                                                    styleClass="settings-reset-btn"/>
-                                        </HBox>
-                                        <HBox alignment="CENTER_LEFT" spacing="12">
-                                            <Label text="Error:" styleClass="settings-sub-label"/>
-                                            <TextField fx:id="errorSoundField" editable="false" HBox.hgrow="ALWAYS"
-                                                       promptText="Default"/>
-                                            <Button onAction="#handleBrowseErrorSound" text="Browse"
-                                                    styleClass="settings-browse-btn"/>
-                                            <Button onAction="#handleResetErrorSound" text="Reset"
-                                                    styleClass="settings-reset-btn"/>
-                                        </HBox>
-                                        <HBox alignment="CENTER_LEFT" spacing="12">
-                                            <Label text="Warning:" styleClass="settings-sub-label"/>
-                                            <TextField fx:id="warningSoundField" editable="false" HBox.hgrow="ALWAYS"
-                                                       promptText="Default"/>
-                                            <Button onAction="#handleBrowseWarningSound" text="Browse"
-                                                    styleClass="settings-browse-btn"/>
-                                            <Button onAction="#handleResetWarningSound" text="Reset"
-                                                    styleClass="settings-reset-btn"/>
-                                        </HBox>
-                                        <HBox alignment="CENTER_LEFT" spacing="12">
-                                            <Label text="Info:" styleClass="settings-sub-label"/>
-                                            <TextField fx:id="infoSoundField" editable="false" HBox.hgrow="ALWAYS"
-                                                       promptText="Default"/>
-                                            <Button onAction="#handleBrowseInfoSound" text="Browse"
-                                                    styleClass="settings-browse-btn"/>
-                                            <Button onAction="#handleResetInfoSound" text="Reset"
-                                                    styleClass="settings-reset-btn"/>
-                                        </HBox>
-                                    </VBox>
-                                </TitledPane>
-                            </VBox>
-
-                            <VBox spacing="14" styleClass="settings-card">
-                                <HBox alignment="CENTER_LEFT">
-                                    <Label text="Background Music" styleClass="settings-card-title"/>
-                                    <Region HBox.hgrow="ALWAYS"/>
-                                    <Button onAction="#handleToggleMusic" styleClass="settings-preview-btn">
-                                        <graphic>
-                                            <FontIcon fx:id="musicToggleIcon" iconLiteral="mdi2p-play-circle-outline" styleClass="settings-preview-icon"/>
-                                        </graphic>
-                                    </Button>
-                                </HBox>
-                                <HBox alignment="CENTER_LEFT" spacing="12">
-                                    <FontIcon iconLiteral="mdi2m-music-circle-outline" styleClass="settings-volume-icon"/>
-                                    <Slider fx:id="backgroundMusicVolumeSlider" HBox.hgrow="ALWAYS"/>
-                                    <Label fx:id="backgroundMusicVolumeLabel" text="100%" styleClass="val-label" minWidth="45"/>
-                                </HBox>
-                            </VBox>
-
+                        <VBox spacing="10" styleClass="connection-setup-step">
+                            <Label text="3" styleClass="connection-step-badge"/>
+                            <Label text="Test the connection, then save and continue." wrapText="true" styleClass="connection-step-text"/>
                         </VBox>
-                    </ScrollPane>
-                </Tab>
-                <Tab text="About">
-                    <ScrollPane fitToWidth="true">
-                        <VBox spacing="16" style="-fx-padding: 22 25 22 25;" alignment="TOP_CENTER">
+                    </VBox>
 
-                            <VBox spacing="14" styleClass="settings-card" alignment="CENTER">
-                                <ImageView fitHeight="80" fitWidth="80" preserveRatio="true">
-                                    <Image url="@/com/frandm/studytracker/images/SZlogo.png"/>
-                                </ImageView>
-                                <Label text="StudyZen" styleClass="settings-about-title"/>
-                                <Label fx:id="appVersionLabel" text="v1.3.0" styleClass="settings-about-version"/>
-                                <Label text="Plan your weeks, track your focus sessions and visualize your progress to build consistent study habits."
-                                       wrapText="true" textAlignment="CENTER" styleClass="settings-about-desc"/>
-                            </VBox>
-
-                            <VBox spacing="14" styleClass="settings-card-danger">
-                                <Label text="Danger Zone" styleClass="settings-card-title-danger"/>
-                                <Label text="Reset all settings to their default values. Your session data will not be affected."
-                                       wrapText="true" styleClass="settings-danger-desc"/>
-                                <Button onAction="#handleResetAllSettings" text="Reset All Settings" styleClass="settings-danger-btn" maxWidth="Infinity"/>
-                            </VBox>
-
+                    <VBox spacing="16" HBox.hgrow="ALWAYS">
+                        <VBox spacing="12" styleClass="connection-setup-form-card">
+                            <Label text="Server URL" styleClass="connection-setup-form-title" />
+                            <Label text="Default local URL: http://localhost:8080/api" wrapText="true" styleClass="connection-setup-form-help"/>
+                            <TextField fx:id="connectionSetupUrlField" promptText="http://localhost:8080/api" styleClass="connection-setup-input" />
+                            <Label fx:id="connectionSetupStatusLabel" text="Use the default local server or enter a custom URL."
+                                   wrapText="true" styleClass="connection-setup-status"/>
                         </VBox>
-                    </ScrollPane>
-                </Tab>
-            </TabPane>
-        </VBox>
+
+                        <VBox spacing="10" styleClass="connection-setup-actions">
+                            <Button text="Use Default Local Server" onAction="#handleUseDefaultServerUrl" maxWidth="Infinity" styleClass="button-secondary, connection-secondary-btn, connection-default-btn"/>
+                            <HBox spacing="12" alignment="CENTER_LEFT" styleClass="connection-setup-actions-row">
+                                <Button text="Test Connection" onAction="#handleTestConnectionSetup" HBox.hgrow="ALWAYS" maxWidth="Infinity" styleClass="button-secondary, connection-secondary-btn"/>
+                                <Button text="Save and Continue" onAction="#handleSaveAndContinueConnectionSetup" HBox.hgrow="ALWAYS" maxWidth="Infinity" styleClass="button-main, connection-primary-btn"/>
+                            </HBox>
+                        </VBox>
+                    </VBox>
+                </HBox>
+            </VBox>
+        </StackPane>
     </GridPane>
 
     <GridPane fx:id="setupPane" visible="false" managed="false" maxHeight="Infinity" maxWidth="Infinity">
@@ -599,8 +337,9 @@
 
                     <VBox spacing="10" styleClass="selection-preview-box">
                         <Label fx:id="selectedNameLabel" text="Nothing selected" styleClass="selection-label" />
-                    </VBox>
-                </VBox>
+                            </VBox>
+
+                        </VBox>
             </HBox>
         </StackPane>
     </GridPane>
@@ -768,6 +507,463 @@
                visible="false"
                managed="false"
                StackPane.alignment="CENTER" />
+
+    <GridPane fx:id="settingsPane" visible="false" managed="false" maxHeight="Infinity" maxWidth="Infinity">
+        <columnConstraints>
+            <ColumnConstraints percentWidth="25" />
+            <ColumnConstraints percentWidth="50" />
+            <ColumnConstraints percentWidth="25" />
+        </columnConstraints>
+        <rowConstraints>
+            <RowConstraints percentHeight="8" />
+            <RowConstraints percentHeight="84" />
+            <RowConstraints percentHeight="8" />
+        </rowConstraints>
+
+        <Region onMouseClicked="#toggleSettings" style="-fx-background-color: rgba(0,0,0,0.5);" GridPane.columnSpan="3" GridPane.rowSpan="3">
+            <effect><GaussianBlur radius="15" /></effect>
+        </Region>
+
+        <VBox fx:id="settingsBox" GridPane.columnIndex="1" GridPane.rowIndex="1" styleClass="settings-sidebar">
+
+            <HBox alignment="CENTER_LEFT" style="-fx-padding: 18 25 12 25;">
+                <Label text="SETTINGS" styleClass="sidebar-title" />
+                <Region HBox.hgrow="ALWAYS" />
+                <Button onAction="#toggleSettings" text="✕" styleClass="close-button" />
+            </HBox>
+            <Separator />
+
+            <TabPane fx:id="settingsTabPane" VBox.vgrow="ALWAYS" tabClosingPolicy="UNAVAILABLE" styleClass="settings-tabpane">
+                <Tab text="General">
+                    <ScrollPane fitToWidth="true">
+                        <VBox spacing="25" style="-fx-padding: 25;">
+
+                            <VBox spacing="10">
+                                <Label text="Mode Selector" styleClass="section-label" />
+                                <HBox styleClass="segmented-button" alignment="CENTER" maxWidth="-Infinity">
+                                    <ToggleButton fx:id="pomoModeBtn" text="Pomodoro" styleClass="left-pill" />
+                                    <ToggleButton fx:id="timerModeBtn" text="Timer" />
+                                    <ToggleButton fx:id="countdownModeBtn" text="Countdown" styleClass="right-pill" />
+                                </HBox>
+                            </VBox>
+
+                            <VBox fx:id="pomoSettingsPane" spacing="25" visible="false" managed="false">
+                                <HBox alignment="CENTER_LEFT">
+                                    <Label text="Time (minutes)" styleClass="section-label"/>
+                                    <Region HBox.hgrow="ALWAYS"/>
+                                    <Button onAction="#handleResetTimeSettings" text="Reset" styleClass="reset-button"/>
+                                </HBox>
+                                <VBox spacing="8">
+                                    <HBox alignment="CENTER_LEFT">
+                                        <Label text="Pomodoro"/>
+                                        <Region HBox.hgrow="ALWAYS"/>
+                                        <Label fx:id="workValLabel" text="25" styleClass="val-label"/>
+                                    </HBox>
+                                    <Slider fx:id="workSlider" min="1" max="180"/>
+                                </VBox>
+                                <VBox spacing="8">
+                                    <HBox alignment="CENTER_LEFT">
+                                        <Label text="Short Break"/>
+                                        <Region HBox.hgrow="ALWAYS"/>
+                                        <Label fx:id="shortValLabel" text="5" styleClass="val-label"/>
+                                    </HBox>
+                                    <Slider fx:id="shortSlider" min="1" max="25"/>
+                                </VBox>
+                                <VBox spacing="8">
+                                    <HBox alignment="CENTER_LEFT">
+                                        <Label text="Long Break"/>
+                                        <Region HBox.hgrow="ALWAYS"/>
+                                        <Label fx:id="longValLabel" text="15" styleClass="val-label"/>
+                                    </HBox>
+                                    <Slider fx:id="longSlider" min="1" max="50"/>
+                                </VBox>
+                                <VBox spacing="8">
+                                    <HBox alignment="CENTER_LEFT">
+                                        <Label text="Long Break Interval"/>
+                                        <Region HBox.hgrow="ALWAYS"/>
+                                        <Label fx:id="intervalValLabel" text="4" styleClass="val-label"/>
+                                    </HBox>
+                                    <Slider fx:id="intervalSlider" min="1" max="20"/>
+                                </VBox>
+                                <VBox spacing="15">
+                                    <HBox alignment="CENTER_LEFT">
+                                        <Label text="Auto Start Breaks" HBox.hgrow="ALWAYS" maxWidth="Infinity"/>
+                                        <ToggleSwitch fx:id="autoBreakToggle" styleClass="toggle-switch"/>
+                                    </HBox>
+                                    <HBox alignment="CENTER_LEFT">
+                                        <Label text="Auto Start Pomodoros" HBox.hgrow="ALWAYS" maxWidth="Infinity"/>
+                                        <ToggleSwitch fx:id="autoPomoToggle" styleClass="toggle-switch"/>
+                                    </HBox>
+                                    <HBox alignment="CENTER_LEFT">
+                                        <Label text="Count Break Time" HBox.hgrow="ALWAYS" maxWidth="Infinity"/>
+                                        <ToggleSwitch fx:id="countBreakTime" styleClass="toggle-switch"/>
+                                    </HBox>
+                                </VBox>
+
+                            </VBox>
+                            <VBox fx:id="countdownSettingsPane" spacing="25" visible="false" managed="false">
+                                <VBox spacing="5">
+                                    <HBox alignment="CENTER_LEFT">
+                                        <Label text="Countdown Timer" />
+                                        <Pane HBox.hgrow="ALWAYS" />
+                                        <Label fx:id="countdownValLabel" text="10" styleClass="val-label" />
+                                    </HBox>
+                                    <Slider fx:id="countdownSlider" min="1" max="180" />
+                                </VBox>
+                            </VBox>
+                            <VBox spacing="14" styleClass="settings-card">
+                                <Label text="Notifications" styleClass="settings-card-title"/>
+                                <HBox alignment="CENTER_LEFT">
+                                    <Label text="Toast Notifications" HBox.hgrow="ALWAYS" maxWidth="Infinity" styleClass="settings-toggle-label"/>
+                                    <ToggleSwitch fx:id="enableToastToggle" styleClass="toggle-switch"/>
+                                </HBox>
+                                <VBox spacing="4">
+                                    <HBox alignment="CENTER_LEFT">
+                                        <Label text="Notification Duration"/>
+                                        <Region HBox.hgrow="ALWAYS"/>
+                                        <Label fx:id="notifDurationLabel" text="4s" styleClass="val-label"/>
+                                    </HBox>
+                                    <Slider fx:id="notifDurationSlider" min="2" max="10" majorTickUnit="1" minorTickCount="0" snapToTicks="true" showTickMarks="true" showTickLabels="true"/>
+                                </VBox>
+                            </VBox>
+
+                        </VBox>
+                    </ScrollPane>
+                </Tab>
+                <Tab text="Appearance">
+                    <ScrollPane fitToWidth="true">
+                        <VBox spacing="16" style="-fx-padding: 22 25 22 25;">
+
+                            <VBox spacing="14" styleClass="settings-card">
+                                <Label text="UI Customization" styleClass="settings-card-title"/>
+                                <VBox spacing="8">
+                                    <HBox alignment="CENTER_LEFT">
+                                        <Label text="Stats Width"/>
+                                        <Region HBox.hgrow="ALWAYS"/>
+                                        <Label fx:id="widthSliderValLabel" text="50%" styleClass="val-label"/>
+                                    </HBox>
+                                    <Slider fx:id="widthSlider" min="25" value="50"/>
+                                </VBox>
+                                <VBox spacing="8">
+                                    <HBox alignment="CENTER_LEFT">
+                                        <Label text="UI Scale"/>
+                                        <Region HBox.hgrow="ALWAYS"/>
+                                        <Label fx:id="circleSizeValLabel" text="25" styleClass="val-label"/>
+                                    </HBox>
+                                    <Slider fx:id="circleSizeSlider" min="30" max="75" value="50"/>
+                                </VBox>
+                            </VBox>
+
+                            <VBox spacing="14" styleClass="settings-card">
+                                <Label text="Font" styleClass="settings-card-title"/>
+                                <HBox alignment="CENTER_LEFT" spacing="12">
+                                    <Label text="UI Font" styleClass="settings-sub-label"/>
+                                    <ComboBox fx:id="fontComboBox" HBox.hgrow="ALWAYS" maxWidth="Infinity"/>
+                                </HBox>
+                            </VBox>
+
+                            <VBox spacing="14" styleClass="settings-card">
+                                <Label text="Theme" styleClass="settings-card-title"/>
+                                <HBox spacing="10" alignment="CENTER_LEFT" fx:id="themeButtonsContainer">
+                                    <Button onAction="#handleThemeChange" userData="primer-dark" styleClass="theme-btn">
+                                        <graphic>
+                                            <VBox spacing="6" alignment="CENTER">
+                                                <HBox spacing="8" alignment="CENTER">
+                                                    <Circle radius="6" fill="#172640"/>
+                                                    <Circle radius="6" fill="#161b22"/>
+                                                    <Circle radius="6" fill="#ffb700"/>
+                                                    <Circle radius="6" fill="#0c1013"/>
+                                                    <Circle radius="6" fill="#eaeaea"/>
+                                                </HBox>
+                                                <Label text="Dark" styleClass="theme-btn-label"/>
+                                            </VBox>
+                                        </graphic>
+                                    </Button>
+                                    <Button onAction="#handleThemeChange" userData="primer-light" styleClass="theme-btn">
+                                        <graphic>
+                                            <VBox spacing="6" alignment="CENTER">
+                                                <HBox spacing="8" alignment="CENTER">
+                                                    <Circle radius="6" fill="#fdf0f3"/>
+                                                    <Circle radius="6" fill="#fdf0f3"/>
+                                                    <Circle radius="6" fill="#e4a3b3"/>
+                                                    <Circle radius="6" fill="#ffffff"/>
+                                                    <Circle radius="6" fill="#4a2030"/>
+                                                </HBox>
+                                                <Label text="Light" styleClass="theme-btn-label"/>
+                                            </VBox>
+                                        </graphic>
+                                    </Button>
+                                    <Button onAction="#handleThemeChange" userData="primer-electric-blue" styleClass="theme-btn">
+                                        <graphic>
+                                            <VBox spacing="6" alignment="CENTER">
+                                                <HBox spacing="8" alignment="CENTER">
+                                                    <Circle radius="6" fill="#000d1f"/>
+                                                    <Circle radius="6" fill="#001529"/>
+                                                    <Circle radius="6" fill="#00d4ff"/>
+                                                    <Circle radius="6" fill="#000d1f"/>
+                                                    <Circle radius="6" fill="#00b4ff"/>
+                                                </HBox>
+                                                <Label text="Electric" styleClass="theme-btn-label"/>
+                                            </VBox>
+                                        </graphic>
+                                    </Button>
+                                    <Button onAction="#handleThemeChange" userData="primer-cappuccino" styleClass="theme-btn">
+                                        <graphic>
+                                            <VBox spacing="6" alignment="CENTER">
+                                                <HBox spacing="8" alignment="CENTER">
+                                                    <Circle radius="6" fill="#1e1e2e"/>
+                                                    <Circle radius="6" fill="#181825"/>
+                                                    <Circle radius="6" fill="#cba6f7"/>
+                                                    <Circle radius="6" fill="#1e1e2e"/>
+                                                    <Circle radius="6" fill="#cdd6f4"/>
+                                                </HBox>
+                                                <Label text="Catppuccin" styleClass="theme-btn-label"/>
+                                            </VBox>
+                                        </graphic>
+                                    </Button>
+                                    <Button onAction="#handleThemeChange" userData="primer-sunset" styleClass="theme-btn">
+                                        <graphic>
+                                            <VBox spacing="6" alignment="CENTER">
+                                                <HBox spacing="8" alignment="CENTER">
+                                                    <Circle radius="6" fill="#1a0e05"/>
+                                                    <Circle radius="6" fill="#120a03"/>
+                                                    <Circle radius="6" fill="#ff7c2a"/>
+                                                    <Circle radius="6" fill="#1a0e05"/>
+                                                    <Circle radius="6" fill="#fde8d0"/>
+                                                </HBox>
+                                                <Label text="Sunset" styleClass="theme-btn-label"/>
+                                            </VBox>
+                                        </graphic>
+                                    </Button>
+                                    <Button onAction="#handleThemeChange" userData="primer-midnight" styleClass="theme-btn">
+                                        <graphic>
+                                            <VBox spacing="6" alignment="CENTER">
+                                                <HBox spacing="8" alignment="CENTER">
+                                                    <Circle radius="6" fill="#12071e"/>
+                                                    <Circle radius="6" fill="#0a0314"/>
+                                                    <Circle radius="6" fill="#b060ff"/>
+                                                    <Circle radius="6" fill="#12071e"/>
+                                                    <Circle radius="6" fill="#e8d5ff"/>
+                                                </HBox>
+                                                <Label text="Midnight" styleClass="theme-btn-label"/>
+                                            </VBox>
+                                        </graphic>
+                                    </Button>
+                                </HBox>
+                            </VBox>
+                            <VBox spacing="14" styleClass="settings-card">
+                                <Label text="Background Video" styleClass="settings-card-title"/>
+                                <VBox spacing="10">
+                                    <Label fx:id="backgroundCurrentLabel" text="Current: No background" styleClass="background-current-label"/>
+                                    <TilePane fx:id="backgroundTilePane" prefColumns="2" hgap="12" vgap="12" styleClass="background-selector-grid"/>
+                                    <Button text="Add file" onAction="#chooseCustomBackgroundFile" styleClass="button-main, background-file-button"/>
+                                </VBox>
+                            </VBox>
+                        </VBox>
+                    </ScrollPane>
+                </Tab>
+                <Tab text="Sound">
+                    <ScrollPane fitToWidth="true">
+                        <VBox spacing="16" style="-fx-padding: 22 25 22 25;">
+
+                            <VBox spacing="14" styleClass="settings-card">
+                                <Label text="Master Volume" styleClass="settings-card-title"/>
+                                <HBox alignment="CENTER_LEFT" spacing="12">
+                                    <FontIcon iconLiteral="mdi2v-volume-high" styleClass="settings-volume-icon"/>
+                                    <Slider fx:id="masterVolumeSlider" HBox.hgrow="ALWAYS"/>
+                                    <Label fx:id="masterVolumeLabel" text="100%" styleClass="val-label" minWidth="45"/>
+                                </HBox>
+                            </VBox>
+
+                            <VBox spacing="14" styleClass="settings-card">
+                                <HBox alignment="CENTER_LEFT">
+                                    <Label text="Alarm" styleClass="settings-card-title"/>
+                                    <Region HBox.hgrow="ALWAYS"/>
+                                    <Button onAction="#handlePreviewAlarm" styleClass="settings-preview-btn">
+                                        <graphic>
+                                            <FontIcon iconLiteral="mdi2p-play-circle-outline" styleClass="settings-preview-icon"/>
+                                        </graphic>
+                                    </Button>
+                                </HBox>
+                                <HBox alignment="CENTER_LEFT" spacing="12">
+                                    <FontIcon iconLiteral="mdi2b-bell-outline" styleClass="settings-volume-icon"/>
+                                    <Slider fx:id="alarmVolumeSlider" HBox.hgrow="ALWAYS"/>
+                                    <Label fx:id="alarmVolumeValLabel" text="100%" styleClass="val-label" minWidth="45"/>
+                                </HBox>
+                                <TitledPane text="Alarm Sound" styleClass="settings-titled-pane" expanded="false">
+                                    <VBox spacing="8">
+                                        <HBox alignment="CENTER_LEFT" spacing="12">
+                                            <Label text="Preset:" styleClass="settings-sub-label"/>
+                                            <ComboBox fx:id="alarmPresetComboBox" HBox.hgrow="ALWAYS"
+                                                      maxWidth="Infinity"/>
+                                        </HBox>
+                                        <HBox alignment="CENTER_LEFT" spacing="12">
+                                            <Label text="Custom:" styleClass="settings-sub-label"/>
+                                            <TextField fx:id="customAlarmSoundField" editable="false"
+                                                       HBox.hgrow="ALWAYS" promptText="Select MP3 file..."/>
+                                            <Button onAction="#handleBrowseAlarmSound" text="Browse"
+                                                    styleClass="settings-browse-btn"/>
+                                            <Button onAction="#handleResetAlarmSound" text="Reset"
+                                                    styleClass="settings-reset-btn"/>
+                                        </HBox>
+                                    </VBox>
+                                </TitledPane>
+                            </VBox>
+
+                            <VBox spacing="14" styleClass="settings-card">
+                                <HBox alignment="CENTER_LEFT">
+                                    <Label text="Notifications" styleClass="settings-card-title"/>
+                                    <Region HBox.hgrow="ALWAYS"/>
+                                    <Button onAction="#handlePreviewNotification" styleClass="settings-preview-btn">
+                                        <graphic>
+                                            <FontIcon iconLiteral="mdi2p-play-circle-outline" styleClass="settings-preview-icon"/>
+                                        </graphic>
+                                    </Button>
+                                </HBox>
+                                <HBox alignment="CENTER_LEFT" spacing="12">
+                                    <FontIcon iconLiteral="mdi2n-notification-clear-all" styleClass="settings-volume-icon"/>
+                                    <Slider fx:id="notificationVolumeSlider" HBox.hgrow="ALWAYS"/>
+                                    <Label fx:id="notificationVolumeLabel" text="100%" styleClass="val-label" minWidth="45"/>
+                                </HBox>
+                                <TitledPane text="Notification Sound" styleClass="settings-titled-pane" expanded="false">
+                                    <VBox spacing="8" >
+                                        <HBox alignment="CENTER_LEFT" spacing="12">
+                                            <Label text="Success:" styleClass="settings-sub-label"/>
+                                            <TextField fx:id="successSoundField" editable="false" HBox.hgrow="ALWAYS"
+                                                       promptText="Default"/>
+                                            <Button onAction="#handleBrowseSuccessSound" text="Browse"
+                                                    styleClass="settings-browse-btn"/>
+                                            <Button onAction="#handleResetSuccessSound" text="Reset"
+                                                    styleClass="settings-reset-btn"/>
+                                        </HBox>
+                                        <HBox alignment="CENTER_LEFT" spacing="12">
+                                            <Label text="Error:" styleClass="settings-sub-label"/>
+                                            <TextField fx:id="errorSoundField" editable="false" HBox.hgrow="ALWAYS"
+                                                       promptText="Default"/>
+                                            <Button onAction="#handleBrowseErrorSound" text="Browse"
+                                                    styleClass="settings-browse-btn"/>
+                                            <Button onAction="#handleResetErrorSound" text="Reset"
+                                                    styleClass="settings-reset-btn"/>
+                                        </HBox>
+                                        <HBox alignment="CENTER_LEFT" spacing="12">
+                                            <Label text="Warning:" styleClass="settings-sub-label"/>
+                                            <TextField fx:id="warningSoundField" editable="false" HBox.hgrow="ALWAYS"
+                                                       promptText="Default"/>
+                                            <Button onAction="#handleBrowseWarningSound" text="Browse"
+                                                    styleClass="settings-browse-btn"/>
+                                            <Button onAction="#handleResetWarningSound" text="Reset"
+                                                    styleClass="settings-reset-btn"/>
+                                        </HBox>
+                                        <HBox alignment="CENTER_LEFT" spacing="12">
+                                            <Label text="Info:" styleClass="settings-sub-label"/>
+                                            <TextField fx:id="infoSoundField" editable="false" HBox.hgrow="ALWAYS"
+                                                       promptText="Default"/>
+                                            <Button onAction="#handleBrowseInfoSound" text="Browse"
+                                                    styleClass="settings-browse-btn"/>
+                                            <Button onAction="#handleResetInfoSound" text="Reset"
+                                                    styleClass="settings-reset-btn"/>
+                                        </HBox>
+                                    </VBox>
+                                </TitledPane>
+                            </VBox>
+                        </VBox>
+                    </ScrollPane>
+                </Tab>
+                <Tab text="Shortcuts">
+                    <ScrollPane fitToWidth="true">
+                        <VBox spacing="16" style="-fx-padding: 22 25 22 25;">
+                            <VBox spacing="14" styleClass="settings-card">
+                                <Label text="Keyboard Shortcuts" styleClass="settings-card-title"/>
+                                <Label text="Customize your timer and UI shortcuts. Press Edit and then type the new combination."
+                                       wrapText="true" styleClass="settings-danger-desc"/>
+                                <Label fx:id="shortcutCaptureStatusLabel" text="Shortcuts only work when no control has focus. The menu shortcut is configurable here too."
+                                       wrapText="true" styleClass="shortcut-help-label"/>
+                            </VBox>
+                            <VBox fx:id="shortcutSettingsListContainer" spacing="12"/>
+                        </VBox>
+                    </ScrollPane>
+                </Tab>
+                <Tab text="Server">
+                    <ScrollPane fitToWidth="true">
+                        <VBox spacing="16" style="-fx-padding: 22 25 22 25;">
+                            <VBox spacing="14" styleClass="settings-card">
+                                <Label text="Backend Connection" styleClass="settings-card-title"/>
+                                <Label text="Connect StudyZen to your self-hosted backend. The default local URL is http://localhost:8080/api"
+                                       wrapText="true" styleClass="settings-danger-desc"/>
+                                <VBox spacing="8">
+                                    <Label text="Backend URL" styleClass="settings-sub-label"/>
+                                    <TextField fx:id="serverUrlField" promptText="http://localhost:8080/api" />
+                                </VBox>
+                                <Label fx:id="serverStatusLabel" text="Server URL ready to use." wrapText="true" styleClass="shortcut-help-label"/>
+                                <HBox spacing="12" alignment="CENTER_LEFT">
+                                    <Button text="Test" onAction="#handleTestServerSettings" styleClass="button-secondary"/>
+                                    <Button text="Save" onAction="#handleSaveServerSettings" styleClass="button-main"/>
+                                </HBox>
+                            </VBox>
+                        </VBox>
+                    </ScrollPane>
+                </Tab>
+                <Tab text="About">
+                    <ScrollPane fitToWidth="true">
+                        <VBox spacing="16" style="-fx-padding: 22 25 22 25;" alignment="TOP_CENTER">
+
+                            <VBox spacing="14" styleClass="settings-card" alignment="CENTER">
+                                <ImageView fitHeight="80" fitWidth="80" preserveRatio="true">
+                                    <Image url="@/com/frandm/studytracker/images/SZlogo.png"/>
+                                </ImageView>
+                                <Label text="StudyZen" styleClass="settings-about-title"/>
+                                <Label fx:id="appVersionLabel" text="v1.3.0" styleClass="settings-about-version"/>
+                                <Label text="Plan your weeks, track your focus sessions and visualize your progress to build consistent study habits."
+                                       wrapText="true" textAlignment="CENTER" styleClass="settings-about-desc"/>
+                                <Button text="Open Welcome Guide" onAction="#handleOpenWelcomeGuide" styleClass="button-secondary"/>
+                            </VBox>
+
+                            <VBox spacing="14" styleClass="settings-card-danger">
+                                <Label text="Danger Zone" styleClass="settings-card-title-danger"/>
+                                <Label text="Reset all settings to their default values. Your session data will not be affected."
+                                       wrapText="true" styleClass="settings-danger-desc"/>
+                                <Button onAction="#handleResetAllSettings" text="Reset All Settings" styleClass="settings-danger-btn" maxWidth="Infinity"/>
+                            </VBox>
+
+                        </VBox>
+                    </ScrollPane>
+                </Tab>
+            </TabPane>
+        </VBox>
+    </GridPane>
+
+    <GridPane fx:id="shortcutMenuPane" visible="false" managed="false" maxHeight="Infinity" maxWidth="Infinity">
+        <columnConstraints>
+            <ColumnConstraints percentWidth="35" />
+            <ColumnConstraints percentWidth="30" />
+            <ColumnConstraints percentWidth="35" />
+        </columnConstraints>
+        <rowConstraints>
+            <RowConstraints percentHeight="25" />
+            <RowConstraints percentHeight="50" />
+            <RowConstraints percentHeight="25" />
+        </rowConstraints>
+
+        <Region onMouseClicked="#toggleShortcutMenu" style="-fx-background-color: rgba(0,0,0,0.5);" GridPane.columnSpan="3" GridPane.rowSpan="3">
+            <effect><GaussianBlur radius="15" /></effect>
+        </Region>
+
+        <VBox fx:id="shortcutMenuBox" visible="false" managed="false" GridPane.columnIndex="1" GridPane.rowIndex="1"
+              spacing="16" styleClass="settings-sidebar">
+            <HBox alignment="CENTER_LEFT" style="-fx-padding: 18 25 12 25;">
+                <VBox spacing="4">
+                    <Label text="SHORTCUTS" styleClass="sidebar-title" />
+                    <Label text="Quick reference and action launcher" styleClass="shortcut-help-label" />
+                </VBox>
+                <Region HBox.hgrow="ALWAYS" />
+                <Button onAction="#toggleShortcutMenu" text="x" styleClass="close-button" />
+            </HBox>
+            <Separator />
+            <ScrollPane fitToWidth="true" VBox.vgrow="ALWAYS">
+                <VBox fx:id="shortcutMenuListContainer" spacing="12" style="-fx-padding: 20 24 24 24;"/>
+            </ScrollPane>
+        </VBox>
+    </GridPane>
 
     <VBox fx:id="notificationContainer"
           mouseTransparent="true"

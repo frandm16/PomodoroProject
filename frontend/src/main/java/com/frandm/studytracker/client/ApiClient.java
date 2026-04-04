@@ -3,9 +3,13 @@ package com.frandm.studytracker.client;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
+import com.frandm.studytracker.core.ConfigManager;
 
 import java.net.URI;
+import java.net.ConnectException;
+import java.net.UnknownHostException;
 import java.net.http.HttpClient;
+import java.net.http.HttpConnectTimeoutException;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
 import java.time.LocalDate;
@@ -21,7 +25,7 @@ import java.util.Random;
 
 public class ApiClient {
 
-    private static final String BASE_URL = System.getenv().getOrDefault("API_URL", "http://localhost:8080/api");
+    private static volatile String baseUrl = ConfigManager.resolveApiUrl();
     private static final HttpClient http = HttpClient.newHttpClient();
     public static final DateTimeFormatter API_TIMESTAMP_FORMAT = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
     private static final ObjectMapper mapper = new ObjectMapper()
@@ -32,6 +36,92 @@ public class ApiClient {
     private static final Map<String, List<Map<String, Object>>> cachedTasksByTag = new java.util.concurrent.ConcurrentHashMap<>();
     private static volatile long lastCacheInvalidation = 0;
     private static final long CACHE_TTL_MS = 30_000;
+
+    private static String normalizeBaseUrl(String value) {
+        if (value == null) {
+            throw new IllegalArgumentException("Backend URL is required");
+        }
+
+        String trimmed = value.trim();
+        if (trimmed.isEmpty()) {
+            throw new IllegalArgumentException("Backend URL is required");
+        }
+
+        while (trimmed.endsWith("/")) {
+            trimmed = trimmed.substring(0, trimmed.length() - 1);
+        }
+
+        URI uri = URI.create(trimmed);
+        if (uri.getScheme() == null || uri.getHost() == null) {
+            throw new IllegalArgumentException("Backend URL must include protocol and host");
+        }
+
+        return trimmed;
+    }
+
+    public static String getBaseUrl() {
+        return baseUrl;
+    }
+
+    public static boolean isConfigured() {
+        return baseUrl != null && !baseUrl.isBlank();
+    }
+
+    public static void setBaseUrl(String newBaseUrl) {
+        baseUrl = normalizeBaseUrl(newBaseUrl);
+        invalidateTagsCache();
+    }
+
+    public static boolean testConnection(String candidateBaseUrl) {
+        try {
+            String normalized = normalizeBaseUrl(candidateBaseUrl);
+            var req = HttpRequest.newBuilder()
+                    .uri(URI.create(normalized + "/tags"))
+                    .GET()
+                    .build();
+            HttpResponse<String> response = http.send(req, HttpResponse.BodyHandlers.ofString());
+            return response.statusCode() >= 200 && response.statusCode()<300;
+        } catch (Exception e) {
+            return false;
+        }
+    }
+
+    public static boolean isConnectionIssue(Throwable error) {
+        Throwable current = error;
+        while (current != null) {
+            if (current instanceof IllegalArgumentException
+                    || current instanceof ConnectException
+                    || current instanceof UnknownHostException
+                    || current instanceof HttpConnectTimeoutException
+                    || current instanceof java.nio.channels.ClosedChannelException) {
+                return true;
+            }
+            current = current.getCause();
+        }
+        return false;
+    }
+
+    public static boolean isLikelyWrongBackendUrl(Throwable error) {
+        if (error == null || error.getMessage() == null) {
+            return false;
+        }
+        String message = error.getMessage();
+        return message.contains("HTTP 404")
+                || message.contains("HTTP 301")
+                || message.contains("HTTP 302")
+                || message.contains("HTTP 307")
+                || message.contains("HTTP 308");
+    }
+
+    public static String getBackendErrorMessage(Throwable error) {
+        if (isConnectionIssue(error)) {
+            return "Cannot reach the configured backend. Check Settings > Server.";
+        }
+        if (isLikelyWrongBackendUrl(error)) {
+            return "The configured backend URL looks incorrect. Check Settings > Server.";
+        }
+        return null;
+    }
 
     public static void invalidateTagsCache() {
         cachedTags = null;
@@ -50,7 +140,7 @@ public class ApiClient {
 
     private static String get(String path) throws Exception {
         var req = HttpRequest.newBuilder()
-                .uri(URI.create(BASE_URL + path))
+                .uri(URI.create(getBaseUrl() + path))
                 .GET()
                 .build();
         HttpResponse<String> response = http.send(req, HttpResponse.BodyHandlers.ofString());
@@ -63,7 +153,7 @@ public class ApiClient {
 
     private static String post(String path, Object body) throws Exception {
         var req = HttpRequest.newBuilder()
-                .uri(URI.create(BASE_URL + path))
+                .uri(URI.create(getBaseUrl() + path))
                 .header("Content-Type", "application/json")
                 .POST(HttpRequest.BodyPublishers.ofString(mapper.writeValueAsString(body)))
                 .build();
@@ -76,7 +166,7 @@ public class ApiClient {
 
     private static String put(String path, Object body) throws Exception {
         var req = HttpRequest.newBuilder()
-                .uri(URI.create(BASE_URL + path))
+                .uri(URI.create(getBaseUrl() + path))
                 .header("Content-Type", "application/json")
                 .PUT(HttpRequest.BodyPublishers.ofString(mapper.writeValueAsString(body)))
                 .build();
@@ -89,7 +179,7 @@ public class ApiClient {
 
     private static String patch(String path, Object body) throws Exception {
         var req = HttpRequest.newBuilder()
-                .uri(URI.create(BASE_URL + path))
+                .uri(URI.create(getBaseUrl() + path))
                 .header("Content-Type", "application/json")
                 .method("PATCH", HttpRequest.BodyPublishers.ofString(mapper.writeValueAsString(body)))
                 .build();
@@ -102,7 +192,7 @@ public class ApiClient {
 
     private static void delete(String path) throws Exception {
         var req = HttpRequest.newBuilder()
-                .uri(URI.create(BASE_URL + path))
+                .uri(URI.create(getBaseUrl() + path))
                 .DELETE()
                 .build();
         http.send(req, HttpResponse.BodyHandlers.ofString());
@@ -131,7 +221,8 @@ public class ApiClient {
         TagEventBus.getInstance().publish(TagEventBus.Type.CREATED, id, name);
     }
 
-    public static void patchTag(long id, Map<String, Object> body) {
+    public static void patchTag(long id, Map<String, Object> body) throws Exception {
+        patch("/tags/" + id, body);
         invalidateTagsCache();
         String name = body.containsKey("name") ? (String) body.get("name") : null;
         if (body.containsKey("isArchived")) {
@@ -199,9 +290,16 @@ public class ApiClient {
     }
 
 
-    public static void patchSession(long id, String title, String description, int rating) throws Exception {
-        mapper.readValue(patch("/sessions/" + id, Map.of("title", title, "description", description, "rating", rating)), new TypeReference<>() {
-        });
+    public static void patchSession(long id, String tagName, String tagColor, String taskName,
+                                    String title, String description, Integer rating) throws Exception {
+        Map<String, Object> body = new LinkedHashMap<>();
+        if (tagName != null) body.put("tagName", tagName);
+        if (tagColor != null) body.put("tagColor", tagColor);
+        if (taskName != null) body.put("taskName", taskName);
+        if (title != null) body.put("title", title);
+        if (description != null) body.put("description", description);
+        if (rating != null) body.put("rating", rating);
+        patch("/sessions/" + id, body);
     }
 
     public static void deleteSession(long id) throws Exception {
@@ -329,7 +427,7 @@ public class ApiClient {
             if (taskList.isEmpty()) {
                 return;
             }
-            int total = 28;
+            int total = 29;
             int count = 0;
 
             for (int i = -14; i <= 14; i++) {
@@ -487,26 +585,13 @@ public class ApiClient {
         };
 
         try {
-            String tasksJson = get("/tasks");
-            List<Map<String, Object>> taskList = mapper.readValue(tasksJson, new TypeReference<>() {});
-            if (taskList.isEmpty()) {
-                System.out.println("[generateRandomTodos] Skipped: no tasks available");
-                return;
-            }
-
             for (int offset = -20; offset <= 24; offset++) {
                 LocalDate date = today.plusDays(offset);
                 int todosToday = random.nextInt(4);
                 for (int i = 0; i < todosToday; i++) {
-                    Map<String, Object> task = taskList.get(random.nextInt(taskList.size()));
-                    @SuppressWarnings("unchecked")
-                    Map<String, Object> tagMap = (Map<String, Object>) task.get("tag");
-
                     Map<String, Object> created = createTodo(
                             date,
-                            prefixes[random.nextInt(prefixes.length)] + " " + subjects[random.nextInt(subjects.length)],
-                            (String) tagMap.get("name"),
-                            (String) task.get("name")
+                            prefixes[random.nextInt(prefixes.length)] + " " + subjects[random.nextInt(subjects.length)]
                     );
 
                     boolean shouldComplete = offset < 0 && random.nextDouble() < 0.55;
@@ -634,7 +719,7 @@ public class ApiClient {
             }
             return "";
         } catch (Exception e) {
-            System.err.println("Error fetching note: " + e.getMessage());
+            Logger.error("Error fetching note", e);
             return "";
         }
     }
@@ -672,23 +757,18 @@ public class ApiClient {
     // --- Todos ---
 
     public static List<Map<String, Object>> getTodosByDate(LocalDate date) throws Exception {
-        return getTodos(date, null);
+        return getTodos(date);
     }
 
-    public static List<Map<String, Object>> getTodos(LocalDate date, Long taskId) throws Exception {
+    public static List<Map<String, Object>> getTodos(LocalDate date) throws Exception {
         String path = "/todos?date=" + date;
-        if (taskId != null) {
-            path += "&taskId=" + taskId;
-        }
         return mapper.readValue(get(path), new TypeReference<>() {});
     }
 
-    public static Map<String, Object> createTodo(LocalDate date, String text, String tagName, String taskName) throws Exception {
+    public static Map<String, Object> createTodo(LocalDate date, String text) throws Exception {
         Map<String, Object> body = new LinkedHashMap<>();
         body.put("date", date.toString());
         body.put("text", text);
-        body.put("tagName", tagName);
-        body.put("taskName", taskName);
         return mapper.readValue(
                 post("/todos", body),
                 new TypeReference<>() {}
@@ -699,8 +779,7 @@ public class ApiClient {
         Map<String, Object> body = new LinkedHashMap<>();
         if (text != null) body.put("text", text);
         if (completed != null) body.put("completed", completed);
-        mapper.readValue(patch("/todos/" + id, body), new TypeReference<>() {
-        });
+        patch("/todos/" + id, body);
     }
 
     public static void updateTodoCompleted(long id, boolean completed) throws Exception {

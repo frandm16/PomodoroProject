@@ -1,6 +1,7 @@
 package com.frandm.studytracker.ui.views.planner;
 
 import com.frandm.studytracker.client.ApiClient;
+import com.frandm.studytracker.core.NotificationManager;
 import com.frandm.studytracker.core.TagEventBus;
 import com.frandm.studytracker.core.Logger;
 import com.frandm.studytracker.controllers.TrackerController;
@@ -674,9 +675,18 @@ public class WeeklyTab extends VBox {
             LocalDateTime fE = dpEnd.getValue()
                     .atTime(PlannerHelpers.parseInt(he.getText()), PlannerHelpers.parseInt(me.getText()));
 
-            try {
-                if (s == null) {
-                    ApiClient.saveScheduledSession(
+            if (!fS.isBefore(fE)) {
+                NotificationManager.show(
+                        "Error",
+                        "Start time must be earlier than end time",
+                        NotificationManager.NotificationType.ERROR
+                );
+                return;
+            }
+
+              try {
+                  if (s == null) {
+                      ApiClient.saveScheduledSession(
                             cTags.getValue(),
                             cTasks.getValue(),
                             txtT.getText().trim(),
@@ -692,11 +702,12 @@ public class WeeklyTab extends VBox {
                             ApiClient.formatApiTimestamp(fS),
                             ApiClient.formatApiTimestamp(fE)
                     );
-                }
-            } catch (Exception error) {
-                Logger.error(error);
-                return;
-            }
+                  }
+              } catch (Exception error) {
+                  Logger.error(error);
+                  controller.showBackendOperationError("Scheduled session could not be saved", error);
+                  return;
+              }
 
             popup.hide();
             refreshPlannerAndMenu();
@@ -718,13 +729,14 @@ public class WeeklyTab extends VBox {
             btnD.getStyleClass().add("button-danger");
             btnD.setMaxWidth(Double.MAX_VALUE);
 
-            btnD.setOnAction(_ -> {
-                try {
-                    ApiClient.deleteScheduledSession((int) s.get("id"));
-                } catch (Exception error) {
-                    Logger.error(error);
-                    return;
-                }
+              btnD.setOnAction(_ -> {
+                  try {
+                     ApiClient.deleteScheduledSession((int) s.get("id"));
+                  } catch (Exception error) {
+                      Logger.error(error);
+                      controller.showBackendOperationError("Scheduled session could not be deleted", error);
+                      return;
+                  }
 
                 popup.hide();
                 refreshPlannerAndMenu();
@@ -808,9 +820,9 @@ public class WeeklyTab extends VBox {
             LocalDateTime newDue = duePicker.getValue().atTime(hour, minute);
             PlannerHelpers.TagSelectionData tagData = cachedTagData != null ? cachedTagData : new PlannerHelpers.TagSelectionData(Map.of(), Map.of());
 
-            try {
-                if (isEdit) {
-                    ApiClient.updateDeadline(
+              try {
+                  if (isEdit) {
+                     ApiClient.updateDeadline(
                             ((Number) deadline.get("id")).longValue(),
                             tagBox.getValue(),
                             tagData.tagColors().getOrDefault(tagBox.getValue(), ""),
@@ -834,13 +846,14 @@ public class WeeklyTab extends VBox {
                                 allDayBox.isSelected(),
                                 false
                     );
-                }
-                popup.hide();
-                refreshPlannerAndMenu();
-            } catch (Exception error) {
-                Logger.error(error);
-            }
-        });
+                  }
+                  popup.hide();
+                  refreshPlannerAndMenu();
+              } catch (Exception error) {
+                  Logger.error(error);
+                  controller.showBackendOperationError("Deadline could not be saved", error);
+              }
+          });
 
         root.getChildren().addAll(
                 titleLabel,
@@ -858,13 +871,14 @@ public class WeeklyTab extends VBox {
             Button deleteButton = new Button("Delete");
             deleteButton.getStyleClass().add("button-danger");
             deleteButton.setMaxWidth(Double.MAX_VALUE);
-            deleteButton.setOnAction(_ -> {
-                try {
-                    ApiClient.deleteDeadline(((Number) deadline.get("id")).longValue());
-                } catch (Exception error) {
-                    Logger.error(error);
-                    return;
-                }
+              deleteButton.setOnAction(_ -> {
+                  try {
+                     ApiClient.deleteDeadline(((Number) deadline.get("id")).longValue());
+                  } catch (Exception error) {
+                      Logger.error(error);
+                      controller.showBackendOperationError("Deadline could not be deleted", error);
+                      return;
+                  }
 
                 popup.hide();
                 refreshPlannerAndMenu();

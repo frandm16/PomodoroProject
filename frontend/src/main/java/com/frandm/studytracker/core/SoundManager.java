@@ -14,12 +14,11 @@ import java.util.Map;
 
 public class SoundManager {
 
-    public enum SoundCategory { MASTER, ALARM, NOTIFICATION, MUSIC }
+    public enum SoundCategory { MASTER, ALARM, NOTIFICATION }
 
     public enum SoundType {
         ALARM("/com/frandm/studytracker/sounds/alarm/bells.mp3", SoundCategory.ALARM),
-        NOTIFICATION("/com/frandm/studytracker/sounds/notification/notification.mp3", SoundCategory.NOTIFICATION),
-        BACKGROUND_MUSIC("/com/frandm/studytracker/sounds/background/lofi1.mp3", SoundCategory.MUSIC);
+        NOTIFICATION("/com/frandm/studytracker/sounds/notification/notification.mp3", SoundCategory.NOTIFICATION);
 
         private final String path;
         private final SoundCategory category;
@@ -59,7 +58,7 @@ public class SoundManager {
 
     private static AudioClip customAlarmClip;
     private static String customAlarmPath = "";
-    private static AlarmSound selectedAlarmPreset = AlarmSound.BIRDS;
+    private static AlarmSound selectedAlarmPreset = AlarmSound.BELLS;
     private static final Map<AlarmSound, AudioClip> alarmSoundCache = new EnumMap<>(AlarmSound.class);
 
     public static void setEngine(TrackerEngine engineInstance) {
@@ -217,68 +216,12 @@ public class SoundManager {
             double categoryPercent = switch (type.getCategory()) {
                 case ALARM -> engine.getAlarmVolume() / 100.0;
                 case NOTIFICATION -> engine.getNotificationVolume() / 100.0;
-                case MUSIC -> engine.getBackgroundMusicVolume() / 100.0;
                 case MASTER -> 1.0;
             };
 
             double finalVolume = masterPercent * categoryPercent;
 
             clip.play(finalVolume);
-        }
-    }
-
-    public static void toggleMusic(SoundType type) {
-        if (musicPlayer != null && musicPlayer.getStatus() == MediaPlayer.Status.PLAYING) {
-            stopMusicWithFade();
-        } else {
-            try {
-                URL resource = SoundManager.class.getResource(type.getPath());
-                if (resource != null && engine != null) {
-                    Media media = new Media(resource.toExternalForm());
-                    musicPlayer = new MediaPlayer(media);
-
-                    musicPlayer.setCycleCount(MediaPlayer.INDEFINITE);
-                    updateMusicVolume();
-                    musicPlayer.play();
-                }
-            } catch (Exception e) {
-                Logger.error("Error toggling music: " + e.getMessage(), e);
-            }
-        }
-    }
-
-    public static void stopMusicWithFade() {
-        if (musicPlayer != null && musicPlayer.getStatus() == MediaPlayer.Status.PLAYING) {
-            double startVolume = musicPlayer.getVolume();
-            int steps = 20;
-            double volumeStep = startVolume / steps;
-
-            Timeline fadeOut = new Timeline(
-                    new KeyFrame(Duration.millis(50), _ -> {
-                        if(musicPlayer != null) {
-                            double newVol = musicPlayer.getVolume() - volumeStep;
-                            if (newVol <= 0) {
-                                musicPlayer.stop();
-                                musicPlayer.dispose();
-                                musicPlayer = null;
-                            } else {
-                                musicPlayer.setVolume(newVol);
-                            }
-                        }
-
-                    })
-            );
-
-            fadeOut.setCycleCount(steps + 1);
-            fadeOut.play();
-        }
-    }
-
-    public static void updateMusicVolume() {
-        if (musicPlayer != null && engine != null) {
-            double finalVol = (engine.getMasterVolume() / 100.0) * (engine.getBackgroundMusicVolume() / 100.0);
-
-            musicPlayer.setVolume(finalVol);
         }
     }
 }

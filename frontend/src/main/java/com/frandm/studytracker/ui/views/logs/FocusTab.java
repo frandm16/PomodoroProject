@@ -1,6 +1,7 @@
 package com.frandm.studytracker.ui.views.logs;
 
 import com.frandm.studytracker.client.ApiClient;
+import com.frandm.studytracker.core.Logger;
 import com.frandm.studytracker.core.TagEventBus;
 import javafx.application.Platform;
 import javafx.geometry.Insets;
@@ -39,6 +40,7 @@ public class FocusTab extends VBox {
         archiveFilterCombo.getItems().addAll("Active", "Archived", "Favorites", "All");
         archiveFilterCombo.setValue("Active");
         archiveFilterCombo.setMaxWidth(120);
+        archiveFilterCombo.getStyleClass().add("filter-button-logger");
         archiveFilterCombo.setOnAction(_ -> refreshFocusAreasGrid());
 
         Region spacer = new Region();
@@ -118,6 +120,9 @@ public class FocusTab extends VBox {
 
     public void refreshFocusAreasGrid() {
         focusAreasRoot.getChildren().removeIf(n -> n instanceof GridPane);
+        if (!ApiClient.isConfigured()) {
+            return;
+        }
 
         String filter = archiveFilterCombo.getValue();
         Map<String, Map<String, Object>> allTags = new LinkedHashMap<>();
@@ -126,7 +131,9 @@ public class FocusTab extends VBox {
                 allTags.put((String) t.get("name"), t);
             }
         } catch (Exception e) {
-            System.err.println("Error loading tags: " + e.getMessage());
+            if (ApiClient.isConfigured()) {
+                Logger.error("Error loading tags", e);
+            }
         }
 
         Map<String, Map<String, Object>> filteredTags = new LinkedHashMap<>();
@@ -222,7 +229,6 @@ public class FocusTab extends VBox {
     private VBox createTagCard(String name, String color, int totalMinutes, int maxTotal, long tagId, boolean isArchived, boolean isFavorite) {
         VBox card = new VBox();
         card.getStyleClass().add("tag-explorer-card");
-        if (isArchived) card.setOpacity(0.5);
 
         HBox topRow = new HBox();
         topRow.getStyleClass().add("tag-card-header");
@@ -255,7 +261,7 @@ public class FocusTab extends VBox {
                 try {
                     ApiClient.patchTag(tagId, Map.of("isFavorite", !isFavorite));
                 } catch (Exception ex) {
-                    System.err.println("Error toggling favorite: " + ex.getMessage());
+                    Logger.error("Error toggling favorite", ex);
                 } finally {
                     Platform.runLater(() -> btnFavorite.setDisable(false));
                 }
@@ -275,7 +281,7 @@ public class FocusTab extends VBox {
                 try {
                     ApiClient.patchTag(tagId, Map.of("isArchived", !isArchived));
                 } catch (Exception ex) {
-                    System.err.println("Error toggling archive: " + ex.getMessage());
+                    Logger.error("Error toggling archive", ex);
                 } finally {
                     Platform.runLater(() -> btnArchive.setDisable(false));
                 }
@@ -348,7 +354,9 @@ public class FocusTab extends VBox {
         try {
             summary = ApiClient.getSummaryByTag(tagName);
         } catch (Exception e) {
-            System.err.println("Error loading summary: " + e.getMessage());
+            if (ApiClient.isConfigured()) {
+                Logger.error("Error loading summary", e);
+            }
             summary = new LinkedHashMap<>();
         }
 

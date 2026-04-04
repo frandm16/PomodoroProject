@@ -1,6 +1,7 @@
 package com.frandm.studytracker.ui.views.logs;
 
 import com.frandm.studytracker.client.ApiClient;
+import com.frandm.studytracker.core.Logger;
 import com.frandm.studytracker.controllers.TrackerController;
 import com.frandm.studytracker.models.Session;
 import com.frandm.studytracker.core.NotificationManager;
@@ -19,6 +20,7 @@ public class LogsController {
     private Session sessionToDelete;
     private Session sessionToEdit;
     private int editRating = 0;
+    private java.util.Map<String, String> tagColors = new java.util.HashMap<>();
 
     public LogsController(TrackerController mainController) {
         this.mainController = mainController;
@@ -40,7 +42,9 @@ public class LogsController {
             try {
                 ApiClient.deleteSession(sessionToDelete.getId());
             } catch (Exception e) {
-                System.err.println("Error deleting session: " + e.getMessage());
+                Logger.error("Error deleting session", e);
+                mainController.showBackendOperationError("Session could not be deleted", e);
+                return;
             }
             refreshAll();
             sessionToDelete = null;
@@ -62,10 +66,18 @@ public class LogsController {
         tagCombo.getItems().clear();
         taskCombo.getItems().clear();
 
+        tagColors.clear();
         try {
-            ApiClient.getTags().forEach(t -> tagCombo.getItems().add((String) t.get("name")));
+            ApiClient.getTags().forEach(t -> {
+                String name = (String) t.get("name");
+                String color = (String) t.get("color");
+                tagCombo.getItems().add(name);
+                tagColors.put(name, color);
+            });
         } catch (Exception e) {
-            System.err.println("Error loading tags: " + e.getMessage());
+            if (ApiClient.isConfigured()) {
+                Logger.error("Error loading tags", e);
+            }
         }
         tagCombo.setValue(sessionToEdit.getTag());
 
@@ -88,7 +100,9 @@ public class LogsController {
         try {
             ApiClient.getTasks(tagName).forEach(t -> taskCombo.getItems().add((String) t.get("name")));
         } catch (Exception e) {
-            System.err.println("Error loading tasks: " + e.getMessage());
+            if (ApiClient.isConfigured()) {
+                Logger.error("Error loading tasks", e);
+            }
         }
     }
 
@@ -126,15 +140,21 @@ public class LogsController {
 
     public void saveEdit(String title, String desc, String tagName, String taskName) {
         if (sessionToEdit != null) {
+            String tagColor = tagColors.getOrDefault(tagName, sessionToEdit.getTagColor());
             try {
                 ApiClient.patchSession(
                         sessionToEdit.getId(),
+                        tagName,
+                        tagColor,
+                        taskName,
                         title,
                         desc,
                         editRating
                 );
             } catch (Exception e) {
-                System.err.println("Error updating session: " + e.getMessage());
+                Logger.error("Error updating session", e);
+                mainController.showBackendOperationError("Session could not be updated", e);
+                return;
             }
             refreshAll();
             sessionToEdit = null;

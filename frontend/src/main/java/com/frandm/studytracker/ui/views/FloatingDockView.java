@@ -14,6 +14,7 @@ import javafx.scene.control.Separator;
 import javafx.scene.control.ToggleButton;
 import javafx.scene.control.ToggleGroup;
 import javafx.scene.control.Tooltip;
+import javafx.scene.Parent;
 import javafx.scene.input.MouseEvent;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.VBox;
@@ -102,6 +103,7 @@ public class FloatingDockView {
 
         Button settingsButton = new Button();
         settingsButton.getStyleClass().addAll("dock-button", "dock-button-utility");
+        settingsButton.setFocusTraversable(false);
         settingsButton.setTooltip(new Tooltip("Settings"));
         settingsButton.setOnAction(_ -> onSettingsRequested.run());
 
@@ -109,23 +111,13 @@ public class FloatingDockView {
         settingsIcon.getStyleClass().add("dock-icon");
         settingsButton.setGraphic(settingsIcon);
 
-        Button backgroundsButton = new Button();
-        backgroundsButton.getStyleClass().addAll("dock-button", "dock-button-utility");
-        backgroundsButton.setTooltip(new Tooltip("Backgrounds"));
-        backgroundsButton.setOnAction(_ -> onBackgroundsRequested.run());
-
-        FontIcon backgroundsIcon = new FontIcon("mdi2i-image-multiple-outline");
-        backgroundsIcon.getStyleClass().add("dock-icon");
-        backgroundsButton.setGraphic(backgroundsIcon);
-
         container.getChildren().addAll(
                 sectionButtons.get(Section.TIMER.name()),
                 sectionButtons.get(Section.PLANNER.name()),
                 sectionButtons.get(Section.STATS.name()),
                 sectionButtons.get(Section.HISTORY.name()),
                 separator,
-                settingsButton,
-                backgroundsButton
+                settingsButton
         );
 
         sectionButtons.get(Section.TIMER.name()).setSelected(true);
@@ -189,6 +181,7 @@ public class FloatingDockView {
 
         ToggleButton button = new ToggleButton();
         button.setToggleGroup(dockGroup);
+        button.setFocusTraversable(false);
         button.addEventFilter(MouseEvent.MOUSE_PRESSED, e -> {
             if (button.isSelected()) {
                 e.consume();
@@ -230,6 +223,7 @@ public class FloatingDockView {
 
         ToggleButton button = new ToggleButton();
         button.setToggleGroup(dockGroup);
+        button.setFocusTraversable(false);
         button.addEventFilter(MouseEvent.MOUSE_PRESSED, e -> {
             if (button.isSelected()) {
                 e.consume();
@@ -256,6 +250,7 @@ public class FloatingDockView {
 
         onNavigate.accept(section, lastDirection);
         refreshState();
+        releaseFocusToRoot();
     }
 
     private void handleGenericClick(String id) {
@@ -271,6 +266,17 @@ public class FloatingDockView {
 
         if (onTabChanged != null) {
             onTabChanged.accept(id);
+        }
+        releaseFocusToRoot();
+    }
+
+    private void releaseFocusToRoot() {
+        if (container.getScene() == null) {
+            return;
+        }
+        Parent root = container.getScene().getRoot();
+        if (root != null) {
+            root.requestFocus();
         }
     }
 

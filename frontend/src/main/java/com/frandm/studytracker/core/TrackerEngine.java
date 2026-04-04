@@ -27,7 +27,8 @@ public class TrackerEngine {
     //endregion
 
     private String currentTheme = "primer-dark";
-    private String backgroundVideoSource = "classpath:/com/frandm/studytracker/videos/raindrops2.mp4";
+    private String currentFont = "sf-pro";
+    private String backgroundVideoSource = "";
 
     private int secondsRemaining;
     private int secondsElapsed = 0;
@@ -37,7 +38,6 @@ public class TrackerEngine {
     private int masterVolume = 100;
     private int alarmVolume = 100;
     private int notificationVolume = 100;
-    private int backgroundMusicVolume = 100;
 
     private int widthStats = 50;
     private int uiSize = 55;
@@ -105,7 +105,7 @@ public class TrackerEngine {
         if (onTick != null) onTick.run();
         if (onStateChange != null) onStateChange.run();
     }
-    public void updateSettings(int w, int s, int l, int i, boolean aBreak, boolean aPomo, boolean cBreak, int masterVolume, int alarmVolume, int notificationVolume, int backgroundMusicVolume, int inWidthStats, int uiSize, Mode mode, int countdownMins, String currentTheme, int notificationDuration, boolean enableToastNotifications) {
+    public void updateSettings(int w, int s, int l, int i, boolean aBreak, boolean aPomo, boolean cBreak, int masterVolume, int alarmVolume, int notificationVolume, int inWidthStats, int uiSize, Mode mode, int countdownMins, String currentTheme, String currentFont, int notificationDuration, boolean enableToastNotifications) {
         this.workMins = w;
         this.shortMins = s;
         this.longMins = l;
@@ -120,9 +120,9 @@ public class TrackerEngine {
         this.alarmVolume = alarmVolume;
         this.masterVolume = masterVolume;
         this.notificationVolume = notificationVolume;
-        this.backgroundMusicVolume = backgroundMusicVolume;
 
         this.currentTheme = currentTheme;
+        this.currentFont = currentFont;
 
         this.notificationDuration = notificationDuration;
         this.enableToastNotifications = enableToastNotifications;
@@ -218,11 +218,11 @@ public class TrackerEngine {
         this.masterVolume = 100;
         this.alarmVolume = 100;
         this.notificationVolume = 100;
-        this.backgroundMusicVolume = 100;
         this.widthStats = 50;
         this.uiSize = 55;
         this.CountdownMins = 10;
         this.currentTheme = "primer-dark";
+        this.currentFont = "sf-pro";
 
         this.notificationSoundSuccess = "";
         this.notificationSoundError = "";
@@ -244,6 +244,7 @@ public class TrackerEngine {
     public void setWidthStats(int widthStats) {this.widthStats = widthStats;}
     public void setUiSize(int uiSize) { this.uiSize = uiSize; }
     public void setCurrentTheme(String currentTheme) { this.currentTheme = currentTheme;}
+    public void setCurrentFont(String currentFont) { this.currentFont = currentFont; }
     public void setMode(Mode mode) {
         stop();
         this.currentMode = mode;
@@ -273,7 +274,6 @@ public class TrackerEngine {
     public void setMasterVolume(int masterVolume) {this.masterVolume = masterVolume;}
     public void setAlarmVolume(int alarmVolume) {this.alarmVolume = alarmVolume;}
     public void setNotificationVolume(int notificationVolume) {this.notificationVolume = notificationVolume;}
-    public void setBackgroundMusicVolume(int backgroundMusicVolume) {this.backgroundMusicVolume = backgroundMusicVolume;}
     public void setBackgroundVideoSource(String backgroundVideoSource) { this.backgroundVideoSource = backgroundVideoSource; }
     public void setNotificationDuration(int v) { this.notificationDuration = v; }
 
@@ -315,12 +315,12 @@ public class TrackerEngine {
     public Mode getCurrentMode() { return currentMode; }
 
     public String getCurrentTheme() {return currentTheme; }
+    public String getCurrentFont() { return currentFont; }
     public String getBackgroundVideoSource() { return backgroundVideoSource; }
 
     public int getMasterVolume() {return masterVolume;}
     public int getAlarmVolume() {return alarmVolume;}
     public int getNotificationVolume() {return notificationVolume;}
-    public int getBackgroundMusicVolume() {return backgroundMusicVolume;}
 
     public int getNotificationDuration() { return notificationDuration; }
     public boolean isEnableToastNotifications() { return enableToastNotifications; }

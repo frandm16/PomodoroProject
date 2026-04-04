@@ -5,6 +5,18 @@
     -fx-background-color: -color-menu !important;
 }
 
+.root-pane.font-sf-pro {
+    -fx-font-family: "SF Pro Display";
+}
+
+.root-pane.font-excalifont {
+    -fx-font-family: "Excalifont";
+}
+
+.root-pane.font-space-grotesk {
+    -fx-font-family: "Space Grotesk";
+}
+
 .background-video-overlay {
     -fx-background-color: linear-gradient(from 0% 0% to 100% 100%, rgba(6, 12, 18, 0.38), rgba(6, 12, 18, 0.62));
 }
@@ -181,6 +193,49 @@
     -fx-text-fill: -text-dark;
 }
 
+.shortcut-help-label {
+    -fx-font-size: 13px;
+    -fx-text-fill: -text-muted;
+}
+
+.shortcut-combo-label {
+    -fx-background-color: -bg-panels;
+    -fx-background-radius: 999;
+    -fx-border-color: -color-border-subtle-light;
+    -fx-border-radius: 999;
+    -fx-padding: 6 10;
+    -fx-text-fill: -text-main;
+    -fx-font-weight: bold;
+}
+
+.shortcut-menu-box {
+    -fx-max-width: 640;
+    -fx-padding: 0 0 8 0;
+}
+
+.shortcut-menu-row {
+    -fx-background-color: -color-bg-subtle;
+    -fx-background-radius: 14;
+    -fx-border-color: -color-border-subtle-light;
+    -fx-border-radius: 14;
+    -fx-padding: 14 16;
+    -fx-text-fill: -text-main;
+    -fx-cursor: hand;
+    -fx-alignment: CENTER_LEFT;
+}
+
+.shortcut-menu-row:hover {
+    -fx-background-color: -color-hover;
+}
+
+.shortcut-menu-row:pressed {
+    -fx-background-color: -color-accent-muted;
+}
+
+.shortcut-menu-row > .label {
+    -fx-text-fill: -text-main;
+}
+
 .settings-field-label {
     -fx-font-size: 12px;
     -fx-font-weight: 600;
@@ -195,6 +250,162 @@
 .settings-card-separator .line {
     -fx-border-color: -color-border-subtle-light;
     -fx-border-width: 1 0 0 0;
+}
+
+/* --- Connection Setup Overlay --- */
+.connection-setup-overlay {
+    -fx-background-color: linear-gradient(from 0% 0% to 100% 100%, rgba(6, 10, 16, 0.68), rgba(6, 10, 16, 0.82));
+}
+
+.connection-setup-card {
+    -fx-background-color: linear-gradient(from 0% 0% to 100% 100%, rgba(22, 27, 34, 0.98), rgba(13, 17, 23, 0.98));
+    -fx-background-radius: 26;
+    -fx-border-color: -color-border-subtle-light;
+    -fx-border-radius: 26;
+    -fx-border-width: 1;
+    -fx-padding: 26 28 24 28;
+    -fx-effect: dropshadow(gaussian, rgba(0, 0, 0, 0.35), 28, 0.18, 0, 14);
+}
+
+.connection-setup-icon-shell {
+    -fx-pref-width: 58;
+    -fx-pref-height: 58;
+    -fx-min-width: 58;
+    -fx-min-height: 58;
+    -fx-max-width: 58;
+    -fx-max-height: 58;
+    -fx-background-color: linear-gradient(from 0% 0% to 100% 100%, -color-accent-light, rgba(255, 255, 255, 0.04));
+    -fx-background-radius: 18;
+    -fx-border-color: -color-border-subtle-light;
+    -fx-border-radius: 18;
+}
+
+.connection-setup-icon {
+    -fx-icon-size: 26;
+    -fx-icon-color: -color-accent;
+}
+
+.connection-setup-title {
+    -fx-font-size: 25px;
+    -fx-font-weight: bold;
+    -fx-text-fill: -text-dark;
+}
+
+.connection-setup-subtitle {
+    -fx-font-size: 13px;
+    -fx-text-fill: -text-muted;
+    -fx-max-width: 480;
+}
+
+.connection-setup-body {
+    -fx-alignment: TOP_LEFT;
+}
+
+.connection-setup-side {
+    -fx-background-color: rgba(255, 255, 255, 0.03);
+    -fx-background-radius: 20;
+    -fx-border-color: -color-border-subtle-light;
+    -fx-border-radius: 20;
+    -fx-padding: 18;
+}
+
+.connection-setup-side-title {
+    -fx-font-size: 15px;
+    -fx-font-weight: bold;
+    -fx-text-fill: -text-dark;
+}
+
+.connection-setup-step {
+    -fx-background-color: rgba(255, 255, 255, 0.025);
+    -fx-background-radius: 16;
+    -fx-padding: 12 14;
+    -fx-alignment: TOP_LEFT;
+}
+
+.connection-step-badge {
+    -fx-pref-width: 26;
+    -fx-min-width: 26;
+    -fx-max-width: 26;
+    -fx-pref-height: 26;
+    -fx-min-height: 26;
+    -fx-max-height: 26;
+    -fx-alignment: CENTER;
+    -fx-background-color: -color-accent;
+    -fx-background-radius: 999;
+    -fx-text-fill: -color-menu;
+    -fx-font-size: 12px;
+    -fx-font-weight: bold;
+}
+
+.connection-step-text {
+    -fx-font-size: 13px;
+    -fx-text-fill: -text-main;
+}
+
+.connection-setup-form-card {
+    -fx-background-color: rgba(255, 255, 255, 0.04);
+    -fx-background-radius: 20;
+    -fx-border-color: -color-border-subtle-light;
+    -fx-border-radius: 20;
+    -fx-padding: 18 18 16 18;
+}
+
+.connection-setup-form-title {
+    -fx-font-size: 16px;
+    -fx-font-weight: bold;
+    -fx-text-fill: -text-dark;
+}
+
+.connection-setup-form-help {
+    -fx-font-size: 12px;
+    -fx-text-fill: -text-muted;
+}
+
+.connection-setup-input {
+    -fx-background-color: rgba(255, 255, 255, 0.05);
+    -fx-background-radius: 14;
+    -fx-border-color: -color-border-subtle-light;
+    -fx-border-radius: 14;
+    -fx-border-width: 1;
+    -fx-padding: 12 14;
+    -fx-font-size: 14px;
+    -fx-text-fill: -text-main;
+    -fx-prompt-text-fill: derive(-text-muted, -8%);
+}
+
+.connection-setup-input:focused {
+    -fx-border-color: -color-accent;
+    -fx-background-color: rgba(255, 255, 255, 0.07);
+    -fx-effect: dropshadow(gaussian, rgba(255, 183, 0, 0.15), 12, 0.1, 0, 0);
+}
+
+.connection-setup-status {
+    -fx-font-size: 12px;
+    -fx-text-fill: -text-muted;
+}
+
+.connection-setup-actions {
+    -fx-fill-width: true;
+}
+
+.connection-setup-actions-row {
+    -fx-fill-height: true;
+}
+
+.connection-default-btn {
+    -fx-alignment: center-left;
+}
+
+.connection-secondary-btn {
+    -fx-padding: 10 16;
+    -fx-font-size: 13px;
+    -fx-font-weight: bold;
+}
+
+.connection-primary-btn {
+    -fx-padding: 10 18;
+    -fx-font-size: 13px;
+    -fx-font-weight: bold;
 }
 
 /* --- Settings Stepper (Numeric Input + -) --- */
@@ -311,6 +522,7 @@
     -fx-font-size: 13px;
     -fx-text-fill: -text-muted;
 }
+
 
 .settings-danger-btn {
     -fx-background-color: transparent;
@@ -452,6 +664,7 @@
 }
 
 .dashboard-reset-button {
+    -fx-background-color: transparent;
     -fx-background-radius: 14;
     -fx-border-radius: 14;
     -fx-padding: 10 14;
@@ -469,7 +682,7 @@
 }
 
 .dashboard-date-picker {
-    -fx-background-color: -color-bg-subtle;
+    -fx-background-color: transparent;
     -fx-border-color: -color-border-subtle-light;
     -fx-border-radius: 10;
     -fx-background-radius: 10;
@@ -793,6 +1006,243 @@
 .setup-scroll {
     -fx-background-color: transparent;
     -fx-background: transparent;
+}
+
+.connection-setup-overlay {
+    -fx-background-color: rgba(5, 8, 14, 0.82);
+}
+
+.connection-setup-card {
+    -fx-background-color: linear-gradient(from 0% 0% to 100% 100%, -bg-panels, -color-bg-subtle);
+    -fx-background-radius: 24;
+    -fx-border-radius: 24;
+    -fx-border-color: -color-border-subtle-light;
+    -fx-border-width: 1;
+    -fx-padding: 28;
+    -fx-effect: dropshadow(three-pass-box, rgba(0,0,0,0.35), 32, 0.2, 0, 10);
+}
+
+.connection-setup-icon-shell {
+    -fx-pref-width: 64;
+    -fx-pref-height: 64;
+    -fx-background-color: linear-gradient(from 0% 0% to 100% 100%, -color-accent-light, transparent);
+    -fx-background-radius: 18;
+    -fx-border-color: -color-accent-light;
+    -fx-border-radius: 18;
+}
+
+.connection-setup-icon {
+    -fx-icon-size: 28px;
+    -fx-icon-color: -color-accent;
+}
+
+.connection-setup-title {
+    -fx-font-size: 26px;
+    -fx-font-weight: bold;
+    -fx-text-fill: -text-dark;
+}
+
+.connection-setup-subtitle {
+    -fx-font-size: 13px;
+    -fx-text-fill: -text-muted;
+}
+
+.connection-setup-body {
+    -fx-padding: 8 0 0 0;
+}
+
+.connection-setup-side {
+    -fx-background-color: rgba(255,255,255,0.03);
+    -fx-background-radius: 18;
+    -fx-border-radius: 18;
+    -fx-border-color: -color-border-subtle-light;
+    -fx-padding: 18;
+}
+
+.connection-setup-side-title {
+    -fx-font-size: 15px;
+    -fx-font-weight: bold;
+    -fx-text-fill: -text-dark;
+}
+
+.connection-setup-step {
+    -fx-background-color: -color-bg-subtle;
+    -fx-background-radius: 14;
+    -fx-border-radius: 14;
+    -fx-border-color: -color-border-subtle-light;
+    -fx-padding: 12;
+}
+
+.connection-step-badge {
+    -fx-min-width: 28;
+    -fx-min-height: 28;
+    -fx-alignment: center;
+    -fx-background-color: -color-accent;
+    -fx-background-radius: 999;
+    -fx-text-fill: -text-main;
+    -fx-font-weight: bold;
+}
+
+.connection-step-text {
+    -fx-text-fill: -text-muted;
+    -fx-font-size: 12px;
+}
+
+.connection-setup-form-card {
+    -fx-background-color: rgba(255,255,255,0.03);
+    -fx-background-radius: 18;
+    -fx-border-radius: 18;
+    -fx-border-color: -color-border-subtle-light;
+    -fx-padding: 18;
+}
+
+.connection-setup-form-title {
+    -fx-font-size: 16px;
+    -fx-font-weight: bold;
+    -fx-text-fill: -text-dark;
+}
+
+.connection-setup-form-help {
+    -fx-font-size: 12px;
+    -fx-text-fill: -text-muted;
+}
+
+.connection-setup-input {
+    -fx-font-size: 14px;
+    -fx-background-color: -color-bg-subtle;
+    -fx-text-fill: -text-main;
+    -fx-background-radius: 12;
+    -fx-border-color: -color-border-subtle-light;
+    -fx-border-radius: 12;
+    -fx-padding: 12 14;
+}
+
+.connection-setup-input:focused {
+    -fx-border-color: -color-accent;
+    -fx-effect: dropshadow(three-pass-box, -color-accent-light, 12, 0.25, 0, 0);
+}
+
+.connection-setup-status {
+    -fx-font-size: 12px;
+    -fx-text-fill: -text-muted;
+}
+
+.connection-primary-btn {
+    -fx-font-weight: bold;
+}
+
+.connection-secondary-btn {
+    -fx-font-size: 13px;
+}
+
+.welcome-guide-overlay {
+    -fx-background-color: linear-gradient(from 0% 0% to 100% 100%, rgba(5, 8, 14, 0.72), rgba(5, 8, 14, 0.84));
+}
+
+.welcome-guide-card {
+    -fx-background-color: linear-gradient(from 0% 0% to 100% 100%, rgba(22, 27, 34, 0.98), rgba(13, 17, 23, 0.98));
+    -fx-background-radius: 26;
+    -fx-border-color: -color-border-subtle-light;
+    -fx-border-radius: 26;
+    -fx-border-width: 1;
+    -fx-padding: 28;
+    -fx-effect: dropshadow(gaussian, rgba(0, 0, 0, 0.38), 32, 0.2, 0, 14);
+}
+
+.welcome-guide-icon-shell {
+    -fx-pref-width: 60;
+    -fx-pref-height: 60;
+    -fx-min-width: 60;
+    -fx-min-height: 60;
+    -fx-background-color: linear-gradient(from 0% 0% to 100% 100%, -color-accent-light, rgba(255, 255, 255, 0.05));
+    -fx-background-radius: 18;
+    -fx-border-color: -color-border-subtle-light;
+    -fx-border-radius: 18;
+}
+
+.welcome-guide-icon {
+    -fx-icon-size: 28px;
+    -fx-icon-color: -color-accent;
+}
+
+.welcome-guide-title {
+    -fx-font-size: 28px;
+    -fx-font-weight: bold;
+    -fx-text-fill: -text-dark;
+}
+
+.welcome-guide-progress {
+    -fx-font-size: 11px;
+    -fx-font-weight: bold;
+    -fx-text-fill: -color-accent;
+    -fx-background-color: rgba(255,255,255,0.04);
+    -fx-background-radius: 999;
+    -fx-padding: 6 10;
+}
+
+.welcome-guide-subtitle {
+    -fx-font-size: 13px;
+    -fx-text-fill: -text-muted;
+    -fx-line-spacing: 3;
+}
+
+.welcome-guide-feature-grid {
+    -fx-padding: 6 0 0 0;
+}
+
+.welcome-guide-feature-card {
+    -fx-background-color: rgba(255,255,255,0.035);
+    -fx-background-radius: 18;
+    -fx-border-color: -color-border-subtle-light;
+    -fx-border-radius: 18;
+    -fx-padding: 18;
+}
+
+.welcome-guide-feature-icon {
+    -fx-icon-size: 22px;
+    -fx-icon-color: -color-accent;
+}
+
+.welcome-guide-feature-title {
+    -fx-font-size: 16px;
+    -fx-font-weight: bold;
+    -fx-text-fill: -text-dark;
+}
+
+.welcome-guide-feature-copy {
+    -fx-font-size: 12px;
+    -fx-text-fill: -text-muted;
+}
+
+.welcome-guide-tip-card {
+    -fx-background-color: rgba(255,255,255,0.03);
+    -fx-background-radius: 18;
+    -fx-border-color: -color-border-subtle-light;
+    -fx-border-radius: 18;
+    -fx-padding: 16 18;
+}
+
+.welcome-guide-tip-title {
+    -fx-font-size: 14px;
+    -fx-font-weight: bold;
+    -fx-text-fill: -text-dark;
+}
+
+.welcome-guide-tip-copy {
+    -fx-font-size: 12px;
+    -fx-text-fill: -text-muted;
+}
+
+.welcome-guide-primary-btn {
+    -fx-padding: 10 20;
+    -fx-font-size: 13px;
+    -fx-font-weight: bold;
+}
+
+.welcome-guide-secondary-btn {
+    -fx-padding: 10 16;
+    -fx-font-size: 13px;
+    -fx-font-weight: bold;
 }
 
 /* endregion */
@@ -1262,7 +1712,6 @@
     -fx-padding: 8 0 18 0;
 }
 
-
 .detail-title-label {
     -fx-font-size: 25px;
     -fx-font-weight: bold;
@@ -1283,16 +1732,12 @@
 }
 
 .options-icon {
-    -fx-icon-size: 28;
-    -fx-icon-color: -icon-main;
-    -fx-padding: 0;
-    -fx-transition: all 0.2s ease;
+    -fx-icon-size: 18;
+    -fx-icon-color: -icon-subtle;
 }
 
 .options-icon:hover {
     -fx-icon-color: -color-accent;
-    -fx-scale-x: 1.15;
-    -fx-scale-y: 1.15;
 }
 
 .tag-add-card {
@@ -1909,6 +2354,10 @@
 /* endregion */
 /* region --- notifications --- */
 
+#notificationContainer{
+    -fx-padding: 40 0 0 0;
+}
+
 .notification-toast {
     -fx-background-color: -color-bg-subtle;
     -fx-border-color: -color-border-subtle-light;
@@ -2049,7 +2498,7 @@
 /* endregion */
 /* region --- combobox --- */
 .combo-box {
-    -fx-background-color: -color-bg-subtle;
+    -fx-background-color: transparent;
     -fx-background-radius: 10;
     -fx-border-color: -color-border-subtle-light;
     -fx-border-radius: 10;
@@ -2092,7 +2541,7 @@
 }
 
 .combo-box-popup .list-view {
-    -fx-background-color: -bg-panels;
+    -fx-background-color: -color-bg-default;
     -fx-background-radius: 10;
     -fx-border-color: -color-border-subtle;
     -fx-border-radius: 10;
@@ -2108,7 +2557,6 @@
 }
 
 .combo-box-popup .list-cell:hover {
-    -fx-background-color: -color-hover;
     -fx-text-fill: -text-main;
     -fx-cursor: hand;
 }
@@ -2166,7 +2614,7 @@
 }
 
 .btn-confirm-delete {
-    -fx-background-color: -color-danger;
+    -fx-background-color: -planner-window-close-bg;
     -fx-text-fill: white;
     -fx-font-weight: bold;
     -fx-background-radius: 8;
@@ -2175,7 +2623,6 @@
 }
 
 .btn-confirm-delete:hover {
-    -fx-background-color: -color-danger-hover;
     -fx-scale-x: 1.05;
     -fx-scale-y: 1.05;
 }
@@ -2314,6 +2761,13 @@
 .theme-btn-label {
     -fx-text-fill: -text-muted;
     -fx-font-size: 20px;
+}
+
+.theme-btn-selected {
+    -fx-border-color: -color-accent;
+    -fx-border-width: 2;
+    -fx-background-color: -color-hover;
+    -fx-effect: dropshadow(three-pass-box, -color-accent-light, 8, 0, 0, 0);
 }
 
 /* endregion */
@@ -2474,7 +2928,7 @@
 }
 
 .daily-note-text {
-    -fx-background-color: -color-bg-subtle;
+    -fx-background-color: linear-gradient(from 0% 0% to 100% 100%, -bg-dashboard, -fg-dashboard);
     -fx-background-radius: 10;
     -fx-padding: 16 18;
     -fx-content-display: left;
@@ -2509,7 +2963,7 @@
 }
 
 .planner-row-base {
-    -fx-background-color: -color-bg-subtle;
+    -fx-background-color: linear-gradient(from 0% 0% to 100% 100%, -bg-dashboard, -fg-dashboard);
     -fx-background-radius: 10;
     -fx-padding: 15;
     -fx-spacing: 15;
@@ -2599,17 +3053,22 @@
 }
 
 .deadline-row {
-    -fx-background-color: -color-bg-subtle;
+    -fx-background-color: linear-gradient(from 0% 0% to 100% 100%, -bg-dashboard, -fg-dashboard);
     -fx-background-radius: 10;
     -fx-padding: 15;
     -fx-spacing: 15;
 }
 
 .event-row {
-    -fx-border-width: 0 0 0 4;
+    -fx-background-color: linear-gradient(from 0% 0% to 100% 100%, -bg-dashboard, -fg-dashboard);
     -fx-background-radius: 8;
-    -event-tag-color: -color-accent;
-    -fx-border-color: transparent transparent transparent -event-tag-color;
+}
+
+.event-row-color-bar {
+    -fx-min-width: 5;
+    -fx-pref-width: 5;
+    -fx-max-width: 5;
+    -fx-background-radius: 6;
 }
 
 .calendar-button-icon {
@@ -2803,7 +3262,7 @@
 .todo-row {
     -fx-padding: 15;
     -fx-spacing: 15;
-    -fx-background-color: -color-bg-subtle;
+    -fx-background-color: linear-gradient(from 0% 0% to 100% 100%, -bg-dashboard, -fg-dashboard);
     -fx-background-radius: 10;
     -fx-transition: all 0.2s ease-in-out;
     -fx-cursor: hand;

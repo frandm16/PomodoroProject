@@ -3,6 +3,7 @@ package com.frandm.studytracker;
 import atlantafx.base.theme.PrimerDark;
 import com.frandm.studytracker.controllers.TrackerController;
 import com.frandm.studytracker.core.NotificationManager;
+import com.frandm.studytracker.core.ShortcutManager;
 import fr.brouillard.oss.cssfx.CSSFX;
 import javafx.animation.FadeTransition;
 import javafx.application.Application;
@@ -11,8 +12,6 @@ import javafx.fxml.FXMLLoader;
 import javafx.scene.Parent;
 import javafx.scene.Scene;
 import javafx.scene.image.Image;
-import javafx.scene.input.KeyCode;
-import javafx.scene.input.KeyEvent;
 import javafx.scene.layout.Pane;
 import javafx.scene.paint.Color;
 import javafx.scene.text.Font;
@@ -29,7 +28,8 @@ public class App extends Application {
         Application.setUserAgentStylesheet(new PrimerDark().getUserAgentStylesheet());
 
         Font.loadFont(getClass().getResourceAsStream("/com/frandm/studytracker/fonts/SF-Pro-Display-Regular.otf"), 12);
-        Font.loadFont(getClass().getResourceAsStream("/com/frandm/studytracker/fonts/SF-Pro-Display-Bold.otf"), 12);
+        Font.loadFont(getClass().getResourceAsStream("/com/frandm/studytracker/fonts/Excalifont-Regular.otf"), 12);
+        Font.loadFont(getClass().getResourceAsStream("/com/frandm/studytracker/fonts/SpaceGrotesk-Regular.ttf"), 12);
 
         String os = System.getProperty("os.name").toLowerCase();
         boolean isWindows = os.contains("win");
@@ -93,11 +93,26 @@ public class App extends Application {
             });
         }
 
-        scene.addEventHandler(KeyEvent.KEY_PRESSED, event -> {
-            if (KeyCode.F11.equals(event.getCode())) {
-                finalStage.setFullScreen(!finalStage.isFullScreen());
-            }
-        });
+        ShortcutManager shortcutManager = new ShortcutManager();
+        if (controller != null) {
+            controller.setShortcutManager(shortcutManager);
+            controller.setFullscreenToggleAction(() -> finalStage.setFullScreen(!finalStage.isFullScreen()));
+            shortcutManager.setActionHandler("open_timer_tab", controller::switchToTimer);
+            shortcutManager.setActionHandler("open_planner_tab", controller::openPlannerPanel);
+            shortcutManager.setActionHandler("open_stats_tab", controller::openStatsPanel);
+            shortcutManager.setActionHandler("open_history_tab", controller::openHistoryPanel);
+            shortcutManager.setActionHandler(
+                    "toggle_start_pause", controller::switchToTimer, () -> Platform.runLater(controller::toggleStartPauseAction)
+            );
+            shortcutManager.setActionHandler("skip_session", controller::triggerSkipAction);
+            shortcutManager.setActionHandler("finish_session", controller::triggerFinishAction);
+            shortcutManager.setActionHandler("toggle_settings", controller::toggleSettings);
+            shortcutManager.setActionHandler("open_setup", controller::openSetupAction);
+            shortcutManager.setActionHandler("toggle_fullscreen", controller::toggleFullscreenAction);
+            shortcutManager.setActionHandler("toggle_shortcut_menu", controller::toggleShortcutMenu);
+            shortcutManager.configureShortcutMenuState(controller::isShortcutMenuVisible, controller::closeShortcutMenu);
+        }
+        shortcutManager.install(scene);
 
         URL iconUrl = getClass().getResource("/com/frandm/studytracker/images/SZlogo.png");
 
@@ -112,6 +127,8 @@ public class App extends Application {
                 finalStage.setMaximized(true);
             } catch (Exception ignored) {
             }
+
+            root.requestFocus();
 
             CSSFX.start();
 

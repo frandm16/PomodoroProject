@@ -77,9 +77,14 @@ public class SessionService {
         return sessionRepository.save(session);
     }
 
-    public Session partialUpdate(Long id, String title, String description, Integer rating) {
+    public Session partialUpdate(Long id, String tagName, String tagColor, String taskName,
+                                 String title, String description, Integer rating) {
         Session session = sessionRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Session not found: " + id));
+        if (tagName != null && taskName != null) {
+            Task task = taskService.getOrCreate(tagName, tagColor, taskName);
+            session.setTask(task);
+        }
         if (title != null) session.setTitle(title);
         if (description != null) session.setDescription(description);
         if (rating != null) session.setRating(rating);

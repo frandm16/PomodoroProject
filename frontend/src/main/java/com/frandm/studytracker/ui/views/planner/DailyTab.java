@@ -348,17 +348,12 @@ public class DailyTab extends VBox {
     private void handleAddTodo(TextField todoField) {
         String text = todoField.getText().trim();
         if (text.isEmpty()) return;
-        String tagName = trackerController.getSelectedTag();
-        String taskName = trackerController.getSelectedTask();
-        if (tagName == null || tagName.isBlank() || taskName == null || taskName.isBlank()) {
-            NotificationManager.show("Select task", "Choose an active task before creating a to-do", NotificationManager.NotificationType.INFO);
-            return;
-        }
+
         todoField.clear();
 
         new Thread(() -> {
             try {
-                Map<String, Object> created = ApiClient.createTodo(currentDate, text, tagName, taskName);
+                Map<String, Object> created = ApiClient.createTodo(currentDate, text);
                 Platform.runLater(() -> {
                     todoListContainer.getChildren().removeIf(node -> node instanceof Label && node.getStyleClass().contains("empty-state-label"));
                     todoListContainer.getChildren().add(createTodoRow(created));
@@ -624,7 +619,16 @@ public class DailyTab extends VBox {
         time.getStyleClass().addAll(Styles.TEXT_MUTED, Styles.TEXT_SMALL);
 
         info.getChildren().addAll(title, time);
-        row.getChildren().add(info);
+        
+        Region colorBar = new Region();
+        colorBar.getStyleClass().add("event-row-color-bar");
+        if (rawTagColor instanceof String tagColor && !tagColor.isBlank()) {
+            colorBar.setStyle("-fx-background-color: " + tagColor + ";");
+        } else {
+            colorBar.setStyle("-fx-background-color: -color-accent;");
+        }
+        
+        row.getChildren().addAll(colorBar, info);
         row.setOnMouseClicked(e -> {
             showScheduledSessionPopup(data);
             e.consume();

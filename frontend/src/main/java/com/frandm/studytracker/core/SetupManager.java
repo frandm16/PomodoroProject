@@ -2,6 +2,7 @@ package com.frandm.studytracker.core;
 
 import com.frandm.studytracker.client.ApiClient;
 import com.frandm.studytracker.controllers.TrackerController;
+import javafx.application.Platform;
 import javafx.geometry.Pos;
 import javafx.scene.control.*;
 import javafx.scene.layout.*;
@@ -35,20 +36,23 @@ public class SetupManager {
             Button createBtn = new Button("+ Create Task: '" + input + "'");
             createBtn.setMaxWidth(Double.MAX_VALUE);
             if(filterTag != null){
-                createBtn.setOnAction(_ -> {
+                createBtn.setOnAction(_ -> new Thread(() -> {
                     try {
                         ApiClient.getOrCreateTask(filterTag, colors.getOrDefault(filterTag, "#ffffff"), input);
+                        Platform.runLater(() -> {
+                            selectedTask = input;
+                            selectedTag = filterTag;
+                            controller.refreshDatabaseData();
+                            updateFuzzyResults(input, container, tagsMap, colors, onSelect);
+                            controller.handleStartSessionFromSetup();
+                            onSelect.run();
+                            NotificationManager.show("Task created", "Successfully created " + input, NotificationManager.NotificationType.SUCCESS);
+                        });
                     } catch (Exception err) {
-                        System.err.println("Error creating task: " + err.getMessage());
+                        Logger.error("Error creating task", err);
+                        Platform.runLater(() -> controller.showBackendOperationError("Task could not be created", err));
                     }
-                    selectedTask = input;
-                    selectedTag = filterTag;
-                    controller.refreshDatabaseData();
-                    updateFuzzyResults(input, container, tagsMap, colors, onSelect);
-                    controller.handleStartSessionFromSetup();
-                    onSelect.run();
-                    NotificationManager.show("Task created", "Successfully created " + input, NotificationManager.NotificationType.SUCCESS);
-                });
+                }, "task-create-thread").start());
             }else{
                 createBtn.setOnAction(_ -> NotificationManager.show("Cant create task", "A tag must be selected", NotificationManager.NotificationType.ERROR));
             }
@@ -115,9 +119,9 @@ public class SetupManager {
 
             Button deleteBtn = new Button();
             deleteBtn.getStyleClass().add("card-options-button");
-            FontIcon optionsIcon = new FontIcon("mdi2d-dots-horizontal");
-            optionsIcon.getStyleClass().add("options-icon");
-            deleteBtn.setGraphic(optionsIcon);
+            FontIcon deleteIcon = new FontIcon("mdi2t-trash-can-outline");
+            deleteIcon.getStyleClass().add("options-icon");
+            deleteBtn.setGraphic(deleteIcon);
 
             deleteBtn.setOnAction(e -> {
                 e.consume();

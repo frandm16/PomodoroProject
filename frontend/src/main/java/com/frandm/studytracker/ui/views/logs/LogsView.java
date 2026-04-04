@@ -3,6 +3,8 @@ package com.frandm.studytracker.ui.views.logs;
 import com.frandm.studytracker.controllers.TrackerController;
 import com.frandm.studytracker.ui.views.FloatingDockView;
 import javafx.animation.FadeTransition;
+import javafx.animation.Interpolator;
+import javafx.animation.ParallelTransition;
 import javafx.animation.TranslateTransition;
 import javafx.scene.Node;
 import javafx.scene.layout.*;
@@ -12,12 +14,15 @@ import java.util.List;
 
 public class LogsView extends StackPane {
 
+    public static final int ANIMATION_DURATION = 150;
     private final LogsController logsController;
     private final HistoryTab historyTab;
     private final FocusTab focusTab;
     private final CalendarTab calendarTab;
 
     private String currentTabId;
+    private final List<String> tabOrder = List.of("history", "focus", "calendar");
+    private boolean initialized;
 
     public LogsView(TrackerController trackerController) {
         this.logsController = new LogsController(trackerController);
@@ -54,6 +59,14 @@ public class LogsView extends StackPane {
         this.getChildren().add(layout);
 
         currentTabId = "history";
+    }
+
+    public void initializeAfterConnection() {
+        if (initialized) {
+            logsController.refreshAll();
+            return;
+        }
+        initialized = true;
         historyTab.reload();
     }
 
@@ -63,23 +76,45 @@ public class LogsView extends StackPane {
         Node oldNode = getTabNode(currentTabId);
         Node newNode = getTabNode(tabId);
 
-        oldNode.setVisible(false);
-        oldNode.setManaged(false);
+        int oldIndex = tabOrder.indexOf(currentTabId);
+        int newIndex = tabOrder.indexOf(tabId);
+        int direction = newIndex > oldIndex ? 1 : -1;
 
+        double offset = 800;
+
+        newNode.setTranslateX(offset * direction);
+        newNode.setOpacity(0);
         newNode.setVisible(true);
         newNode.setManaged(true);
-        currentTabId = tabId;
 
-        newNode.setOpacity(0);
-        newNode.setTranslateY(10);
-        FadeTransition fadeIn = new FadeTransition(Duration.millis(200), newNode);
+        newNode.toFront();
+
+        TranslateTransition slideOut = new TranslateTransition(Duration.millis(ANIMATION_DURATION), oldNode);
+        slideOut.setByX(-offset * direction);
+        slideOut.setInterpolator(Interpolator.EASE_IN);
+        
+        FadeTransition fadeOut = new FadeTransition(Duration.millis(ANIMATION_DURATION), oldNode);
+        fadeOut.setFromValue(1.0);
+        fadeOut.setToValue(0.0);
+
+        TranslateTransition slideIn = new TranslateTransition(Duration.millis(ANIMATION_DURATION), newNode);
+        slideIn.setToX(0);
+        slideIn.setInterpolator(Interpolator.EASE_OUT);
+        
+        FadeTransition fadeIn = new FadeTransition(Duration.millis(ANIMATION_DURATION), newNode);
         fadeIn.setFromValue(0.0);
         fadeIn.setToValue(1.0);
-        TranslateTransition slideIn = new TranslateTransition(Duration.millis(200), newNode);
-        slideIn.setFromY(10);
-        slideIn.setToY(0);
-        fadeIn.play();
-        slideIn.play();
+
+        ParallelTransition transition = new ParallelTransition(slideOut, fadeOut, slideIn, fadeIn);
+        transition.setOnFinished(_ -> {
+            oldNode.setVisible(false);
+            oldNode.setManaged(false);
+            oldNode.setTranslateX(0);
+            oldNode.setOpacity(1);
+        });
+        transition.play();
+        
+        currentTabId = tabId;
     }
 
     private Node getTabNode(String tabId) {

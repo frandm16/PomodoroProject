@@ -2,20 +2,17 @@ package com.frandm.studytracker.controllers;
 
 import atlantafx.base.controls.ProgressSliderSkin;
 import atlantafx.base.controls.ToggleSwitch;
-import atlantafx.base.theme.PrimerDark;
-import atlantafx.base.theme.PrimerLight;
 import com.frandm.studytracker.client.ApiClient;
 import com.frandm.studytracker.core.*;
+import com.frandm.studytracker.ui.util.AppearanceManager;
 import com.frandm.studytracker.ui.util.Animations;
 import com.frandm.studytracker.ui.util.UIManager;
 import com.frandm.studytracker.ui.views.FloatingDockView;
 import com.frandm.studytracker.ui.views.dashboard.StatsDashboardView;
 import com.frandm.studytracker.ui.views.logs.LogsView;
 import com.frandm.studytracker.ui.views.planner.PlannerController;
-import javafx.application.Application;
 import javafx.application.Platform;
 import javafx.event.ActionEvent;
-import javafx.event.Event;
 import javafx.fxml.FXML;
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;
@@ -37,18 +34,21 @@ import java.util.*;
 
 public class TrackerController {
 
-    public static final String PROJECT_VERSION = "v1.3.0";
-    @FXML public GridPane mainContainer, setupPane, settingsPane, editSessionPane, summaryPane;
-    @FXML public StackPane rootPane, setupBox, editSessionBox, summaryBox, stackpaneCircle,
+    public static final String PROJECT_VERSION = "v2.0.0";
+
+    @FXML public GridPane mainContainer, setupPane, settingsPane, editSessionPane, summaryPane, shortcutMenuPane, connectionSetupPane, welcomeGuidePane;
+    @FXML public StackPane rootPane, setupBox, editSessionBox, summaryBox, stackpaneCircle, connectionSetupBox, welcomeGuideBox,
             confirmOverlay, confirmTagOverlay, plannerOverlayLayer;
     @FXML public VBox timerTextContainer, notificationContainer, scheduleListContainer,
             plannerContainer, historyContainer, fuzzyResultsContainer, tagsListContainer,
             pomoSettingsPane, countdownSettingsPane, settingsBox, confirmTagBox,
-            confirmBox, themeButtonsContainer, mainVbox;
+            confirmBox, mainVbox, shortcutMenuBox, shortcutSettingsListContainer,
+            shortcutMenuListContainer;
     @FXML public HBox starsContainer, editStarsContainer, buttonsHbox, floatingDock, activeTaskContainer;
+    @FXML public HBox themeButtonsContainer;
     @FXML public Label timerLabel, workValLabel, shortValLabel, longValLabel, intervalValLabel,
             alarmVolumeValLabel, widthSliderValLabel, countdownValLabel, circleSizeValLabel,
-            selectedNameLabel, notificationVolumeLabel, masterVolumeLabel, backgroundMusicVolumeLabel;
+            selectedNameLabel, notificationVolumeLabel, masterVolumeLabel;
     @FXML public TextField summaryTitle, editTitleField, tagNameInput, fuzzySearchInput;
     @FXML public TextArea summaryDesc, editDescArea;
     @FXML public ComboBox<String> editTagCombo, editTaskCombo;
@@ -57,28 +57,43 @@ public class TrackerController {
     @FXML public ToggleButton timerModeBtn, pomoModeBtn, countdownModeBtn;
     @FXML public ToggleSwitch countBreakTime, autoPomoToggle, autoBreakToggle;
     @FXML public Slider workSlider, shortSlider, longSlider, intervalSlider, alarmVolumeSlider,
-            widthSlider, countdownSlider, circleSizeSlider, notificationVolumeSlider, masterVolumeSlider,
-            backgroundMusicVolumeSlider;
+            widthSlider, countdownSlider, circleSizeSlider, notificationVolumeSlider, masterVolumeSlider;
     @FXML public ColumnConstraints colRightStats, colCenterStats, colLeftStats;
     @FXML public ScrollPane statsContainer;
     @FXML public MediaView backgroundVideoView;
 
     @FXML public ToggleSwitch enableToastToggle;
     @FXML public Slider notifDurationSlider;
-    @FXML public Label notifDurationLabel, appVersionLabel;
-    @FXML public FontIcon musicToggleIcon;
+    @FXML public Label notifDurationLabel, appVersionLabel, shortcutCaptureStatusLabel,
+            serverStatusLabel, connectionSetupStatusLabel, welcomeGuideProgressLabel,
+            welcomeGuideTitleLabel, welcomeGuideSubtitleLabel, welcomeGuideTipTitleLabel,
+            welcomeGuideTipCopyLabel, welcomeFeatureTitleOne, welcomeFeatureCopyOne,
+            welcomeFeatureTitleTwo, welcomeFeatureCopyTwo, welcomeFeatureTitleThree,
+            welcomeFeatureCopyThree;
 
     @FXML public ComboBox<String> alarmPresetComboBox;
+    @FXML public ComboBox<String> fontComboBox;
+    @FXML public TabPane settingsTabPane;
     @FXML public TextField customAlarmSoundField;
     @FXML public TextField successSoundField;
     @FXML public TextField errorSoundField;
     @FXML public TextField warningSoundField;
     @FXML public TextField infoSoundField;
+    @FXML public TextField serverUrlField;
+    @FXML public TextField connectionSetupUrlField;
+    @FXML public TilePane backgroundTilePane;
+    @FXML public Label backgroundCurrentLabel;
+    @FXML public Button welcomeGuideBackButton;
+    @FXML public Button welcomeGuideContinueButton;
+    @FXML public FontIcon welcomeGuideFeatureIconOne;
+    @FXML public FontIcon welcomeGuideFeatureIconTwo;
+    @FXML public FontIcon welcomeGuideFeatureIconThree;
     //endregion
 
     private final TrackerEngine engine = new TrackerEngine();
     private final SetupManager setupManager = new SetupManager(this);
     private final UIManager uiManager = new UIManager();
+    private final AppearanceManager appearanceManager = new AppearanceManager();
     @FXML
     public Label ModeSubnameLabel;
     @FXML
@@ -99,6 +114,8 @@ public class TrackerController {
     private PlannerController plannerController;
     private LogsView logsView;
     private FloatingDockView floatingDockView;
+    private ShortcutManager shortcutManager;
+    private Runnable fullscreenToggleAction = () -> {};
 
     private double SIZE_FACTOR = 0.05;
     private int currentRating = 0;
@@ -120,6 +137,59 @@ public class TrackerController {
     private BackgroundManager backgroundManager;
     @FXML
     private Region backgroundVideoOverlay;
+    private boolean connectionSetupRequired;
+    private boolean welcomeGuideRequired;
+    private int welcomeGuideStepIndex = 0;
+    private final List<WelcomeGuideStep> welcomeGuideSteps = List.of(
+            new WelcomeGuideStep(
+                    "Step 1 of 4",
+                    "Welcome To StudyZen",
+                    "A personal study tracker for planning your weeks, logging focus sessions and reviewing your progress with your own self-hosted backend.",
+                    "mdi2c-compass-outline",
+                    "Track", "Run focused sessions and keep a real history of what you studied.",
+                    "Plan", "Organize tasks, weekly blocks and deadlines in one place.",
+                    "Review", "Use logs and stats to understand your study rhythm over time.",
+                    "What happens next",
+                    "After this intro, you'll configure your backend once and the app will remember it for future launches.",
+                    "Next"
+            ),
+            new WelcomeGuideStep(
+                    "Step 2 of 4",
+                    "Track Your Focus Sessions",
+                    "StudyZen is built around sessions you can start, rate and revisit later.",
+                    "mdi2t-timer-outline",
+                    "Start", "Pick a tag and task, then launch a focused session from the timer view.",
+                    "Capture", "Save title, notes and rating when you finish to build useful context.",
+                    "Reuse", "Your session history stays available in logs and stats for future review.",
+                    "Why it matters",
+                    "The timer is not just a stopwatch; it becomes your personal record of real work.",
+                    "Next"
+            ),
+            new WelcomeGuideStep(
+                    "Step 3 of 4",
+                    "Plan Ahead With Structure",
+                    "The planner helps you map what you want to do before you start doing it.",
+                    "mdi2c-calendar-month-outline",
+                    "Schedule", "Create study blocks and place them through your week calendar.",
+                    "Deadlines", "Track upcoming work and keep urgency visible before it becomes noise.",
+                    "Daily view", "Review todos, notes and sessions for a specific day in one place.",
+                    "Why it matters",
+                    "Planning reduces friction and makes the timer and logs more meaningful.",
+                    "Next"
+            ),
+            new WelcomeGuideStep(
+                    "Step 4 of 4",
+                    "Review Your Progress",
+                    "Once you have sessions and plans recorded, StudyZen helps you inspect the pattern.",
+                    "mdi2c-chart-line",
+                    "Logs", "Browse your history by day, task and calendar view.",
+                    "Stats", "See study volume, tendencies and distribution over time.",
+                    "Adjust", "Use that feedback to improve consistency instead of relying on guesswork.",
+                    "Ready to connect",
+                    "Next you'll set your backend URL so the app can save and load your data.",
+                    "Start Setup"
+            )
+    );
 
     @FXML
     public void initialize() {
@@ -129,6 +199,7 @@ public class TrackerController {
         setupDynamicDock();
         setupInitialUIState();
         setupSettingsPanel();
+        setupConnectionUi();
         setupModeSystem();
         setupFuzzySearch();
         setupEngineCallbacks();
@@ -136,10 +207,14 @@ public class TrackerController {
 
         updateEngineSettings();
         updateUIFromEngine();
+        Platform.runLater(this::handleInitialConnectionFlow);
     }
 
     private void subscribeToTagEvents() {
-        TagEventBus.getInstance().subscribe(_ -> refreshTagsAndTasksAsync());
+        TagEventBus.getInstance().subscribe(_ -> {
+            refreshTagsAndTasksAsync();
+            Platform.runLater(this::refreshSideMenu);
+        });
     }
 
     //region initialize
@@ -148,17 +223,23 @@ public class TrackerController {
         // setupGeneratorsDEVELOP();
         // -------------------------------------------
         ConfigManager.load(engine);
-        applyTheme();
+        ApiClient.setBaseUrl(ConfigManager.resolveApiUrl());
+        appearanceManager.bindRoot(rootPane);
+        appearanceManager.applyAll(engine);
         NotificationManager.init(notificationContainer);
         NotificationManager.setEngine(engine);
-        new Thread(() -> {
-            refreshTagsAndTasks();
-            Platform.runLater(() -> {
-                if (statsDashboard != null) {
-                    statsDashboard.refresh();
-                }
-            });
-        }, "data-refresh-thread").start();
+        boolean hasStoredApiUrl = ConfigManager.hasStoredApiUrl();
+        boolean hasEnvApiUrl = System.getenv("API_URL") != null && !System.getenv("API_URL").isBlank();
+        if (hasStoredApiUrl || hasEnvApiUrl) {
+            new Thread(() -> {
+                refreshTagsAndTasks();
+                Platform.runLater(() -> {
+                    if (statsDashboard != null) {
+                        statsDashboard.refresh();
+                    }
+                });
+            }, "data-refresh-thread").start();
+        }
     }
 
     private void setupBackgroundVideo() {
@@ -217,13 +298,232 @@ public class TrackerController {
         resizeUI();
     }
 
+    private void setupConnectionUi() {
+        syncConnectionFields(ApiClient.getBaseUrl());
+        setConnectionStatus(serverStatusLabel, "Server URL ready to use.", "-text-muted");
+        setConnectionStatus(connectionSetupStatusLabel, "Use the default local server or enter a custom URL.", "-text-muted");
+    }
+
+    private void handleInitialConnectionFlow() {
+        boolean hasStoredApiUrl = ConfigManager.hasStoredApiUrl();
+        boolean hasEnvApiUrl = System.getenv("API_URL") != null && !System.getenv("API_URL").isBlank();
+        connectionSetupRequired = !hasStoredApiUrl && !hasEnvApiUrl;
+        welcomeGuideRequired = !ConfigManager.isWelcomeGuideCompleted();
+
+        if (welcomeGuideRequired) {
+            openWelcomeGuide();
+        } else if (connectionSetupRequired) {
+            openConnectionSetup();
+        } else {
+            validateCurrentConnectionAsync(false);
+        }
+    }
+
+    private void syncConnectionFields(String url) {
+        if (serverUrlField != null) {
+            serverUrlField.setText(url);
+        }
+        if (connectionSetupUrlField != null) {
+            connectionSetupUrlField.setText(url);
+        }
+    }
+
+    private void setConnectionStatus(Label label, String message, String colorToken) {
+        if (label == null) {
+            return;
+        }
+        label.setText(message);
+        label.setStyle("-fx-text-fill: " + colorToken + ";");
+    }
+
+    public void showBackendOperationError(String fallbackMessage, Exception error) {
+        String backendMessage = ApiClient.getBackendErrorMessage(error);
+        if (backendMessage != null) {
+            setConnectionStatus(serverStatusLabel, "Cannot reach server", "-color-danger");
+            setConnectionStatus(connectionSetupStatusLabel, "Cannot reach server", "-color-danger");
+            NotificationManager.show("Backend unavailable", backendMessage, NotificationManager.NotificationType.ERROR);
+            openServerSettings();
+            return;
+        }
+
+        NotificationManager.show("Error", fallbackMessage, NotificationManager.NotificationType.ERROR);
+    }
+
+    private void openServerSettings() {
+        if (settingsTabPane != null) {
+            settingsTabPane.getTabs().stream()
+                    .filter(tab -> "Server".equals(tab.getText()))
+                    .findFirst()
+                    .ifPresent(tab -> settingsTabPane.getSelectionModel().select(tab));
+        }
+        if (settingsPane != null && !settingsPane.isVisible()) {
+            toggleSettings();
+        }
+    }
+
+    private void openConnectionSetup() {
+        if (connectionSetupPane == null || connectionSetupBox == null) {
+            return;
+        }
+        closeWelcomeGuide(false);
+        syncConnectionFields(ApiClient.getBaseUrl());
+        setConnectionStatus(connectionSetupStatusLabel, "Use the default local server or enter a custom URL.", "-text-muted");
+        if (!connectionSetupPane.isVisible()) {
+            Animations.show(connectionSetupPane, connectionSetupBox, () -> Platform.runLater(connectionSetupUrlField::requestFocus));
+        }
+    }
+
+    private void closeConnectionSetup() {
+        if (connectionSetupPane != null && connectionSetupPane.isVisible()) {
+            Animations.hide(connectionSetupPane, connectionSetupBox, () -> {
+                connectionSetupRequired = false;
+                if (rootPane != null) {
+                    rootPane.requestFocus();
+                }
+            });
+        } else {
+            connectionSetupRequired = false;
+        }
+    }
+
+    private void openWelcomeGuide() {
+        if (welcomeGuidePane == null || welcomeGuideBox == null) {
+            return;
+        }
+        if (connectionSetupPane != null && connectionSetupPane.isVisible()) {
+            Animations.hide(connectionSetupPane, connectionSetupBox, null);
+        }
+        welcomeGuideStepIndex = 0;
+        renderWelcomeGuideStep();
+        if (!welcomeGuidePane.isVisible()) {
+            Animations.show(welcomeGuidePane, welcomeGuideBox, () -> {
+                if (rootPane != null) {
+                    rootPane.requestFocus();
+                }
+            });
+        }
+    }
+
+    private void renderWelcomeGuideStep() {
+        if (welcomeGuideSteps.isEmpty()) {
+            return;
+        }
+
+        WelcomeGuideStep step = welcomeGuideSteps.get(welcomeGuideStepIndex);
+        if (welcomeGuideProgressLabel != null) welcomeGuideProgressLabel.setText(step.progress());
+        if (welcomeGuideTitleLabel != null) welcomeGuideTitleLabel.setText(step.title());
+        if (welcomeGuideSubtitleLabel != null) welcomeGuideSubtitleLabel.setText(step.subtitle());
+        if (welcomeGuideTipTitleLabel != null) welcomeGuideTipTitleLabel.setText(step.tipTitle());
+        if (welcomeGuideTipCopyLabel != null) welcomeGuideTipCopyLabel.setText(step.tipCopy());
+
+        if (welcomeFeatureTitleOne != null) welcomeFeatureTitleOne.setText(step.featureTitleOne());
+        if (welcomeFeatureCopyOne != null) welcomeFeatureCopyOne.setText(step.featureCopyOne());
+        if (welcomeFeatureTitleTwo != null) welcomeFeatureTitleTwo.setText(step.featureTitleTwo());
+        if (welcomeFeatureCopyTwo != null) welcomeFeatureCopyTwo.setText(step.featureCopyTwo());
+        if (welcomeFeatureTitleThree != null) welcomeFeatureTitleThree.setText(step.featureTitleThree());
+        if (welcomeFeatureCopyThree != null) welcomeFeatureCopyThree.setText(step.featureCopyThree());
+
+        if (welcomeGuideFeatureIconOne != null) welcomeGuideFeatureIconOne.setIconLiteral(step.heroIcon());
+        if (welcomeGuideFeatureIconTwo != null) welcomeGuideFeatureIconTwo.setIconLiteral(step.featureIconTwo());
+        if (welcomeGuideFeatureIconThree != null) welcomeGuideFeatureIconThree.setIconLiteral(step.featureIconThree());
+
+        if (welcomeGuideBackButton != null) {
+            boolean firstStep = welcomeGuideStepIndex == 0;
+            welcomeGuideBackButton.setVisible(!firstStep);
+            welcomeGuideBackButton.setManaged(!firstStep);
+        }
+        if (welcomeGuideContinueButton != null) {
+            welcomeGuideContinueButton.setText(step.primaryButtonLabel());
+        }
+    }
+
+    private void closeWelcomeGuide(boolean markCompleted) {
+        if (markCompleted) {
+            ConfigManager.setWelcomeGuideCompleted(true);
+            welcomeGuideRequired = false;
+        }
+        if (welcomeGuidePane != null && welcomeGuidePane.isVisible()) {
+            Animations.hide(welcomeGuidePane, welcomeGuideBox, () -> {
+                if (rootPane != null) {
+                    rootPane.requestFocus();
+                }
+            });
+        }
+    }
+
+    private void validateCurrentConnectionAsync(boolean showSuccess) {
+        String currentUrl = ApiClient.getBaseUrl();
+        new Thread(() -> {
+            boolean reachable = ApiClient.testConnection(currentUrl);
+            Platform.runLater(() -> {
+                if (reachable) {
+                    setConnectionStatus(serverStatusLabel, "Connected", "-color-accent");
+                    setConnectionStatus(connectionSetupStatusLabel, "Connected", "-color-accent");
+                    if (showSuccess) {
+                        NotificationManager.show("Server connected", currentUrl, NotificationManager.NotificationType.SUCCESS);
+                    }
+                    if (logsView != null) {
+                        logsView.initializeAfterConnection();
+                    }
+                    refreshDatabaseData();
+                } else {
+                    setConnectionStatus(serverStatusLabel, "Cannot reach server", "-color-danger");
+                    setConnectionStatus(connectionSetupStatusLabel, "Cannot reach server", "-color-danger");
+                    if (!connectionSetupRequired) {
+                        NotificationManager.show(
+                                "Connection issue",
+                                "Cannot reach the configured backend. Update it in Settings > Server.",
+                                NotificationManager.NotificationType.WARNING
+                        );
+                        openServerSettings();
+                    }
+                }
+            });
+        }, "api-connection-check").start();
+    }
+
+    private void testConnectionAsync(String candidateUrl, Label statusLabel, Runnable onSuccess) {
+        setConnectionStatus(statusLabel, "Testing connection...", "-text-muted");
+        new Thread(() -> {
+            boolean reachable = ApiClient.testConnection(candidateUrl);
+            Platform.runLater(() -> {
+                if (reachable) {
+                    setConnectionStatus(statusLabel, "Connected", "-color-accent");
+                    if (onSuccess != null) {
+                        onSuccess.run();
+                    }
+                } else {
+                    setConnectionStatus(statusLabel, "Cannot reach server", "-color-danger");
+                }
+            });
+        }, "api-connection-test").start();
+    }
+
+    private void applyApiUrl(String candidateUrl, boolean closeSetupAfterSave) {
+        try {
+            ApiClient.setBaseUrl(candidateUrl);
+            ConfigManager.saveApiUrl(ApiClient.getBaseUrl());
+            syncConnectionFields(ApiClient.getBaseUrl());
+            setConnectionStatus(serverStatusLabel, "Saved", "-color-accent");
+            setConnectionStatus(connectionSetupStatusLabel, "Saved", "-color-accent");
+            refreshDatabaseData();
+            if (closeSetupAfterSave) {
+                closeConnectionSetup();
+            }
+            NotificationManager.show("Server updated", ApiClient.getBaseUrl(), NotificationManager.NotificationType.SUCCESS);
+        } catch (IllegalArgumentException e) {
+            setConnectionStatus(serverStatusLabel, e.getMessage(), "-color-danger");
+            setConnectionStatus(connectionSetupStatusLabel, e.getMessage(), "-color-danger");
+        }
+    }
+
     private void setupDynamicDock() {
         floatingDockView = new FloatingDockView(
                 floatingDock,
                 () -> engine,
                 this::handleDockNavigation,
                 this::toggleSettings,
-                this::openBackgroundSelector
+                () -> {}
         );
     }
 
@@ -277,6 +577,20 @@ public class TrackerController {
         }
     }
 
+    public void openStatsPanel() {
+        if (getActivePanel() == statsContainer) return;
+        if (floatingDockView != null) {
+            floatingDockView.triggerSection(FloatingDockView.Section.STATS);
+        }
+    }
+
+    public void openHistoryPanel() {
+        if (getActivePanel() == historyContainer) return;
+        if (floatingDockView != null) {
+            floatingDockView.triggerSection(FloatingDockView.Section.HISTORY);
+        }
+    }
+
     private void setupSettingsPanel() {
         setupSlider(workSlider, workValLabel, engine.getWorkMins(), engine::setWorkMins, " min");
         setupSlider(shortSlider, shortValLabel, engine.getShortMins(), engine::setShortMins, " min");
@@ -284,16 +598,9 @@ public class TrackerController {
         setupSlider(intervalSlider, intervalValLabel, engine.getInterval(), engine::setInterval, "");
         setupSlider(countdownSlider, countdownValLabel, engine.getCountdownMins(), engine::setCountdownMins, " min");
 
-        setupSlider(masterVolumeSlider, masterVolumeLabel, engine.getMasterVolume(), (newVolume) -> {
-            engine.setMasterVolume(newVolume);
-            SoundManager.updateMusicVolume();
-        }, " %");
+        setupSlider(masterVolumeSlider, masterVolumeLabel, engine.getMasterVolume(), engine::setMasterVolume, " %");
         setupSlider(alarmVolumeSlider, alarmVolumeValLabel, engine.getAlarmVolume(), engine::setAlarmVolume, " %");
         setupSlider(notificationVolumeSlider, notificationVolumeLabel, engine.getNotificationVolume(), engine::setNotificationVolume, " %");
-        setupSlider(backgroundMusicVolumeSlider, backgroundMusicVolumeLabel, engine.getBackgroundMusicVolume(), (newVolume) -> {
-            engine.setBackgroundMusicVolume(newVolume);
-            SoundManager.updateMusicVolume();
-        }, " %");
 
         setupSlider(widthSlider, widthSliderValLabel, engine.getWidthStats(), engine::setWidthStats, " %");
         setupSlider(circleSizeSlider, circleSizeValLabel, engine.getUiSize(), (newVal) -> {
@@ -317,6 +624,54 @@ public class TrackerController {
         colCenterStats.percentWidthProperty().bind(widthSlider.valueProperty());
         colLeftStats.percentWidthProperty().bind(widthSlider.valueProperty().multiply(-1).add(100).divide(2));
         colRightStats.percentWidthProperty().bind(widthSlider.valueProperty().multiply(-1).add(100).divide(2));
+        
+        setupBackgroundSelector();
+        setupFontSelector();
+        appearanceManager.updateThemeSelection(themeButtonsContainer, engine.getCurrentTheme());
+        refreshShortcutViews();
+    }
+
+    private void setupFontSelector() {
+        if (fontComboBox == null) return;
+
+        fontComboBox.getItems().setAll(appearanceManager.getFontLabels());
+        fontComboBox.getSelectionModel().select(appearanceManager.getFontLabel(engine.getCurrentFont()));
+        fontComboBox.valueProperty().addListener((_, _, newValue) -> {
+            if (newValue == null) {
+                return;
+            }
+
+            String fontKey = appearanceManager.getFontKeyForLabel(newValue);
+            if (fontKey.equals(engine.getCurrentFont())) {
+                return;
+            }
+
+            engine.setCurrentFont(fontKey);
+            appearanceManager.applyFont(fontKey);
+        });
+    }
+
+    private void setupBackgroundSelector() {
+        if (backgroundTilePane == null || backgroundCurrentLabel == null) return;
+        
+        backgroundTilePane.getChildren().clear();
+        
+        // Actualizar etiqueta con el fondo actual
+        backgroundCurrentLabel.setText("Current: " + backgroundManager.getLabel(engine.getBackgroundVideoSource()));
+        
+        // Crear botones para cada preset
+        for (BackgroundManager.BackgroundOption preset : backgroundManager.getDynamicPresets()) {
+            Button btn = backgroundManager.createOptionButton(
+                    preset,
+                    engine.getBackgroundVideoSource(),
+                    () -> {
+                        // Al hacer clic en un preset, actualizar la etiqueta y refrescar selección
+                        backgroundCurrentLabel.setText("Current: " + backgroundManager.getLabel(preset.source()));
+                        setupBackgroundSelector();
+                    }
+            );
+            backgroundTilePane.getChildren().add(btn);
+        }
     }
 
     private void setupModeSystem() {
@@ -402,13 +757,25 @@ public class TrackerController {
 
     //region data
     public void refreshDatabaseData() {
-        refreshTagsAndTasks();
+        if (!ApiClient.isConfigured()) {
+            return;
+        }
+        refreshTagsAndTasksAsync();
+        if (plannerController != null) {
+            plannerController.refresh();
+        }
+        if (logsView != null && logsView.getLogsController() != null) {
+            logsView.getLogsController().refreshAll();
+        }
         if (statsDashboard != null) {
             statsDashboard.refresh();
         }
     }
 
     public void refreshTagsAndTasks() {
+        if (!ApiClient.isConfigured()) {
+            return;
+        }
         try {
             final Map<String, String> colors = new java.util.LinkedHashMap<>();
             final Map<String, Long> ids = new java.util.LinkedHashMap<>();
@@ -432,7 +799,7 @@ public class TrackerController {
             tagIds = ids;
             tagsWithTasksMap = map;
         } catch (Exception e) {
-            System.err.println("Error refreshing data: " + e.getMessage());
+            Logger.error("Error refreshing data", e);
         }
 
         setupManager.renderTagsList(tagsListContainer, tagColors, tagIds, () ->
@@ -443,6 +810,9 @@ public class TrackerController {
     }
 
     private void refreshTagsAndTasksAsync() {
+        if (!ApiClient.isConfigured()) {
+            return;
+        }
         new Thread(() -> {
             try {
                 final Map<String, String> colors = new java.util.LinkedHashMap<>();
@@ -476,7 +846,7 @@ public class TrackerController {
                     setupManager.updateFuzzyResults("", fuzzyResultsContainer, tagsWithTasksMap, tagColors, this::onTaskSelected);
                 });
             } catch (Exception e) {
-                System.err.println("Error refreshing tags async: " + e.getMessage());
+                Logger.error("Error refreshing tags async", e);
             }
         }, "tag-refresh-thread").start();
     }
@@ -493,12 +863,12 @@ public class TrackerController {
                 (int)masterVolumeSlider.getValue(),
                 (int)alarmVolumeSlider.getValue(),
                 (int)notificationVolumeSlider.getValue(),
-                (int)backgroundMusicVolumeSlider.getValue(),
                 (int)widthSlider.getValue(),
                 (int)circleSizeSlider.getValue(),
                 engine.getCurrentMode(),
                 (int)countdownSlider.getValue(),
                 engine.getCurrentTheme(),
+                engine.getCurrentFont(),
                 (int)notifDurationSlider.getValue(),
                 enableToastToggle != null && enableToastToggle.isSelected()
         );
@@ -542,6 +912,23 @@ public class TrackerController {
     @FXML
     private void handleSkip() { engine.skip(); }
 
+    public void toggleStartPauseAction() {
+        handleMainAction();
+    }
+
+    public void triggerSkipAction() {
+        if (skipBtn.isVisible()) {
+            handleSkip();
+            updateUIFromEngine();
+        }
+    }
+
+    public void triggerFinishAction() {
+        if (finishBtn.isVisible()) {
+            handleFinish();
+        }
+    }
+
     @FXML
     private void handleSaveSummary() {
         if(engine.getRealMinutesElapsed() < 1) {
@@ -561,8 +948,8 @@ public class TrackerController {
                     currentRating
             );
         } catch (Exception e) {
-            System.err.println("Error saving session: " + e.getMessage());
-            NotificationManager.show("Error", "Session could not be saved", NotificationManager.NotificationType.ERROR);
+            Logger.error("Error saving session", e);
+            showBackendOperationError("Session could not be saved", e);
             return;
         }
 
@@ -608,17 +995,7 @@ public class TrackerController {
 
     @FXML
     private void handlePreviewNotification() {
-        // Reproducir sonido de notificación de ejemplo (tipo INFO)
         SoundManager.playNotificationSound(NotificationManager.NotificationType.INFO);
-    }
-
-    @FXML
-    private void handleToggleMusic() {
-        SoundManager.toggleMusic(SoundManager.SoundType.BACKGROUND_MUSIC);
-        if (musicToggleIcon != null) {
-            String currentIcon = musicToggleIcon.getIconLiteral();
-            musicToggleIcon.setIconLiteral(currentIcon.contains("play") ? "mdi2p-pause-circle-outline" : "mdi2p-play-circle-outline");
-        }
     }
 
     @FXML
@@ -634,7 +1011,6 @@ public class TrackerController {
         masterVolumeSlider.setValue(engine.getMasterVolume());
         alarmVolumeSlider.setValue(engine.getAlarmVolume());
         notificationVolumeSlider.setValue(engine.getNotificationVolume());
-        backgroundMusicVolumeSlider.setValue(engine.getBackgroundMusicVolume());
 
         widthSlider.setValue(engine.getWidthStats());
         circleSizeSlider.setValue(engine.getUiSize());
@@ -649,7 +1025,12 @@ public class TrackerController {
         engine.setMode(TrackerEngine.Mode.POMODORO);
 
         engine.setCurrentTheme("primer-dark");
-        applyTheme();
+        engine.setCurrentFont("sf-pro");
+        appearanceManager.applyAll(engine);
+        appearanceManager.updateThemeSelection(themeButtonsContainer, engine.getCurrentTheme());
+        if (fontComboBox != null) {
+            fontComboBox.getSelectionModel().select(appearanceManager.getFontLabel(engine.getCurrentFont()));
+        }
 
         SoundManager.setSelectedAlarmPreset(SoundManager.AlarmSound.BIRDS);
         SoundManager.setCustomAlarmSound("");
@@ -665,9 +1046,20 @@ public class TrackerController {
         if (warningSoundField != null) warningSoundField.clear();
         if (infoSoundField != null) infoSoundField.clear();
 
+        if (shortcutManager != null) {
+            shortcutManager.resetAllShortcuts();
+        }
+
+        ConfigManager.clearApiUrl();
+        ConfigManager.resetWelcomeGuideCompleted();
+        ApiClient.setBaseUrl(ConfigManager.resolveApiUrl());
+        syncConnectionFields(ApiClient.getBaseUrl());
+        setConnectionStatus(serverStatusLabel, "Server setting reset.", "-text-muted");
+        setConnectionStatus(connectionSetupStatusLabel, "Server setting reset.", "-text-muted");
+
         updateEngineSettings();
-        SoundManager.updateMusicVolume();
         ConfigManager.save(engine);
+        refreshShortcutViews();
         NotificationManager.show("Settings Reset", "All settings have been restored to defaults.", NotificationManager.NotificationType.INFO);
     }
 
@@ -687,8 +1079,12 @@ public class TrackerController {
             new Thread(() -> {
                 try {
                     ApiClient.createTag(newTagName, hexColor);
+                    Platform.runLater(() ->
+                            NotificationManager.show("Tag created", newTagName, NotificationManager.NotificationType.SUCCESS)
+                    );
                 } catch (Exception e) {
-                    System.err.println("Error creating tag: " + e.getMessage());
+                    Logger.error("Error creating tag", e);
+                    Platform.runLater(() -> showBackendOperationError("Tag could not be created", e));
                 }
             }, "tag-create-thread").start();
         }
@@ -708,69 +1104,11 @@ public class TrackerController {
         plannerOverlayLayer.setManaged(false);
     }
 
-    public void openBackgroundSelector() {
-        StackPane overlay = new StackPane();
-        overlay.getStyleClass().add("planner-overlay");
-        overlay.setPickOnBounds(true);
-        overlay.setOnMouseClicked(event -> {
-            if (event.getTarget() == overlay) {
-                hidePlannerOverlay();
-            }
-        });
-
-        VBox card = new VBox(18);
-        card.getStyleClass().addAll("planner-overlay-card", "background-selector-card");
-        card.setMaxWidth(520);
-        card.setOnMouseClicked(Event::consume);
-
-        HBox header = new HBox();
-        header.setAlignment(Pos.CENTER_LEFT);
-
-        VBox titleGroup = new VBox(4);
-        Label title = new Label("Backgrounds");
-        title.getStyleClass().addAll("planner-overlay-title", "background-selector-title");
-        Label subtitle = new Label("Choose a preset video or load your own MP4 file.");
-        subtitle.getStyleClass().add("background-selector-subtitle");
-        titleGroup.getChildren().addAll(title, subtitle);
-
-        Region spacer = new Region();
-        HBox.setHgrow(spacer, Priority.ALWAYS);
-
-        Button closeButton = new Button("✕");
-        closeButton.getStyleClass().add("close-button");
-        closeButton.setOnAction(_ -> hidePlannerOverlay());
-
-        header.getChildren().addAll(titleGroup, spacer, closeButton);
-
-        Label currentSourceLabel = new Label("Current: " + backgroundManager.getLabel(engine.getBackgroundVideoSource()));
-        currentSourceLabel.getStyleClass().add("background-current-label");
-
-        TilePane presetGrid = new TilePane();
-        presetGrid.setPrefColumns(2);
-        presetGrid.setHgap(12);
-        presetGrid.setVgap(12);
-        presetGrid.getStyleClass().add("background-selector-grid");
-
-        for (BackgroundManager.BackgroundOption preset : backgroundManager.getDynamicPresets()) {
-            Button btn = backgroundManager.createOptionButton(
-                    preset,
-                    engine.getBackgroundVideoSource(),
-                    this::openBackgroundSelector
-            );
-            presetGrid.getChildren().add(btn);
-        }
-
-        Button addFileButton = new Button("Add file");
-        addFileButton.getStyleClass().addAll("button-main", "background-file-button");
-        addFileButton.setOnAction(_ -> chooseCustomBackgroundFile());
-
-        card.getChildren().addAll(header, currentSourceLabel, presetGrid, addFileButton);
-        overlay.getChildren().add(card);
-        showPlannerOverlay(overlay);
-    }
 
 
-    private void chooseCustomBackgroundFile() {
+
+    @FXML
+    public void chooseCustomBackgroundFile() {
         Window window = rootPane != null && rootPane.getScene() != null ? rootPane.getScene().getWindow() : null;
         FileChooser chooser = new FileChooser();
         chooser.setTitle("Choose background video");
@@ -784,6 +1122,11 @@ public class TrackerController {
         backgroundManager.applyBackground(selectedFile.getAbsolutePath(), true);
         hidePlannerOverlay();
         NotificationManager.show("Background updated", selectedFile.getName(), NotificationManager.NotificationType.SUCCESS);
+        // Actualizar etiqueta en settings si existe
+        if (backgroundCurrentLabel != null) {
+            backgroundCurrentLabel.setText("Current: " + backgroundManager.getLabel(selectedFile.getAbsolutePath()));
+            setupBackgroundSelector();
+        }
     }
 
     private Region getActivePanel() {
@@ -871,27 +1214,82 @@ public class TrackerController {
             Animations.hide(settingsPane, settingsBox, () -> {
                 updateEngineSettings();
                 ConfigManager.save(engine);
+                if (rootPane != null) {
+                    rootPane.requestFocus();
+                }
             });
         }
     }
 
-    private void applyTheme() {
-        rootPane.getStyleClass().removeAll(
-                "primer-dark", "primer-light", "primer-electric-blue",
-                "primer-cappuccino", "primer-sunset", "primer-midnight", "primer-custom"
-        );
+    //endregion
 
-        if (engine.getCurrentTheme().equals("primer-light")) {
-            Application.setUserAgentStylesheet(new PrimerLight().getUserAgentStylesheet());
-        } else {
-            Application.setUserAgentStylesheet(new PrimerDark().getUserAgentStylesheet());
-        }
-
-        rootPane.getStyleClass().add(engine.getCurrentTheme());
+    @FXML
+    public void handleUseDefaultServerUrl() {
+        String defaultUrl = ConfigManager.DEFAULT_API_URL;
+        syncConnectionFields(defaultUrl);
+        setConnectionStatus(connectionSetupStatusLabel, "Default local server selected.", "-text-muted");
+        setConnectionStatus(serverStatusLabel, "Default local server selected.", "-text-muted");
     }
 
+    @FXML
+    public void handleTestServerSettings() {
+        testConnectionAsync(serverUrlField.getText(), serverStatusLabel, null);
+    }
 
-    //endregion
+    @FXML
+    public void handleSaveServerSettings() {
+        applyApiUrl(serverUrlField.getText(), false);
+        validateCurrentConnectionAsync(false);
+    }
+
+    @FXML
+    public void handleTestConnectionSetup() {
+        testConnectionAsync(connectionSetupUrlField.getText(), connectionSetupStatusLabel, null);
+    }
+
+    @FXML
+    public void handleSaveAndContinueConnectionSetup() {
+        applyApiUrl(connectionSetupUrlField.getText(), true);
+        validateCurrentConnectionAsync(false);
+    }
+
+    @FXML
+    public void handleContinueWelcomeGuide() {
+        if (welcomeGuideStepIndex < welcomeGuideSteps.size() - 1) {
+            welcomeGuideStepIndex++;
+            renderWelcomeGuideStep();
+            return;
+        }
+        closeWelcomeGuide(true);
+        if (connectionSetupRequired) {
+            openConnectionSetup();
+        } else {
+            validateCurrentConnectionAsync(false);
+        }
+    }
+
+    @FXML
+    public void handleSkipWelcomeGuide() {
+        closeWelcomeGuide(true);
+        if (connectionSetupRequired) {
+            openConnectionSetup();
+        } else {
+            validateCurrentConnectionAsync(false);
+        }
+    }
+
+    @FXML
+    public void handleOpenWelcomeGuide() {
+        openWelcomeGuide();
+    }
+
+    @FXML
+    public void handleBackWelcomeGuide() {
+        if (welcomeGuideStepIndex > 0) {
+            welcomeGuideStepIndex--;
+            renderWelcomeGuideStep();
+        }
+    }
 
     //region Setup
     @FXML
@@ -909,7 +1307,11 @@ public class TrackerController {
 
             Animations.show(setupPane, setupBox, () -> Platform.runLater(fuzzySearchInput::requestFocus));
         } else {
-            Animations.hide(setupPane, setupBox, null);
+            Animations.hide(setupPane, setupBox, () -> {
+                if (rootPane != null) {
+                    rootPane.requestFocus();
+                }
+            });
         }
     }
 
@@ -943,11 +1345,61 @@ public class TrackerController {
     public void updateActiveTaskDisplay(String tagName, String taskName) {
         uiManager.updateActiveBadge(activeTaskContainer, tagName, taskName, tagColors.getOrDefault(tagName, "-color-accent"), this);
     }
+
+    public void openSetupAction() {
+        if (!setupPane.isVisible()) {
+            toggleSetup();
+        } else {
+            Platform.runLater(fuzzySearchInput::requestFocus);
+        }
+    }
+
+    public void setShortcutManager(ShortcutManager shortcutManager) {
+        this.shortcutManager = shortcutManager;
+        refreshShortcutViews();
+    }
+
+    public void setFullscreenToggleAction(Runnable fullscreenToggleAction) {
+        this.fullscreenToggleAction = fullscreenToggleAction != null ? fullscreenToggleAction : () -> {};
+    }
+
+    public void toggleFullscreenAction() {
+        fullscreenToggleAction.run();
+    }
+
+    public boolean isShortcutMenuVisible() {
+        return shortcutMenuPane != null && shortcutMenuPane.isVisible();
+    }
+
+    public void closeShortcutMenu() {
+        if (isShortcutMenuVisible()) {
+            toggleShortcutMenu();
+        }
+    }
+
+    @FXML
+    public void toggleShortcutMenu() {
+        if (shortcutMenuPane == null || shortcutMenuBox == null) {
+            return;
+        }
+
+        boolean opening = !shortcutMenuPane.isVisible();
+        if (opening) {
+            refreshShortcutViews();
+            Animations.show(shortcutMenuPane, shortcutMenuBox, null);
+        } else {
+            Animations.hide(shortcutMenuPane, shortcutMenuBox, () -> {
+                if (rootPane != null) {
+                    rootPane.requestFocus();
+                }
+            });
+        }
+    }
     //endregion
 
     private void setupSlider(Slider s, Label l, int v, java.util.function.Consumer<Integer> a, String unit) {
         if (s == null) {
-            System.err.println("[ERROR] setupSlider");
+            Logger.error("[ERROR] setupSlider");
             return;
         }
         s.setSkin(new ProgressSliderSkin(s));
@@ -970,7 +1422,8 @@ public class TrackerController {
         String theme = (String) clicked.getUserData();
         engine.setCurrentTheme(theme);
         updateEngineSettings();
-        applyTheme();
+        appearanceManager.applyTheme(theme);
+        appearanceManager.updateThemeSelection(themeButtonsContainer, theme);
     }
 
     private VBox createTodaySchedulesList() {
@@ -988,7 +1441,7 @@ public class TrackerController {
             String endOfDay = ApiClient.formatApiTimestamp(LocalDate.now().atTime(23, 59, 59));
             todaySessions = ApiClient.getScheduledSessions(today, endOfDay);
         } catch (Exception e) {
-            System.err.println("Error loading today sessions: " + e.getMessage());
+            Logger.error("Error loading today sessions", e);
             todaySessions = new ArrayList<>();
         }
 
@@ -1025,7 +1478,7 @@ public class TrackerController {
             String futureLimit = ApiClient.formatApiTimestamp(todayDate.plusYears(1).atTime(23, 59, 59));
             upcomingDeadlines = ApiClient.getDeadlines(startOfToday, futureLimit);
         } catch (Exception e) {
-            System.err.println("Error loading upcoming deadlines: " + e.getMessage());
+            Logger.error("Error loading upcoming deadlines", e);
             upcomingDeadlines = new ArrayList<>();
         }
 
@@ -1072,7 +1525,7 @@ public class TrackerController {
         try {
             todos = ApiClient.getTodosByDate(LocalDate.now());
         } catch (Exception e) {
-            System.err.println("Error loading today's todos: " + e.getMessage());
+            Logger.error("Error loading today's todos", e);
             todos = new ArrayList<>();
         }
 
@@ -1324,6 +1777,40 @@ public class TrackerController {
         updateUIFromEngine();
     }
 
+    private record WelcomeGuideStep(
+            String progress,
+            String title,
+            String subtitle,
+            String heroIcon,
+            String featureTitleOne,
+            String featureCopyOne,
+            String featureTitleTwo,
+            String featureCopyTwo,
+            String featureTitleThree,
+            String featureCopyThree,
+            String tipTitle,
+            String tipCopy,
+            String primaryButtonLabel
+    ) {
+        String featureIconTwo() {
+            return switch (progress) {
+                case "Step 1 of 4" -> "mdi2c-calendar-month-outline";
+                case "Step 2 of 4" -> "mdi2n-note-text-outline";
+                case "Step 3 of 4" -> "mdi2a-alert-outline";
+                default -> "mdi2c-chart-bar";
+            };
+        }
+
+        String featureIconThree() {
+            return switch (progress) {
+                case "Step 1 of 4" -> "mdi2c-chart-line";
+                case "Step 2 of 4" -> "mdi2h-history";
+                case "Step 3 of 4" -> "mdi2v-view-day-outline";
+                default -> "mdi2t-tune";
+            };
+        }
+    }
+
     @FXML
     public void toggleConfirmDelete(){
        if(!confirmOverlay.isVisible()){
@@ -1376,10 +1863,12 @@ public class TrackerController {
                         if (wasSelectedTag) {
                             resetFullApp();
                         }
+                        refreshDatabaseData();
                         NotificationManager.show("Tag Deleted", "Success", NotificationManager.NotificationType.SUCCESS);
                     });
                 } catch (Exception e) {
-                    System.err.println("Error deleting tag: " + e.getMessage());
+                    Logger.error("Error deleting tag", e);
+                    Platform.runLater(() -> showBackendOperationError("Tag could not be deleted", e));
                 }
             }, "tag-delete-thread").start();
         }
@@ -1621,6 +2110,152 @@ public class TrackerController {
         }
 
         setupAlarmPresetComboBox();
+    }
+
+    private void refreshShortcutViews() {
+        updateShortcutCaptureLabel();
+        rebuildShortcutSettingsList();
+        rebuildShortcutMenuList();
+    }
+
+    private void updateShortcutCaptureLabel() {
+        if (shortcutCaptureStatusLabel == null) {
+            return;
+        }
+        if (shortcutManager == null) {
+            shortcutCaptureStatusLabel.setText("Shortcut manager unavailable.");
+            return;
+        }
+        if (shortcutManager.isCaptureActive()) {
+            shortcutCaptureStatusLabel.setText("Press a new combination now. Press Esc to cancel.");
+        } else {
+            shortcutCaptureStatusLabel.setText("Shortcuts only work when no control has focus. The menu shortcut is configurable here too.");
+        }
+    }
+
+    private void rebuildShortcutSettingsList() {
+        if (shortcutSettingsListContainer == null || shortcutManager == null) {
+            return;
+        }
+
+        shortcutSettingsListContainer.getChildren().clear();
+        for (ShortcutManager.ShortcutDefinition definition : shortcutManager.getDefinitions()) {
+            shortcutSettingsListContainer.getChildren().add(createShortcutSettingsRow(definition));
+        }
+
+        Button resetAllButton = new Button("Reset All Shortcuts");
+        resetAllButton.getStyleClass().add("settings-danger-btn");
+        resetAllButton.setMaxWidth(Double.MAX_VALUE);
+        resetAllButton.setOnAction(_ -> {
+            if (shortcutManager.isCaptureActive()) {
+                shortcutManager.cancelCapture();
+            }
+            shortcutManager.resetAllShortcuts();
+            refreshShortcutViews();
+            NotificationManager.show("Shortcuts Reset", "Default shortcuts restored.", NotificationManager.NotificationType.INFO);
+        });
+        shortcutSettingsListContainer.getChildren().add(resetAllButton);
+    }
+
+    private Node createShortcutSettingsRow(ShortcutManager.ShortcutDefinition definition) {
+        VBox card = new VBox(10);
+        card.getStyleClass().add("settings-card");
+
+        HBox row = new HBox(12);
+        row.setAlignment(Pos.CENTER_LEFT);
+
+        VBox textBox = new VBox(4);
+        Label label = new Label(definition.label());
+        label.getStyleClass().add("settings-card-title");
+        Label value = new Label(shortcutManager.getShortcutDisplay(definition.id()));
+        value.getStyleClass().add("shortcut-combo-label");
+        textBox.getChildren().addAll(label, value);
+
+        Region spacer = new Region();
+        HBox.setHgrow(spacer, Priority.ALWAYS);
+
+        Button editButton = new Button(shortcutManager.isCapturing(definition.id()) ? "Listening..." : "Edit");
+        editButton.getStyleClass().add("settings-browse-btn");
+        editButton.setOnAction(_ -> {
+            if (shortcutManager.isCapturing(definition.id())) {
+                shortcutManager.cancelCapture();
+                refreshShortcutViews();
+                return;
+            }
+
+            shortcutManager.beginCapture(definition.id(), result -> Platform.runLater(() -> {
+                refreshShortcutViews();
+                if (result.success()) {
+                    NotificationManager.show("Shortcut Updated", result.message(), NotificationManager.NotificationType.SUCCESS);
+                } else if (!result.cancelled()) {
+                    NotificationManager.show("Shortcut Not Updated", result.message(), NotificationManager.NotificationType.WARNING);
+                }
+            }));
+            if (rootPane != null) {
+                Platform.runLater(rootPane::requestFocus);
+            }
+            refreshShortcutViews();
+        });
+
+        Button resetButton = new Button("Reset");
+        resetButton.getStyleClass().add("settings-reset-btn");
+        resetButton.setOnAction(_ -> {
+            if (shortcutManager.isCaptureActive()) {
+                shortcutManager.cancelCapture();
+            }
+            shortcutManager.resetShortcut(definition.id());
+            refreshShortcutViews();
+        });
+
+        row.getChildren().addAll(textBox, spacer, editButton, resetButton);
+        card.getChildren().add(row);
+        return card;
+    }
+
+    private void rebuildShortcutMenuList() {
+        if (shortcutMenuListContainer == null || shortcutManager == null) {
+            return;
+        }
+
+        shortcutMenuListContainer.getChildren().clear();
+        for (ShortcutManager.ShortcutDefinition definition : shortcutManager.getDefinitions()) {
+            shortcutMenuListContainer.getChildren().add(createShortcutMenuRow(
+                    definition.label(),
+                    shortcutManager.getShortcutDisplay(definition.id()),
+                    definition.id()
+            ));
+        }
+    }
+
+    private Node createShortcutMenuRow(String labelText, String shortcutText, String actionId) {
+        Button row = new Button();
+        row.getStyleClass().add("shortcut-menu-row");
+        row.setMaxWidth(Double.MAX_VALUE);
+        row.setContentDisplay(ContentDisplay.GRAPHIC_ONLY);
+        row.setMnemonicParsing(false);
+
+        HBox content = new HBox(12);
+        content.setAlignment(Pos.CENTER_LEFT);
+
+        Label label = new Label(labelText);
+        label.getStyleClass().add("settings-card-title");
+
+        Region spacer = new Region();
+        HBox.setHgrow(spacer, Priority.ALWAYS);
+
+        Label value = new Label(shortcutText);
+        value.getStyleClass().add("shortcut-combo-label");
+
+        content.getChildren().addAll(label, spacer, value);
+        row.setGraphic(content);
+        row.setOnAction(_ -> {
+            closeShortcutMenu();
+            if (!"toggle_shortcut_menu".equals(actionId)) {
+                shortcutManager.triggerAction(actionId);
+            }
+        });
+
+        return row;
     }
 
     //endregion

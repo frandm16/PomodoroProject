@@ -90,6 +90,9 @@ public class SessionController {
     public Session patch(@PathVariable Long id, @RequestBody Map<String, Object> body) {
         return sessionService.partialUpdate(
                 id,
+                (String) body.get("tagName"),
+                (String) body.get("tagColor"),
+                (String) body.get("taskName"),
                 (String) body.get("title"),
                 (String) body.get("description"),
                 (Integer) body.get("rating")

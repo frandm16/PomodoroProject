@@ -21,6 +21,12 @@ public class Task {
     @OneToMany(mappedBy = "task", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<Session> sessions;
 
+    @OneToMany(mappedBy = "task", cascade = CascadeType.ALL, orphanRemoval = true)
+    private List<ScheduledSession> scheduledSessions;
+
+    @OneToMany(mappedBy = "task", cascade = CascadeType.ALL, orphanRemoval = true)
+    private List<Deadline> deadlines;
+
     public Long getId() { return id; }
     public Tag getTag() { return tag; }
     public String getName() { return name; }

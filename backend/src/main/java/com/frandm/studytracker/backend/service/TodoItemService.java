@@ -5,26 +5,17 @@ import com.frandm.studytracker.backend.repository.TodoItemRepository;
 import org.springframework.stereotype.Service;
 import java.time.LocalDate;
 import java.util.List;
-import com.frandm.studytracker.backend.model.Task;
 
 @Service
 public class TodoItemService {
 
     private final TodoItemRepository todoItemRepository;
-    private final TaskService taskService;
 
-    public TodoItemService(TodoItemRepository todoItemRepository, TaskService taskService) {
+    public TodoItemService(TodoItemRepository todoItemRepository) {
         this.todoItemRepository = todoItemRepository;
-        this.taskService = taskService;
     }
 
-    public List<TodoItem> getFiltered(Long taskId, LocalDate date) {
-        if (taskId != null && date != null) {
-            return todoItemRepository.findByTask_IdAndDateOrderByIdAsc(taskId, date);
-        }
-        if (taskId != null) {
-            return todoItemRepository.findByTask_IdOrderByIdAsc(taskId);
-        }
+    public List<TodoItem> getFiltered(LocalDate date) {
         if (date != null) {
             return todoItemRepository.findByDateOrderByIdAsc(date);
         }
@@ -36,20 +27,16 @@ public class TodoItemService {
                 .orElseThrow(() -> new RuntimeException("TodoItem not found: " + id));
     }
 
-    public TodoItem create(Long taskId, String tagName, String taskName, LocalDate date, String text) {
-        Task task = resolveTask(taskId, tagName, taskName);
+    public TodoItem create(LocalDate date, String text) {
         TodoItem item = new TodoItem();
-        item.setTask(task);
         item.setDate(date);
         item.setText(text);
         return todoItemRepository.save(item);
     }
 
-    public TodoItem fullUpdate(Long id, Long taskId, String tagName, String taskName, LocalDate date, String text, Boolean completed) {
+    public TodoItem fullUpdate(Long id, LocalDate date, String text, Boolean completed) {
         TodoItem item = todoItemRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("TodoItem not found: " + id));
-        Task task = resolveTask(taskId, tagName, taskName);
-        item.setTask(task);
         item.setDate(date);
         item.setText(text);
         if (completed != null) item.setCompleted(completed);
@@ -66,15 +53,5 @@ public class TodoItemService {
 
     public void delete(Long id) {
         todoItemRepository.deleteById(id);
-    }
-
-    private Task resolveTask(Long taskId, String tagName, String taskName) {
-        if (taskId != null) {
-            return taskService.getById(taskId);
-        }
-        if (taskName == null || taskName.isEmpty()) {
-            throw new RuntimeException("TodoItem requires taskId or taskName");
-        }
-        return taskService.getOrCreate(tagName, "#94a3b8", taskName);
     }
 }
