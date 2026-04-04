@@ -9,6 +9,9 @@ public class ConfigManager {
 
     private static final String FOLDER_NAME = ".StudyTracker";
     private static final String FILE_NAME = "settings.properties";
+    public static final String API_URL_KEY = "apiUrl";
+    public static final String DEFAULT_API_URL = "http://localhost:8080/api";
+
     private static File getConfigFile() {
 
         String userHome = System.getProperty("user.home");
@@ -17,7 +20,7 @@ public class ConfigManager {
         if (!configDir.exists()) {
             boolean success = configDir.mkdirs();
             if(!success){
-                System.err.println("Error creating config folder");
+                Logger.error("Error creating config folder");
             }
         }
 
@@ -35,7 +38,7 @@ public class ConfigManager {
         try (InputStream in = new FileInputStream(configFile)) {
             props.load(in);
         } catch (IOException e) {
-            System.err.println("Error ConfigManager.loadAllProperties: " + e.getMessage());
+            Logger.error("Error ConfigManager.loadAllProperties", e);
         }
 
         return props;
@@ -47,8 +50,60 @@ public class ConfigManager {
         try (OutputStream out = new FileOutputStream(configFile)) {
             props.store(out, "Study Tracker Settings");
         } catch (IOException e) {
-            System.err.println("Error ConfigManager.storeProperties: " + e.getMessage());
+            Logger.error("Error ConfigManager.storeProperties", e);
         }
+    }
+
+    private static String normalizeApiUrl(String value) {
+        if (value == null) return null;
+        String trimmed = value.trim();
+        if (trimmed.isEmpty()) return null;
+        while (trimmed.endsWith("/")) {
+            trimmed = trimmed.substring(0, trimmed.length() - 1);
+        }
+        return trimmed;
+    }
+
+    public static String getStoredApiUrl() {
+        return normalizeApiUrl(loadAllProperties().getProperty(API_URL_KEY));
+    }
+
+    public static boolean hasStoredApiUrl() {
+        return getStoredApiUrl() != null;
+    }
+
+    public static boolean hasApiUrlOverride() {
+        String env = normalizeApiUrl(System.getenv("API_URL"));
+        return hasStoredApiUrl() || env != null;
+    }
+
+    public static String resolveApiUrl() {
+        String stored = getStoredApiUrl();
+        if (stored != null) {
+            return stored;
+        }
+
+        String env = normalizeApiUrl(System.getenv("API_URL"));
+        if (env != null) {
+            return env;
+        }
+
+        return DEFAULT_API_URL;
+    }
+
+    public static void saveApiUrl(String apiUrl) {
+        Properties props = loadAllProperties();
+        String normalized = normalizeApiUrl(apiUrl);
+        if (normalized == null) {
+            props.remove(API_URL_KEY);
+        } else {
+            props.setProperty(API_URL_KEY, normalized);
+        }
+        storeProperties(props);
+    }
+
+    public static void clearApiUrl() {
+        saveApiUrl(null);
     }
 
     public static void save(TrackerEngine engine) {
@@ -122,7 +177,7 @@ public class ConfigManager {
                 props.getProperty("selectedAlarmPreset", engine.getSelectedAlarmPreset())
             );
         } catch (NumberFormatException e) {
-            System.err.println("Error ConfigManager.load: " + e.getMessage());
+            Logger.error("Error ConfigManager.load", e);
         }
     }
 

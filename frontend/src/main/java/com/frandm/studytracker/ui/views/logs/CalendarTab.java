@@ -108,6 +108,11 @@ public class CalendarTab extends VBox {
     }
 
     private void loadAndRefresh() {
+        if (!ApiClient.isConfigured()) {
+            weekSessions = new ArrayList<>();
+            refresh();
+            return;
+        }
         loadWeekSessions();
         refresh();
     }
@@ -450,8 +455,9 @@ public class CalendarTab extends VBox {
                     currentWeekStart.plusDays(6).atTime(23, 59, 59).toString()
             );
         } catch (Exception e) {
-            System.err.println("[CalendarTab] Error loading sessions: " + e.getMessage());
-            Logger.error(e);
+            if (ApiClient.isConfigured()) {
+                Logger.error("Error loading sessions", e);
+            }
             weekSessions = new ArrayList<>();
         }
     }

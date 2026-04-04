@@ -3,9 +3,13 @@ package com.frandm.studytracker.client;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
+import com.frandm.studytracker.core.ConfigManager;
 
 import java.net.URI;
+import java.net.ConnectException;
+import java.net.UnknownHostException;
 import java.net.http.HttpClient;
+import java.net.http.HttpConnectTimeoutException;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
 import java.time.LocalDate;
@@ -21,7 +25,7 @@ import java.util.Random;
 
 public class ApiClient {
 
-    private static final String BASE_URL = System.getenv().getOrDefault("API_URL", "http://localhost:8080/api");
+    private static volatile String baseUrl = ConfigManager.resolveApiUrl();
     private static final HttpClient http = HttpClient.newHttpClient();
     public static final DateTimeFormatter API_TIMESTAMP_FORMAT = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
     private static final ObjectMapper mapper = new ObjectMapper()
@@ -32,6 +36,92 @@ public class ApiClient {
     private static final Map<String, List<Map<String, Object>>> cachedTasksByTag = new java.util.concurrent.ConcurrentHashMap<>();
     private static volatile long lastCacheInvalidation = 0;
     private static final long CACHE_TTL_MS = 30_000;
+
+    private static String normalizeBaseUrl(String value) {
+        if (value == null) {
+            throw new IllegalArgumentException("Backend URL is required");
+        }
+
+        String trimmed = value.trim();
+        if (trimmed.isEmpty()) {
+            throw new IllegalArgumentException("Backend URL is required");
+        }
+
+        while (trimmed.endsWith("/")) {
+            trimmed = trimmed.substring(0, trimmed.length() - 1);
+        }
+
+        URI uri = URI.create(trimmed);
+        if (uri.getScheme() == null || uri.getHost() == null) {
+            throw new IllegalArgumentException("Backend URL must include protocol and host");
+        }
+
+        return trimmed;
+    }
+
+    public static String getBaseUrl() {
+        return baseUrl;
+    }
+
+    public static boolean isConfigured() {
+        return baseUrl != null && !baseUrl.isBlank();
+    }
+
+    public static void setBaseUrl(String newBaseUrl) {
+        baseUrl = normalizeBaseUrl(newBaseUrl);
+        invalidateTagsCache();
+    }
+
+    public static boolean testConnection(String candidateBaseUrl) {
+        try {
+            String normalized = normalizeBaseUrl(candidateBaseUrl);
+            var req = HttpRequest.newBuilder()
+                    .uri(URI.create(normalized + "/tags"))
+                    .GET()
+                    .build();
+            HttpResponse<String> response = http.send(req, HttpResponse.BodyHandlers.ofString());
+            return response.statusCode() >= 200 && response.statusCode()<300;
+        } catch (Exception e) {
+            return false;
+        }
+    }
+
+    public static boolean isConnectionIssue(Throwable error) {
+        Throwable current = error;
+        while (current != null) {
+            if (current instanceof IllegalArgumentException
+                    || current instanceof ConnectException
+                    || current instanceof UnknownHostException
+                    || current instanceof HttpConnectTimeoutException
+                    || current instanceof java.nio.channels.ClosedChannelException) {
+                return true;
+            }
+            current = current.getCause();
+        }
+        return false;
+    }
+
+    public static boolean isLikelyWrongBackendUrl(Throwable error) {
+        if (error == null || error.getMessage() == null) {
+            return false;
+        }
+        String message = error.getMessage();
+        return message.contains("HTTP 404")
+                || message.contains("HTTP 301")
+                || message.contains("HTTP 302")
+                || message.contains("HTTP 307")
+                || message.contains("HTTP 308");
+    }
+
+    public static String getBackendErrorMessage(Throwable error) {
+        if (isConnectionIssue(error)) {
+            return "Cannot reach the configured backend. Check Settings > Server.";
+        }
+        if (isLikelyWrongBackendUrl(error)) {
+            return "The configured backend URL looks incorrect. Check Settings > Server.";
+        }
+        return null;
+    }
 
     public static void invalidateTagsCache() {
         cachedTags = null;
@@ -50,7 +140,7 @@ public class ApiClient {
 
     private static String get(String path) throws Exception {
         var req = HttpRequest.newBuilder()
-                .uri(URI.create(BASE_URL + path))
+                .uri(URI.create(getBaseUrl() + path))
                 .GET()
                 .build();
         HttpResponse<String> response = http.send(req, HttpResponse.BodyHandlers.ofString());
@@ -63,7 +153,7 @@ public class ApiClient {
 
     private static String post(String path, Object body) throws Exception {
         var req = HttpRequest.newBuilder()
-                .uri(URI.create(BASE_URL + path))
+                .uri(URI.create(getBaseUrl() + path))
                 .header("Content-Type", "application/json")
                 .POST(HttpRequest.BodyPublishers.ofString(mapper.writeValueAsString(body)))
                 .build();
@@ -76,7 +166,7 @@ public class ApiClient {
 
     private static String put(String path, Object body) throws Exception {
         var req = HttpRequest.newBuilder()
-                .uri(URI.create(BASE_URL + path))
+                .uri(URI.create(getBaseUrl() + path))
                 .header("Content-Type", "application/json")
                 .PUT(HttpRequest.BodyPublishers.ofString(mapper.writeValueAsString(body)))
                 .build();
@@ -89,7 +179,7 @@ public class ApiClient {
 
     private static String patch(String path, Object body) throws Exception {
         var req = HttpRequest.newBuilder()
-                .uri(URI.create(BASE_URL + path))
+                .uri(URI.create(getBaseUrl() + path))
                 .header("Content-Type", "application/json")
                 .method("PATCH", HttpRequest.BodyPublishers.ofString(mapper.writeValueAsString(body)))
                 .build();
@@ -102,7 +192,7 @@ public class ApiClient {
 
     private static void delete(String path) throws Exception {
         var req = HttpRequest.newBuilder()
-                .uri(URI.create(BASE_URL + path))
+                .uri(URI.create(getBaseUrl() + path))
                 .DELETE()
                 .build();
         http.send(req, HttpResponse.BodyHandlers.ofString());
@@ -629,7 +719,7 @@ public class ApiClient {
             }
             return "";
         } catch (Exception e) {
-            System.err.println("Error fetching note: " + e.getMessage());
+            Logger.error("Error fetching note", e);
             return "";
         }
     }

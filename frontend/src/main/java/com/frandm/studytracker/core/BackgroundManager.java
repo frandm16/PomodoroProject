@@ -57,7 +57,7 @@ public class BackgroundManager {
 
             updateEngineAndSave(normalizedSource, persist);
         } catch (Exception ex) {
-            System.err.println("Error loading background video: " + ex.getMessage());
+            Logger.error("Error loading background video", ex);
             handleNoBackground(persist);
         }
     }
@@ -95,7 +95,7 @@ public class BackgroundManager {
                 }
             }
         } catch (Exception e) {
-            System.err.println("Error scanning background folder: " + e.getMessage());
+            Logger.error("Error scanning background folder", e);
         }
         return options;
     }

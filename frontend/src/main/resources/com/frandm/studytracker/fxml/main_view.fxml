@@ -190,7 +190,7 @@
             </HBox>
             <Separator />
 
-            <TabPane VBox.vgrow="ALWAYS" tabClosingPolicy="UNAVAILABLE" styleClass="settings-tabpane">
+            <TabPane fx:id="settingsTabPane" VBox.vgrow="ALWAYS" tabClosingPolicy="UNAVAILABLE" styleClass="settings-tabpane">
                 <Tab text="General">
                     <ScrollPane fitToWidth="true">
                         <VBox spacing="25" style="-fx-padding: 25;">
@@ -540,6 +540,26 @@
                         </VBox>
                     </ScrollPane>
                 </Tab>
+                <Tab text="Server">
+                    <ScrollPane fitToWidth="true">
+                        <VBox spacing="16" style="-fx-padding: 22 25 22 25;">
+                            <VBox spacing="14" styleClass="settings-card">
+                                <Label text="Backend Connection" styleClass="settings-card-title"/>
+                                <Label text="Connect StudyZen to your self-hosted backend. The default local URL is http://localhost:8080/api"
+                                       wrapText="true" styleClass="settings-danger-desc"/>
+                                <VBox spacing="8">
+                                    <Label text="Backend URL" styleClass="settings-sub-label"/>
+                                    <TextField fx:id="serverUrlField" promptText="http://localhost:8080/api" />
+                                </VBox>
+                                <Label fx:id="serverStatusLabel" text="Server URL ready to use." wrapText="true" styleClass="shortcut-help-label"/>
+                                <HBox spacing="12" alignment="CENTER_LEFT">
+                                    <Button text="Test" onAction="#handleTestServerSettings" styleClass="button-secondary"/>
+                                    <Button text="Save" onAction="#handleSaveServerSettings" styleClass="button-main"/>
+                                </HBox>
+                            </VBox>
+                        </VBox>
+                    </ScrollPane>
+                </Tab>
                 <Tab text="About">
                     <ScrollPane fitToWidth="true">
                         <VBox spacing="16" style="-fx-padding: 22 25 22 25;" alignment="TOP_CENTER">
@@ -599,6 +619,71 @@
                 <VBox fx:id="shortcutMenuListContainer" spacing="12" style="-fx-padding: 20 24 24 24;"/>
             </ScrollPane>
         </VBox>
+    </GridPane>
+
+    <GridPane fx:id="connectionSetupPane" visible="false" managed="false" maxHeight="Infinity" maxWidth="Infinity">
+        <columnConstraints>
+            <ColumnConstraints percentWidth="25" />
+            <ColumnConstraints percentWidth="50" />
+            <ColumnConstraints percentWidth="25" />
+        </columnConstraints>
+        <rowConstraints>
+            <RowConstraints percentHeight="20" />
+            <RowConstraints percentHeight="60" />
+            <RowConstraints percentHeight="20" />
+        </rowConstraints>
+        <Region styleClass="connection-setup-overlay" GridPane.columnSpan="3" GridPane.rowSpan="3">
+            <effect><GaussianBlur radius="15" /></effect>
+        </Region>
+        <StackPane fx:id="connectionSetupBox" GridPane.columnIndex="1" GridPane.rowIndex="1">
+            <VBox spacing="20" styleClass="connection-setup-card" maxWidth="700">
+                <HBox alignment="CENTER_LEFT" spacing="16">
+                    <StackPane styleClass="connection-setup-icon-shell">
+                        <FontIcon iconLiteral="mdi2s-server-network-outline" styleClass="connection-setup-icon"/>
+                    </StackPane>
+                    <VBox spacing="6">
+                        <Label text="Connect Your StudyZen Backend" styleClass="connection-setup-title" />
+                        <Label text="Set the server URL once and the app will remember it for future launches."
+                               wrapText="true" styleClass="connection-setup-subtitle"/>
+                    </VBox>
+                </HBox>
+
+                <HBox spacing="18" styleClass="connection-setup-body">
+                    <VBox spacing="14" prefWidth="220" styleClass="connection-setup-side">
+                        <Label text="Quick Start" styleClass="connection-setup-side-title"/>
+                        <VBox spacing="10" styleClass="connection-setup-step">
+                            <Label text="1" styleClass="connection-step-badge"/>
+                            <Label text="Start your backend with Docker Compose." wrapText="true" styleClass="connection-step-text"/>
+                        </VBox>
+                        <VBox spacing="10" styleClass="connection-setup-step">
+                            <Label text="2" styleClass="connection-step-badge"/>
+                            <Label text="Use the default local server if you are running everything on this machine." wrapText="true" styleClass="connection-step-text"/>
+                        </VBox>
+                        <VBox spacing="10" styleClass="connection-setup-step">
+                            <Label text="3" styleClass="connection-step-badge"/>
+                            <Label text="Test the connection, then save and continue." wrapText="true" styleClass="connection-step-text"/>
+                        </VBox>
+                    </VBox>
+
+                    <VBox spacing="16" HBox.hgrow="ALWAYS">
+                        <VBox spacing="12" styleClass="connection-setup-form-card">
+                            <Label text="Server URL" styleClass="connection-setup-form-title" />
+                            <Label text="Default local URL: http://localhost:8080/api" wrapText="true" styleClass="connection-setup-form-help"/>
+                            <TextField fx:id="connectionSetupUrlField" promptText="http://localhost:8080/api" styleClass="connection-setup-input" />
+                            <Label fx:id="connectionSetupStatusLabel" text="Use the default local server or enter a custom URL."
+                                   wrapText="true" styleClass="connection-setup-status"/>
+                        </VBox>
+
+                        <HBox spacing="12" alignment="CENTER_LEFT">
+                            <Button text="Use Default Local Server" onAction="#handleUseDefaultServerUrl" styleClass="button-secondary, connection-secondary-btn"/>
+                            <Region HBox.hgrow="ALWAYS" />
+                            <Button text="Test Connection" onAction="#handleTestConnectionSetup" styleClass="button-secondary, connection-secondary-btn"/>
+                            <Button text="Save and Continue" onAction="#handleSaveAndContinueConnectionSetup" styleClass="button-main, connection-primary-btn"/>
+                        </HBox>
+                    </VBox>
+                </HBox>
+            </VBox>
+        </StackPane>
     </GridPane>
 
     <GridPane fx:id="setupPane" visible="false" managed="false" maxHeight="Infinity" maxWidth="Infinity">

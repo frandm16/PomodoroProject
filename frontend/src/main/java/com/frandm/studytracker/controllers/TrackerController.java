@@ -36,8 +36,8 @@ public class TrackerController {
 
     public static final String PROJECT_VERSION = "v1.3.0";
 
-    @FXML public GridPane mainContainer, setupPane, settingsPane, editSessionPane, summaryPane, shortcutMenuPane;
-    @FXML public StackPane rootPane, setupBox, editSessionBox, summaryBox, stackpaneCircle,
+    @FXML public GridPane mainContainer, setupPane, settingsPane, editSessionPane, summaryPane, shortcutMenuPane, connectionSetupPane;
+    @FXML public StackPane rootPane, setupBox, editSessionBox, summaryBox, stackpaneCircle, connectionSetupBox,
             confirmOverlay, confirmTagOverlay, plannerOverlayLayer;
     @FXML public VBox timerTextContainer, notificationContainer, scheduleListContainer,
             plannerContainer, historyContainer, fuzzyResultsContainer, tagsListContainer,
@@ -64,15 +64,19 @@ public class TrackerController {
 
     @FXML public ToggleSwitch enableToastToggle;
     @FXML public Slider notifDurationSlider;
-    @FXML public Label notifDurationLabel, appVersionLabel, shortcutCaptureStatusLabel;
+    @FXML public Label notifDurationLabel, appVersionLabel, shortcutCaptureStatusLabel,
+            serverStatusLabel, connectionSetupStatusLabel;
 
     @FXML public ComboBox<String> alarmPresetComboBox;
     @FXML public ComboBox<String> fontComboBox;
+    @FXML public TabPane settingsTabPane;
     @FXML public TextField customAlarmSoundField;
     @FXML public TextField successSoundField;
     @FXML public TextField errorSoundField;
     @FXML public TextField warningSoundField;
     @FXML public TextField infoSoundField;
+    @FXML public TextField serverUrlField;
+    @FXML public TextField connectionSetupUrlField;
     @FXML public TilePane backgroundTilePane;
     @FXML public Label backgroundCurrentLabel;
     //endregion
@@ -124,6 +128,7 @@ public class TrackerController {
     private BackgroundManager backgroundManager;
     @FXML
     private Region backgroundVideoOverlay;
+    private boolean connectionSetupRequired;
 
     @FXML
     public void initialize() {
@@ -133,6 +138,7 @@ public class TrackerController {
         setupDynamicDock();
         setupInitialUIState();
         setupSettingsPanel();
+        setupConnectionUi();
         setupModeSystem();
         setupFuzzySearch();
         setupEngineCallbacks();
@@ -140,6 +146,7 @@ public class TrackerController {
 
         updateEngineSettings();
         updateUIFromEngine();
+        Platform.runLater(this::handleInitialConnectionFlow);
     }
 
     private void subscribeToTagEvents() {
@@ -155,18 +162,23 @@ public class TrackerController {
         // setupGeneratorsDEVELOP();
         // -------------------------------------------
         ConfigManager.load(engine);
+        ApiClient.setBaseUrl(ConfigManager.resolveApiUrl());
         appearanceManager.bindRoot(rootPane);
         appearanceManager.applyAll(engine);
         NotificationManager.init(notificationContainer);
         NotificationManager.setEngine(engine);
-        new Thread(() -> {
-            refreshTagsAndTasks();
-            Platform.runLater(() -> {
-                if (statsDashboard != null) {
-                    statsDashboard.refresh();
-                }
-            });
-        }, "data-refresh-thread").start();
+        boolean hasStoredApiUrl = ConfigManager.hasStoredApiUrl();
+        boolean hasEnvApiUrl = System.getenv("API_URL") != null && !System.getenv("API_URL").isBlank();
+        if (hasStoredApiUrl || hasEnvApiUrl) {
+            new Thread(() -> {
+                refreshTagsAndTasks();
+                Platform.runLater(() -> {
+                    if (statsDashboard != null) {
+                        statsDashboard.refresh();
+                    }
+                });
+            }, "data-refresh-thread").start();
+        }
     }
 
     private void setupBackgroundVideo() {
@@ -223,6 +235,156 @@ public class TrackerController {
         stackpaneCircle.heightProperty().addListener((_, _, _) -> resizeUI());
         SIZE_FACTOR = engine.getUiSize() * 0.05;
         resizeUI();
+    }
+
+    private void setupConnectionUi() {
+        syncConnectionFields(ApiClient.getBaseUrl());
+        setConnectionStatus(serverStatusLabel, "Server URL ready to use.", "-text-muted");
+        setConnectionStatus(connectionSetupStatusLabel, "Use the default local server or enter a custom URL.", "-text-muted");
+    }
+
+    private void handleInitialConnectionFlow() {
+        boolean hasStoredApiUrl = ConfigManager.hasStoredApiUrl();
+        boolean hasEnvApiUrl = System.getenv("API_URL") != null && !System.getenv("API_URL").isBlank();
+        connectionSetupRequired = !hasStoredApiUrl && !hasEnvApiUrl;
+
+        if (connectionSetupRequired) {
+            openConnectionSetup();
+        } else {
+            validateCurrentConnectionAsync(false);
+        }
+    }
+
+    private void syncConnectionFields(String url) {
+        if (serverUrlField != null) {
+            serverUrlField.setText(url);
+        }
+        if (connectionSetupUrlField != null) {
+            connectionSetupUrlField.setText(url);
+        }
+    }
+
+    private void setConnectionStatus(Label label, String message, String colorToken) {
+        if (label == null) {
+            return;
+        }
+        label.setText(message);
+        label.setStyle("-fx-text-fill: " + colorToken + ";");
+    }
+
+    public void showBackendOperationError(String fallbackMessage, Exception error) {
+        String backendMessage = ApiClient.getBackendErrorMessage(error);
+        if (backendMessage != null) {
+            setConnectionStatus(serverStatusLabel, "Cannot reach server", "-color-danger");
+            setConnectionStatus(connectionSetupStatusLabel, "Cannot reach server", "-color-danger");
+            NotificationManager.show("Backend unavailable", backendMessage, NotificationManager.NotificationType.ERROR);
+            openServerSettings();
+            return;
+        }
+
+        NotificationManager.show("Error", fallbackMessage, NotificationManager.NotificationType.ERROR);
+    }
+
+    private void openServerSettings() {
+        if (settingsTabPane != null) {
+            settingsTabPane.getTabs().stream()
+                    .filter(tab -> "Server".equals(tab.getText()))
+                    .findFirst()
+                    .ifPresent(tab -> settingsTabPane.getSelectionModel().select(tab));
+        }
+        if (settingsPane != null && !settingsPane.isVisible()) {
+            toggleSettings();
+        }
+    }
+
+    private void openConnectionSetup() {
+        if (connectionSetupPane == null || connectionSetupBox == null) {
+            return;
+        }
+        syncConnectionFields(ApiClient.getBaseUrl());
+        setConnectionStatus(connectionSetupStatusLabel, "Use the default local server or enter a custom URL.", "-text-muted");
+        if (!connectionSetupPane.isVisible()) {
+            Animations.show(connectionSetupPane, connectionSetupBox, () -> Platform.runLater(connectionSetupUrlField::requestFocus));
+        }
+    }
+
+    private void closeConnectionSetup() {
+        if (connectionSetupPane != null && connectionSetupPane.isVisible()) {
+            Animations.hide(connectionSetupPane, connectionSetupBox, () -> {
+                connectionSetupRequired = false;
+                if (rootPane != null) {
+                    rootPane.requestFocus();
+                }
+            });
+        } else {
+            connectionSetupRequired = false;
+        }
+    }
+
+    private void validateCurrentConnectionAsync(boolean showSuccess) {
+        String currentUrl = ApiClient.getBaseUrl();
+        new Thread(() -> {
+            boolean reachable = ApiClient.testConnection(currentUrl);
+            Platform.runLater(() -> {
+                if (reachable) {
+                    setConnectionStatus(serverStatusLabel, "Connected", "-color-accent");
+                    setConnectionStatus(connectionSetupStatusLabel, "Connected", "-color-accent");
+                    if (showSuccess) {
+                        NotificationManager.show("Server connected", currentUrl, NotificationManager.NotificationType.SUCCESS);
+                    }
+                    if (logsView != null) {
+                        logsView.initializeAfterConnection();
+                    }
+                    refreshDatabaseData();
+                } else {
+                    setConnectionStatus(serverStatusLabel, "Cannot reach server", "-color-danger");
+                    setConnectionStatus(connectionSetupStatusLabel, "Cannot reach server", "-color-danger");
+                    if (!connectionSetupRequired) {
+                        NotificationManager.show(
+                                "Connection issue",
+                                "Cannot reach the configured backend. Update it in Settings > Server.",
+                                NotificationManager.NotificationType.WARNING
+                        );
+                        openServerSettings();
+                    }
+                }
+            });
+        }, "api-connection-check").start();
+    }
+
+    private void testConnectionAsync(String candidateUrl, Label statusLabel, Runnable onSuccess) {
+        setConnectionStatus(statusLabel, "Testing connection...", "-text-muted");
+        new Thread(() -> {
+            boolean reachable = ApiClient.testConnection(candidateUrl);
+            Platform.runLater(() -> {
+                if (reachable) {
+                    setConnectionStatus(statusLabel, "Connected", "-color-accent");
+                    if (onSuccess != null) {
+                        onSuccess.run();
+                    }
+                } else {
+                    setConnectionStatus(statusLabel, "Cannot reach server", "-color-danger");
+                }
+            });
+        }, "api-connection-test").start();
+    }
+
+    private void applyApiUrl(String candidateUrl, boolean closeSetupAfterSave) {
+        try {
+            ApiClient.setBaseUrl(candidateUrl);
+            ConfigManager.saveApiUrl(ApiClient.getBaseUrl());
+            syncConnectionFields(ApiClient.getBaseUrl());
+            setConnectionStatus(serverStatusLabel, "Saved", "-color-accent");
+            setConnectionStatus(connectionSetupStatusLabel, "Saved", "-color-accent");
+            refreshDatabaseData();
+            if (closeSetupAfterSave) {
+                closeConnectionSetup();
+            }
+            NotificationManager.show("Server updated", ApiClient.getBaseUrl(), NotificationManager.NotificationType.SUCCESS);
+        } catch (IllegalArgumentException e) {
+            setConnectionStatus(serverStatusLabel, e.getMessage(), "-color-danger");
+            setConnectionStatus(connectionSetupStatusLabel, e.getMessage(), "-color-danger");
+        }
     }
 
     private void setupDynamicDock() {
@@ -465,6 +627,9 @@ public class TrackerController {
 
     //region data
     public void refreshDatabaseData() {
+        if (!ApiClient.isConfigured()) {
+            return;
+        }
         refreshTagsAndTasksAsync();
         if (plannerController != null) {
             plannerController.refresh();
@@ -478,6 +643,9 @@ public class TrackerController {
     }
 
     public void refreshTagsAndTasks() {
+        if (!ApiClient.isConfigured()) {
+            return;
+        }
         try {
             final Map<String, String> colors = new java.util.LinkedHashMap<>();
             final Map<String, Long> ids = new java.util.LinkedHashMap<>();
@@ -501,7 +669,7 @@ public class TrackerController {
             tagIds = ids;
             tagsWithTasksMap = map;
         } catch (Exception e) {
-            System.err.println("Error refreshing data: " + e.getMessage());
+            Logger.error("Error refreshing data", e);
         }
 
         setupManager.renderTagsList(tagsListContainer, tagColors, tagIds, () ->
@@ -512,6 +680,9 @@ public class TrackerController {
     }
 
     private void refreshTagsAndTasksAsync() {
+        if (!ApiClient.isConfigured()) {
+            return;
+        }
         new Thread(() -> {
             try {
                 final Map<String, String> colors = new java.util.LinkedHashMap<>();
@@ -545,7 +716,7 @@ public class TrackerController {
                     setupManager.updateFuzzyResults("", fuzzyResultsContainer, tagsWithTasksMap, tagColors, this::onTaskSelected);
                 });
             } catch (Exception e) {
-                System.err.println("Error refreshing tags async: " + e.getMessage());
+                Logger.error("Error refreshing tags async", e);
             }
         }, "tag-refresh-thread").start();
     }
@@ -647,8 +818,8 @@ public class TrackerController {
                     currentRating
             );
         } catch (Exception e) {
-            System.err.println("Error saving session: " + e.getMessage());
-            NotificationManager.show("Error", "Session could not be saved", NotificationManager.NotificationType.ERROR);
+            Logger.error("Error saving session", e);
+            showBackendOperationError("Session could not be saved", e);
             return;
         }
 
@@ -749,6 +920,12 @@ public class TrackerController {
             shortcutManager.resetAllShortcuts();
         }
 
+        ConfigManager.clearApiUrl();
+        ApiClient.setBaseUrl(ConfigManager.resolveApiUrl());
+        syncConnectionFields(ApiClient.getBaseUrl());
+        setConnectionStatus(serverStatusLabel, "Server setting reset.", "-text-muted");
+        setConnectionStatus(connectionSetupStatusLabel, "Server setting reset.", "-text-muted");
+
         updateEngineSettings();
         ConfigManager.save(engine);
         refreshShortcutViews();
@@ -771,8 +948,12 @@ public class TrackerController {
             new Thread(() -> {
                 try {
                     ApiClient.createTag(newTagName, hexColor);
+                    Platform.runLater(() ->
+                            NotificationManager.show("Tag created", newTagName, NotificationManager.NotificationType.SUCCESS)
+                    );
                 } catch (Exception e) {
-                    System.err.println("Error creating tag: " + e.getMessage());
+                    Logger.error("Error creating tag", e);
+                    Platform.runLater(() -> showBackendOperationError("Tag could not be created", e));
                 }
             }, "tag-create-thread").start();
         }
@@ -911,6 +1092,36 @@ public class TrackerController {
 
     //endregion
 
+    @FXML
+    public void handleUseDefaultServerUrl() {
+        String defaultUrl = ConfigManager.DEFAULT_API_URL;
+        syncConnectionFields(defaultUrl);
+        setConnectionStatus(connectionSetupStatusLabel, "Default local server selected.", "-text-muted");
+        setConnectionStatus(serverStatusLabel, "Default local server selected.", "-text-muted");
+    }
+
+    @FXML
+    public void handleTestServerSettings() {
+        testConnectionAsync(serverUrlField.getText(), serverStatusLabel, null);
+    }
+
+    @FXML
+    public void handleSaveServerSettings() {
+        applyApiUrl(serverUrlField.getText(), false);
+        validateCurrentConnectionAsync(false);
+    }
+
+    @FXML
+    public void handleTestConnectionSetup() {
+        testConnectionAsync(connectionSetupUrlField.getText(), connectionSetupStatusLabel, null);
+    }
+
+    @FXML
+    public void handleSaveAndContinueConnectionSetup() {
+        applyApiUrl(connectionSetupUrlField.getText(), true);
+        validateCurrentConnectionAsync(false);
+    }
+
     //region Setup
     @FXML
     public void toggleSetup() {
@@ -1019,7 +1230,7 @@ public class TrackerController {
 
     private void setupSlider(Slider s, Label l, int v, java.util.function.Consumer<Integer> a, String unit) {
         if (s == null) {
-            System.err.println("[ERROR] setupSlider");
+            Logger.error("[ERROR] setupSlider");
             return;
         }
         s.setSkin(new ProgressSliderSkin(s));
@@ -1061,7 +1272,7 @@ public class TrackerController {
             String endOfDay = ApiClient.formatApiTimestamp(LocalDate.now().atTime(23, 59, 59));
             todaySessions = ApiClient.getScheduledSessions(today, endOfDay);
         } catch (Exception e) {
-            System.err.println("Error loading today sessions: " + e.getMessage());
+            Logger.error("Error loading today sessions", e);
             todaySessions = new ArrayList<>();
         }
 
@@ -1098,7 +1309,7 @@ public class TrackerController {
             String futureLimit = ApiClient.formatApiTimestamp(todayDate.plusYears(1).atTime(23, 59, 59));
             upcomingDeadlines = ApiClient.getDeadlines(startOfToday, futureLimit);
         } catch (Exception e) {
-            System.err.println("Error loading upcoming deadlines: " + e.getMessage());
+            Logger.error("Error loading upcoming deadlines", e);
             upcomingDeadlines = new ArrayList<>();
         }
 
@@ -1145,7 +1356,7 @@ public class TrackerController {
         try {
             todos = ApiClient.getTodosByDate(LocalDate.now());
         } catch (Exception e) {
-            System.err.println("Error loading today's todos: " + e.getMessage());
+            Logger.error("Error loading today's todos", e);
             todos = new ArrayList<>();
         }
 
@@ -1453,7 +1664,8 @@ public class TrackerController {
                         NotificationManager.show("Tag Deleted", "Success", NotificationManager.NotificationType.SUCCESS);
                     });
                 } catch (Exception e) {
-                    System.err.println("Error deleting tag: " + e.getMessage());
+                    Logger.error("Error deleting tag", e);
+                    Platform.runLater(() -> showBackendOperationError("Tag could not be deleted", e));
                 }
             }, "tag-delete-thread").start();
         }

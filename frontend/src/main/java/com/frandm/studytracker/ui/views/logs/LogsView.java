@@ -22,6 +22,7 @@ public class LogsView extends StackPane {
 
     private String currentTabId;
     private final List<String> tabOrder = List.of("history", "focus", "calendar");
+    private boolean initialized;
 
     public LogsView(TrackerController trackerController) {
         this.logsController = new LogsController(trackerController);
@@ -58,6 +59,14 @@ public class LogsView extends StackPane {
         this.getChildren().add(layout);
 
         currentTabId = "history";
+    }
+
+    public void initializeAfterConnection() {
+        if (initialized) {
+            logsController.refreshAll();
+            return;
+        }
+        initialized = true;
         historyTab.reload();
     }
 

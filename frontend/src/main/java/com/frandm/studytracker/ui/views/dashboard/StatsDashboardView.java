@@ -1,6 +1,7 @@
 package com.frandm.studytracker.ui.views.dashboard;
 
 import com.frandm.studytracker.client.ApiClient;
+import com.frandm.studytracker.core.Logger;
 import com.frandm.studytracker.core.TagEventBus;
 import com.frandm.studytracker.models.Session;
 import javafx.application.Platform;
@@ -367,7 +368,7 @@ public class StatsDashboardView {
                 }
             }
         } catch (Exception e) {
-            System.err.println("Error loading archived tags: " + e.getMessage());
+            Logger.error("Error loading archived tags", e);
         }
     }
 

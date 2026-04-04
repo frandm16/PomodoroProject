@@ -252,6 +252,150 @@
     -fx-border-width: 1 0 0 0;
 }
 
+/* --- Connection Setup Overlay --- */
+.connection-setup-overlay {
+    -fx-background-color: linear-gradient(from 0% 0% to 100% 100%, rgba(6, 10, 16, 0.68), rgba(6, 10, 16, 0.82));
+}
+
+.connection-setup-card {
+    -fx-background-color: linear-gradient(from 0% 0% to 100% 100%, rgba(22, 27, 34, 0.98), rgba(13, 17, 23, 0.98));
+    -fx-background-radius: 26;
+    -fx-border-color: -color-border-subtle-light;
+    -fx-border-radius: 26;
+    -fx-border-width: 1;
+    -fx-padding: 26 28 24 28;
+    -fx-effect: dropshadow(gaussian, rgba(0, 0, 0, 0.35), 28, 0.18, 0, 14);
+}
+
+.connection-setup-icon-shell {
+    -fx-pref-width: 58;
+    -fx-pref-height: 58;
+    -fx-min-width: 58;
+    -fx-min-height: 58;
+    -fx-max-width: 58;
+    -fx-max-height: 58;
+    -fx-background-color: linear-gradient(from 0% 0% to 100% 100%, -color-accent-light, rgba(255, 255, 255, 0.04));
+    -fx-background-radius: 18;
+    -fx-border-color: -color-border-subtle-light;
+    -fx-border-radius: 18;
+}
+
+.connection-setup-icon {
+    -fx-icon-size: 26;
+    -fx-icon-color: -color-accent;
+}
+
+.connection-setup-title {
+    -fx-font-size: 25px;
+    -fx-font-weight: bold;
+    -fx-text-fill: -text-dark;
+}
+
+.connection-setup-subtitle {
+    -fx-font-size: 13px;
+    -fx-text-fill: -text-muted;
+    -fx-max-width: 480;
+}
+
+.connection-setup-body {
+    -fx-alignment: TOP_LEFT;
+}
+
+.connection-setup-side {
+    -fx-background-color: rgba(255, 255, 255, 0.03);
+    -fx-background-radius: 20;
+    -fx-border-color: -color-border-subtle-light;
+    -fx-border-radius: 20;
+    -fx-padding: 18;
+}
+
+.connection-setup-side-title {
+    -fx-font-size: 15px;
+    -fx-font-weight: bold;
+    -fx-text-fill: -text-dark;
+}
+
+.connection-setup-step {
+    -fx-background-color: rgba(255, 255, 255, 0.025);
+    -fx-background-radius: 16;
+    -fx-padding: 12 14;
+    -fx-alignment: TOP_LEFT;
+}
+
+.connection-step-badge {
+    -fx-pref-width: 26;
+    -fx-min-width: 26;
+    -fx-max-width: 26;
+    -fx-pref-height: 26;
+    -fx-min-height: 26;
+    -fx-max-height: 26;
+    -fx-alignment: CENTER;
+    -fx-background-color: -color-accent;
+    -fx-background-radius: 999;
+    -fx-text-fill: -color-menu;
+    -fx-font-size: 12px;
+    -fx-font-weight: bold;
+}
+
+.connection-step-text {
+    -fx-font-size: 13px;
+    -fx-text-fill: -text-main;
+}
+
+.connection-setup-form-card {
+    -fx-background-color: rgba(255, 255, 255, 0.04);
+    -fx-background-radius: 20;
+    -fx-border-color: -color-border-subtle-light;
+    -fx-border-radius: 20;
+    -fx-padding: 18 18 16 18;
+}
+
+.connection-setup-form-title {
+    -fx-font-size: 16px;
+    -fx-font-weight: bold;
+    -fx-text-fill: -text-dark;
+}
+
+.connection-setup-form-help {
+    -fx-font-size: 12px;
+    -fx-text-fill: -text-muted;
+}
+
+.connection-setup-input {
+    -fx-background-color: rgba(255, 255, 255, 0.05);
+    -fx-background-radius: 14;
+    -fx-border-color: -color-border-subtle-light;
+    -fx-border-radius: 14;
+    -fx-border-width: 1;
+    -fx-padding: 12 14;
+    -fx-font-size: 14px;
+    -fx-text-fill: -text-main;
+    -fx-prompt-text-fill: derive(-text-muted, -8%);
+}
+
+.connection-setup-input:focused {
+    -fx-border-color: -color-accent;
+    -fx-background-color: rgba(255, 255, 255, 0.07);
+    -fx-effect: dropshadow(gaussian, rgba(255, 183, 0, 0.15), 12, 0.1, 0, 0);
+}
+
+.connection-setup-status {
+    -fx-font-size: 12px;
+    -fx-text-fill: -text-muted;
+}
+
+.connection-secondary-btn {
+    -fx-padding: 10 16;
+    -fx-font-size: 13px;
+    -fx-font-weight: bold;
+}
+
+.connection-primary-btn {
+    -fx-padding: 10 18;
+    -fx-font-size: 13px;
+    -fx-font-weight: bold;
+}
+
 /* --- Settings Stepper (Numeric Input + -) --- */
 .settings-stepper {
     -fx-background-color: -bg-panels;
@@ -849,6 +993,133 @@
 .setup-scroll {
     -fx-background-color: transparent;
     -fx-background: transparent;
+}
+
+.connection-setup-overlay {
+    -fx-background-color: rgba(5, 8, 14, 0.82);
+}
+
+.connection-setup-card {
+    -fx-background-color: linear-gradient(from 0% 0% to 100% 100%, -bg-panels, -color-bg-subtle);
+    -fx-background-radius: 24;
+    -fx-border-radius: 24;
+    -fx-border-color: -color-border-subtle-light;
+    -fx-border-width: 1;
+    -fx-padding: 28;
+    -fx-effect: dropshadow(three-pass-box, rgba(0,0,0,0.35), 32, 0.2, 0, 10);
+}
+
+.connection-setup-icon-shell {
+    -fx-pref-width: 64;
+    -fx-pref-height: 64;
+    -fx-background-color: linear-gradient(from 0% 0% to 100% 100%, -color-accent-light, transparent);
+    -fx-background-radius: 18;
+    -fx-border-color: -color-accent-light;
+    -fx-border-radius: 18;
+}
+
+.connection-setup-icon {
+    -fx-icon-size: 28px;
+    -fx-icon-color: -color-accent;
+}
+
+.connection-setup-title {
+    -fx-font-size: 26px;
+    -fx-font-weight: bold;
+    -fx-text-fill: -text-dark;
+}
+
+.connection-setup-subtitle {
+    -fx-font-size: 13px;
+    -fx-text-fill: -text-muted;
+}
+
+.connection-setup-body {
+    -fx-padding: 8 0 0 0;
+}
+
+.connection-setup-side {
+    -fx-background-color: rgba(255,255,255,0.03);
+    -fx-background-radius: 18;
+    -fx-border-radius: 18;
+    -fx-border-color: -color-border-subtle-light;
+    -fx-padding: 18;
+}
+
+.connection-setup-side-title {
+    -fx-font-size: 15px;
+    -fx-font-weight: bold;
+    -fx-text-fill: -text-dark;
+}
+
+.connection-setup-step {
+    -fx-background-color: -color-bg-subtle;
+    -fx-background-radius: 14;
+    -fx-border-radius: 14;
+    -fx-border-color: -color-border-subtle-light;
+    -fx-padding: 12;
+}
+
+.connection-step-badge {
+    -fx-min-width: 28;
+    -fx-min-height: 28;
+    -fx-alignment: center;
+    -fx-background-color: -color-accent;
+    -fx-background-radius: 999;
+    -fx-text-fill: -text-main;
+    -fx-font-weight: bold;
+}
+
+.connection-step-text {
+    -fx-text-fill: -text-muted;
+    -fx-font-size: 12px;
+}
+
+.connection-setup-form-card {
+    -fx-background-color: rgba(255,255,255,0.03);
+    -fx-background-radius: 18;
+    -fx-border-radius: 18;
+    -fx-border-color: -color-border-subtle-light;
+    -fx-padding: 18;
+}
+
+.connection-setup-form-title {
+    -fx-font-size: 16px;
+    -fx-font-weight: bold;
+    -fx-text-fill: -text-dark;
+}
+
+.connection-setup-form-help {
+    -fx-font-size: 12px;
+    -fx-text-fill: -text-muted;
+}
+
+.connection-setup-input {
+    -fx-font-size: 14px;
+    -fx-background-color: -color-bg-subtle;
+    -fx-text-fill: -text-main;
+    -fx-background-radius: 12;
+    -fx-border-color: -color-border-subtle-light;
+    -fx-border-radius: 12;
+    -fx-padding: 12 14;
+}
+
+.connection-setup-input:focused {
+    -fx-border-color: -color-accent;
+    -fx-effect: dropshadow(three-pass-box, -color-accent-light, 12, 0.25, 0, 0);
+}
+
+.connection-setup-status {
+    -fx-font-size: 12px;
+    -fx-text-fill: -text-muted;
+}
+
+.connection-primary-btn {
+    -fx-font-weight: bold;
+}
+
+.connection-secondary-btn {
+    -fx-font-size: 13px;
 }
 
 /* endregion */

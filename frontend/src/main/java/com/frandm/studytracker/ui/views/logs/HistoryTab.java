@@ -1,6 +1,7 @@
 package com.frandm.studytracker.ui.views.logs;
 
 import com.frandm.studytracker.client.ApiClient;
+import com.frandm.studytracker.core.Logger;
 import com.frandm.studytracker.models.Session;
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;
@@ -99,6 +100,11 @@ public class HistoryTab extends VBox {
 
     private void loadMore() {
         if (!hasMoreData) return;
+        if (!ApiClient.isConfigured()) {
+            hasMoreData = false;
+            loadMoreBtn.setVisible(false);
+            return;
+        }
 
         List<Session> newSessions;
         try {
@@ -123,7 +129,9 @@ public class HistoryTab extends VBox {
 
             hasMoreData = newSessions.size() == PAGE_SIZE;
         } catch (Exception e) {
-            System.err.println("Error loading sessions: " + e.getMessage());
+            if (ApiClient.isConfigured()) {
+                Logger.error("Error loading sessions", e);
+            }
             newSessions = new ArrayList<>();
             hasMoreData = false;
         }
