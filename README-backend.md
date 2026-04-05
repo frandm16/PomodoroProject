@@ -15,7 +15,7 @@ The backend package is expected to contain:
 The backend itself is pulled as a prebuilt container image from:
 
 ```text
-ghcr.io/frandm16/studytracker-backend:v2.0.0
+ghcr.io/frandm16/studytracker-backend:v2.0.1
 ```
 
 ## What It Starts
@@ -109,7 +109,7 @@ studyzen-backend/
 For the backend package, a clearer release asset name would be:
 
 ```text
-StudyZen-backend-v2.0.0.zip
+StudyZen-backend-v2.0.1.zip
 ```
 
 ## Notes

@@ -34,14 +34,14 @@ import java.util.*;
 
 public class TrackerController {
 
-    public static final String PROJECT_VERSION = "v2.0.0";
+    public static final String PROJECT_VERSION = "v2.0.1";
 
     @FXML public GridPane mainContainer, setupPane, settingsPane, editSessionPane, summaryPane, shortcutMenuPane, connectionSetupPane, welcomeGuidePane;
     @FXML public StackPane rootPane, setupBox, editSessionBox, summaryBox, stackpaneCircle, connectionSetupBox, welcomeGuideBox,
-            confirmOverlay, confirmTagOverlay, plannerOverlayLayer;
+            confirmOverlay, confirmTagOverlay, confirmTaskOverlay, plannerOverlayLayer;
     @FXML public VBox timerTextContainer, notificationContainer, scheduleListContainer,
             plannerContainer, historyContainer, fuzzyResultsContainer, tagsListContainer,
-            pomoSettingsPane, countdownSettingsPane, settingsBox, confirmTagBox,
+            pomoSettingsPane, countdownSettingsPane, settingsBox, confirmTagBox, confirmTaskBox,
             confirmBox, mainVbox, shortcutMenuBox, shortcutSettingsListContainer,
             shortcutMenuListContainer;
     @FXML public HBox starsContainer, editStarsContainer, buttonsHbox, floatingDock, activeTaskContainer;
@@ -129,10 +129,13 @@ public class TrackerController {
     private static final DateTimeFormatter MENU_DATETIME_FORMAT = DateTimeFormatter.ofPattern("dd MMM • HH:mm");
 
 
-    private Map<String, List<String>> tagsWithTasksMap = new HashMap<>();
+    private Map<String, List<SetupManager.TaskOption>> tagsWithTasksMap = new HashMap<>();
     private Map<String, String> tagColors = new HashMap<>();
     private Map<String, Long> tagIds = new HashMap<>();
     private Long tagToDelete = null;
+    private PendingTaskDelete taskToDelete = null;
+
+    private record PendingTaskDelete(Long id, String tagName, String taskName) {}
 
     private BackgroundManager backgroundManager;
     @FXML
@@ -710,8 +713,20 @@ public class TrackerController {
         fuzzySearchInput.setOnKeyPressed(event -> {
             if (event.getCode() == KeyCode.ENTER && !fuzzyResultsContainer.getChildren().isEmpty()) {
                 fuzzyResultsContainer.getChildren().stream()
-                        .filter(node -> node instanceof Button)
-                        .map(node -> (Button) node)
+                        .map(node -> {
+                            if (node instanceof Button button) {
+                                return button;
+                            }
+                            if (node instanceof Pane pane) {
+                                return pane.getChildren().stream()
+                                        .filter(Button.class::isInstance)
+                                        .map(Button.class::cast)
+                                        .findFirst()
+                                        .orElse(null);
+                            }
+                            return null;
+                        })
+                        .filter(Objects::nonNull)
                         .findFirst()
                         .ifPresent(Button::fire);
             }
@@ -779,7 +794,7 @@ public class TrackerController {
         try {
             final Map<String, String> colors = new java.util.LinkedHashMap<>();
             final Map<String, Long> ids = new java.util.LinkedHashMap<>();
-            final Map<String, List<String>> map = new java.util.LinkedHashMap<>();
+            final Map<String, List<SetupManager.TaskOption>> map = new java.util.LinkedHashMap<>();
 
             List<Map<String, Object>> tags = ApiClient.getTags();
             tags.forEach(t -> {
@@ -787,8 +802,8 @@ public class TrackerController {
                 colors.put(tagName, (String) t.get("color"));
                 ids.put(tagName, ((Number) t.get("id")).longValue());
                 try {
-                    List<String> tasks = ApiClient.getTasks(tagName).stream()
-                            .map(task -> (String) task.get("name"))
+                    List<SetupManager.TaskOption> tasks = ApiClient.getTasks(tagName).stream()
+                            .map(task -> new SetupManager.TaskOption(((Number) task.get("id")).longValue(), (String) task.get("name")))
                             .collect(java.util.stream.Collectors.toList());
                     map.put(tagName, tasks);
                 } catch (Exception ex) {
@@ -817,7 +832,7 @@ public class TrackerController {
             try {
                 final Map<String, String> colors = new java.util.LinkedHashMap<>();
                 final Map<String, Long> ids = new java.util.LinkedHashMap<>();
-                final Map<String, List<String>> map = new java.util.LinkedHashMap<>();
+                final Map<String, List<SetupManager.TaskOption>> map = new java.util.LinkedHashMap<>();
 
                 List<Map<String, Object>> tags = ApiClient.getTags();
                 tags.forEach(t -> {
@@ -825,8 +840,8 @@ public class TrackerController {
                     colors.put(tagName, (String) t.get("color"));
                     ids.put(tagName, ((Number) t.get("id")).longValue());
                     try {
-                        List<String> tasks = ApiClient.getTasks(tagName).stream()
-                                .map(task -> (String) task.get("name"))
+                        List<SetupManager.TaskOption> tasks = ApiClient.getTasks(tagName).stream()
+                                .map(task -> new SetupManager.TaskOption(((Number) task.get("id")).longValue(), (String) task.get("name")))
                                 .collect(java.util.stream.Collectors.toList());
                         map.put(tagName, tasks);
                     } catch (Exception ex) {
@@ -1833,10 +1848,21 @@ public class TrackerController {
         Animations.show(confirmTagOverlay, confirmTagBox, null);
     }
 
+    public void openConfirmDeleteTask(Long taskId, String tagName, String taskName) {
+        taskToDelete = new PendingTaskDelete(taskId, tagName, taskName);
+        Animations.show(confirmTaskOverlay, confirmTaskBox, null);
+    }
+
     @FXML
     public void closeConfirmDeleteTag() {
         tagToDelete = null;
         Animations.hide(confirmTagOverlay, confirmTagBox, null);
+    }
+
+    @FXML
+    public void closeConfirmDeleteTask() {
+        taskToDelete = null;
+        Animations.hide(confirmTaskOverlay, confirmTaskBox, null);
     }
 
     public void showCloseBlockedNotification() {
@@ -1871,6 +1897,33 @@ public class TrackerController {
                     Platform.runLater(() -> showBackendOperationError("Tag could not be deleted", e));
                 }
             }, "tag-delete-thread").start();
+        }
+    }
+
+    @FXML
+    private void onConfirmDeleteTaskClick() {
+        if (taskToDelete != null) {
+            boolean wasSelectedTask = Objects.equals(taskToDelete.tagName(), setupManager.getSelectedTag())
+                    && Objects.equals(taskToDelete.taskName(), setupManager.getSelectedTask());
+
+            PendingTaskDelete pendingDelete = taskToDelete;
+            closeConfirmDeleteTask();
+
+            new Thread(() -> {
+                try {
+                    ApiClient.deleteTask(pendingDelete.id(), pendingDelete.tagName());
+                    Platform.runLater(() -> {
+                        if (wasSelectedTask) {
+                            setupManager.resetSelection();
+                        }
+                        refreshDatabaseData();
+                        NotificationManager.show("Task Deleted", "Success", NotificationManager.NotificationType.SUCCESS);
+                    });
+                } catch (Exception e) {
+                    Logger.error("Error deleting task", e);
+                    Platform.runLater(() -> showBackendOperationError("Task could not be deleted", e));
+                }
+            }, "task-delete-thread").start();
         }
     }
 
