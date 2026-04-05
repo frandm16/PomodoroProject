@@ -259,6 +259,15 @@ public class ApiClient {
         invalidateTasksCache(tagName);
     }
 
+    public static void deleteTask(long id, String tagName) throws Exception {
+        delete("/tasks/" + id);
+        if (tagName != null && !tagName.isBlank()) {
+            invalidateTasksCache(tagName);
+        } else {
+            cachedTasksByTag.clear();
+        }
+    }
+
     // --- Sessions ---
     public static List<Map<String, Object>> getSessions(String tag, String task, int page) throws Exception {
         String url = "/sessions?page=" + page;
@@ -287,6 +296,7 @@ public class ApiClient {
                 "totalMinutes", totalMinutes, "startDate", startDate,
                 "endDate", endDate, "rating", rating
         ));
+        TagEventBus.getInstance().publish(TagEventBus.Type.UPDATED, null, tagName);
     }
 
 

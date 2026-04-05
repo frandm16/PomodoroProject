@@ -23,6 +23,8 @@ public class FocusTab extends VBox {
     private final Label detailTitleLabel;
     private final Label totalStatsLabel;
     private final ComboBox<String> archiveFilterCombo;
+    private String currentDetailTag;
+    private String currentDetailColor = "#ffffff";
 
     public FocusTab(LogsController logsController) {
         this.logsController = logsController;
@@ -85,12 +87,18 @@ public class FocusTab extends VBox {
 
         this.getChildren().addAll(focusAreasRoot, detailRoot);
 
-        TagEventBus.getInstance().subscribe(_ -> refreshFocusAreasGrid());
+        TagEventBus.getInstance().subscribe(event -> {
+            refreshFocusAreasGrid();
+            if (currentDetailTag != null && detailRoot.isVisible()) {
+                loadTagSummary(currentDetailTag, currentDetailColor);
+            }
+        });
 
         refreshFocusAreasGrid();
     }
 
     private void showGrid() {
+        currentDetailTag = null;
         detailRoot.setVisible(false);
         detailRoot.setManaged(false);
         focusAreasRoot.setVisible(true);
@@ -114,6 +122,8 @@ public class FocusTab extends VBox {
         } catch (Exception e) {
             color = "#ffffff";
         }
+        currentDetailTag = tagName;
+        currentDetailColor = color;
         detailTitleLabel.setStyle("-fx-text-fill: " + color + ";");
         loadTagSummary(tagName, color);
     }

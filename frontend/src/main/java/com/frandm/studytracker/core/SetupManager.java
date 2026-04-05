@@ -16,6 +16,8 @@ import java.util.*;
 import java.util.concurrent.atomic.AtomicInteger;
 
 public class SetupManager {
+    public record TaskOption(Long id, String name) {}
+
     private String filterTag = null;
     private String selectedTag = null;
     private String selectedTask = null;
@@ -25,7 +27,7 @@ public class SetupManager {
         this.controller = p;
     }
 
-    public void updateFuzzyResults(String input, VBox container, Map<String, List<String>> tagsMap, Map<String, String> colors, Runnable onSelect) {
+    public void updateFuzzyResults(String input, VBox container, Map<String, List<TaskOption>> tagsMap, Map<String, String> colors, Runnable onSelect) {
         container.getChildren().clear();
         boolean isQueryEmpty = (input == null || input.trim().isEmpty());
 
@@ -67,18 +69,23 @@ public class SetupManager {
                 if (isQueryEmpty) {
                     tasks.stream()
                             .limit(remaining)
-                            .forEach(t -> {
-                                container.getChildren().add(createResultButton(t, tag, colors, onSelect));
+                            .forEach(taskOption -> {
+                                container.getChildren().add(createResultRow(taskOption, tag, colors, onSelect));
                                 totalResults.incrementAndGet();
                             });
                 } else {
                     if (remaining > 0) {
-                        List<ExtractedResult> matches = FuzzySearch.extractTop(input, tasks, Math.min(5, remaining));
+                        List<ExtractedResult> matches = FuzzySearch.extractTop(input, tasks.stream().map(TaskOption::name).toList(), Math.min(5, remaining));
                         matches.stream()
                                 .filter(m -> m.getScore() >= 60)
                                 .forEach(m -> {
-                                    container.getChildren().add(createResultButton(m.getString(), tag, colors, onSelect));
-                                    totalResults.incrementAndGet();
+                                    tasks.stream()
+                                            .filter(taskOption -> Objects.equals(taskOption.name(), m.getString()))
+                                            .findFirst()
+                                            .ifPresent(taskOption -> {
+                                                container.getChildren().add(createResultRow(taskOption, tag, colors, onSelect));
+                                                totalResults.incrementAndGet();
+                                            });
                                 });
                     }
                 }
@@ -86,20 +93,37 @@ public class SetupManager {
         });
     }
 
-    private Button createResultButton(String task, String tag, Map<String, String> colors, Runnable onSelect) {
+    private HBox createResultRow(TaskOption taskOption, String tag, Map<String, String> colors, Runnable onSelect) {
+        String task = taskOption.name();
         Button btn = new Button(task + " (" + tag + ")");
         btn.getStyleClass().add("fuzzy-result-button");
-        btn.setMaxWidth(Double.MAX_VALUE);
         btn.setAlignment(Pos.CENTER_LEFT);
         String color = colors.getOrDefault(tag, "#ffffff");
         btn.setStyle("-fx-border-color: " + color + "; -fx-border-width: 0 0 0 4;");
+        btn.setMaxWidth(Double.MAX_VALUE);
+        HBox.setHgrow(btn, Priority.ALWAYS);
         btn.setOnAction(_ -> {
             selectedTask = task;
             selectedTag = tag;
             controller.handleStartSessionFromSetup();
             onSelect.run();
         });
-        return btn;
+
+        Button deleteBtn = new Button();
+        deleteBtn.getStyleClass().add("card-options-button");
+        FontIcon deleteIcon = new FontIcon("mdi2t-trash-can-outline");
+        deleteIcon.getStyleClass().add("options-icon");
+        deleteBtn.setGraphic(deleteIcon);
+        Tooltip.install(deleteBtn, new Tooltip("Delete task"));
+        deleteBtn.setOnAction(event -> {
+            event.consume();
+            controller.openConfirmDeleteTask(taskOption.id(), tag, task);
+        });
+
+        HBox row = new HBox(8, btn, deleteBtn);
+        row.setAlignment(Pos.CENTER_LEFT);
+        row.setMaxWidth(Double.MAX_VALUE);
+        return row;
     }
 
     public void renderTagsList(VBox container, Map<String, String> colors, Map<String, Long> tagIds, Runnable onFilterChange) {
