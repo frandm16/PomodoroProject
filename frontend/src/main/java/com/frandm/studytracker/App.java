@@ -83,7 +83,7 @@ public class App extends Application {
         String mainStyles = Objects.requireNonNull(getClass().getResource("/com/frandm/studytracker/css/styles.css")).toExternalForm();
         scene.getStylesheets().add(mainStyles);
 
-        finalStage.setTitle("Study Tracker");
+        finalStage.setTitle("StudyZen");
         finalStage.setResizable(true);
 
         if (controller != null && controller.titleBar != null) {
